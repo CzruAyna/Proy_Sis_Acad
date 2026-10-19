@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "apps.usuarios.apps.UsuariosConfig",
+    "apps.academico.apps.AcademicoConfig",
 ]
 
 MIDDLEWARE = [

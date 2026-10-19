@@ -1,3 +1,5 @@
+import { CatalogoAcademico } from "@/components/catalogo-academico";
+
 const modules = [
   {
     number: "01",
@@ -45,7 +47,7 @@ export default function Home() {
           <nav aria-label="Navegación principal" className="sheet-nav">
             <a href="#sistema">El sistema</a>
             <a href="#modulos">Módulos</a>
-            <a href="#principios">Principios</a>
+            <a href="#catalogo">Malla</a>
           </nav>
           <span className="edition-label">CUADERNO 01 <span>·</span> EDICIÓN INICIAL</span>
         </header>
@@ -101,6 +103,8 @@ export default function Home() {
           </div>
         </section>
 
+        <CatalogoAcademico />
+
         <footer className="sheet-footer">
           <span>SISTEMA DE GESTIÓN ACADÉMICA</span>
           <span>UNA BASE PARA APRENDER Y AVANZAR</span>
@@ -109,4 +113,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
+}\n

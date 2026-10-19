@@ -2,7 +2,7 @@
 
 Monorepo para un sistema de gestión académica universitaria. El proyecto prioriza la libertad del estudiante para organizar su horario, el control de cupos, las reglas de avance curricular y la generación de documentos institucionales.
 
-El desarrollo inicial se realiza de forma local, sin Docker. El repositorio está en etapa de inicio: la estructura y la documentación establecen la base para implementar los módulos por fases.
+El desarrollo se realiza de forma local, sin Docker. El núcleo académico ya cuenta con modelos para carreras, planes de estudio, materias, prerrequisitos y periodos; estos datos se administran desde Django y se consultan desde la interfaz mediante la API.
 
 ## Tecnologías previstas
 
@@ -22,6 +22,12 @@ frontend/         Aplicación Next.js
 docs/             Especificación, reglas y modelo de datos
 latex-templates/  Plantillas institucionales (fase posterior)
 ```
+
+## Núcleo académico
+
+El catálogo conecta carreras con sus planes de estudio y materias. Las materias pueden declarar prerrequisitos o corequisitos; el sistema evita relaciones duplicadas, autorreferencias y ciclos en la malla. Los periodos académicos incluyen semestres ordinarios, anuales, verano, invierno y mesas.
+
+La API publica las consultas de carreras, mallas, materias y periodos. El catálogo de la portada consume estos endpoints y presenta planes, materias agrupadas por semestre y sus requisitos.
 
 ## Documentación del proyecto
 

@@ -39,7 +39,6 @@ Notas técnicas fijadas:
 ## 3. Estructura del Repositorio (monorepo)
 
     sistema-academico/
-    ├── .github/pull_request_template.md
     ├── .vscode/extensions.json
     ├── .vscode/settings.json
     ├── backend/
@@ -89,7 +88,6 @@ Notas técnicas fijadas:
     ├── .editorconfig
     ├── .env.example
     ├── .gitignore
-    ├── CONTRIBUTING.md
     ├── LICENSE (MIT)
     └── README.md
 
@@ -248,8 +246,8 @@ Implementación: grupos y permisos de Django + validaciones a nivel de servicio.
 
 ## 12. Diseño UI/UX
 
-- Paleta: fondo slate-50, texto slate-900, primario sky-500 (#0ea5e9), superficies blancas con borde slate-200 y esquinas redondeadas (rounded-xl), sombras suaves.
-- Tipografía: Inter (o sans-serif del sistema), jerarquía clara.
+- Paleta: blanco, negro y grises de papel e impresión; textura sutil de hoja, líneas de cuaderno y margen editorial.
+- Tipografía: serif editorial para títulos y sans-serif legible para datos e interfaz.
 - Pantallas principales:
   1. Login: formulario centrado, autenticación JWT contra la API.
   2. Dashboard estudiante: tarjeta de promedio ponderado, materias en curso, % de avance de malla, acciones rápidas.
