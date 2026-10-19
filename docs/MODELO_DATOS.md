@@ -37,6 +37,14 @@ Los catálogos de carreras, planes, materias y periodos se exponen en modo de so
 
 La gestión se realiza en el admin de Django. La API pública solo muestra paralelos abiertos y permite filtrarlos por periodo o materia. La oferta aparece en la interfaz con docente, cupo, aula y sesiones semanales.
 
+## Inscripciones implementadas
+
+| Entidad | Campos principales | Restricciones |
+|---|---|---|
+| Inscripcion | estudiante, paralelo, estado, origen, creado_en, actualizado_en | Un registro por estudiante y paralelo; no se sobrepasa el cupo ni se cursa dos veces la misma materia en el periodo. |
+
+La inscripción requiere JWT y rol de estudiante. La operación bloquea los paralelos de la misma materia y periodo mientras asigna el asiento; si el seleccionado está lleno, intenta los paralelos siguientes. Retirar una inscripción cambia su estado a `RETIRADA` y libera el asiento. La API devuelve inscriptos actuales y cupos disponibles.
+
 | Consulta | Endpoint |
 |---|---|
 | Estado de la API | `GET /api/health/` |
@@ -49,6 +57,9 @@ La gestión se realiza en el admin de Django. La API pública solo muestra paral
 | Paralelos abiertos | `GET /api/paralelos/` |
 | Paralelos de un periodo | `GET /api/paralelos/?periodo=<id>` |
 | Paralelos de una materia | `GET /api/paralelos/?materia=<id>` |
+| Inscripciones propias | `GET /api/inscripciones/` (JWT estudiante) |
+| Crear inscripción | `POST /api/inscripciones/` con `{"paralelo_id": <id>}` (JWT estudiante) |
+| Retirar inscripción propia | `DELETE /api/inscripciones/<id>/` (JWT estudiante) |
 
 ## Decisiones de dominio
 

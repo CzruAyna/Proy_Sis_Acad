@@ -22,6 +22,8 @@ class ParaleloSerializer(serializers.ModelSerializer):
     periodo_anio = serializers.IntegerField(source="periodo.anio", read_only=True)
     docente_nombre = serializers.SerializerMethodField()
     sesiones = SesionClaseSerializer(many=True, read_only=True)
+    inscriptos_actuales = serializers.SerializerMethodField()
+    cupos_disponibles = serializers.SerializerMethodField()
 
     class Meta:
         model = Paralelo
@@ -36,6 +38,8 @@ class ParaleloSerializer(serializers.ModelSerializer):
             "identificador",
             "docente_nombre",
             "cupo_maximo",
+            "inscriptos_actuales",
+            "cupos_disponibles",
             "abierto",
             "sesiones",
         )
@@ -44,3 +48,12 @@ class ParaleloSerializer(serializers.ModelSerializer):
         if not obj.docente_id:
             return "Por asignar"
         return obj.docente.get_full_name() or obj.docente.username
+
+    def get_inscriptos_actuales(self, obj):
+        cantidad = getattr(obj, "cantidad_inscriptos", None)
+        if cantidad is not None:
+            return cantidad
+        return obj.inscripciones.filter(estado="CURSANDO").count()
+
+    def get_cupos_disponibles(self, obj):
+        return max(0, obj.cupo_maximo - self.get_inscriptos_actuales(obj))

@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -11,7 +12,11 @@ class ParaleloViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (AllowAny,)
 
     def get_queryset(self):
-        queryset = Paralelo.objects.filter(abierto=True).select_related(
+        queryset = Paralelo.objects.filter(abierto=True).annotate(
+            cantidad_inscriptos=Count(
+                "inscripciones", filter=Q(inscripciones__estado="CURSANDO")
+            )
+        ).select_related(
             "materia", "periodo", "docente"
         ).prefetch_related("sesiones", "sesiones__aula")
         for parameter in ("periodo", "materia"):

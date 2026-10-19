@@ -11,6 +11,7 @@ from apps.academico.views import (
     PlanEstudioViewSet,
 )
 from apps.oferta.views import ParaleloViewSet
+from apps.inscripciones.views import InscripcionViewSet
 
 
 router = DefaultRouter()
@@ -19,6 +20,7 @@ router.register("mallas", PlanEstudioViewSet)
 router.register("materias", MateriaViewSet, basename="materia")
 router.register("periodos", PeriodoAcademicoViewSet)
 router.register("paralelos", ParaleloViewSet, basename="paralelo")
+router.register("inscripciones", InscripcionViewSet, basename="inscripcion")
 
 
 def health(request):
@@ -29,6 +31,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health),
     path("api/", include(router.urls)),
-    path("api/token/", TokenObtainPairView.as_view()),
-    path("api/token/refresh/", TokenRefreshView.as_view()),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]

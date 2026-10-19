@@ -26,6 +26,8 @@ interface Paralelo {
   identificador: string;
   docente_nombre: string;
   cupo_maximo: number;
+  inscriptos_actuales: number;
+  cupos_disponibles: number;
   sesiones: SesionClase[];
 }
 
@@ -124,7 +126,10 @@ export function OfertaAcademica() {
               </div>
               <h3>{paralelo.materia_nombre}</h3>
               <p className="offer-teacher">Docente · {paralelo.docente_nombre}</p>
-              <div className="offer-capacity"><span>CUPO MÁXIMO</span><strong>{paralelo.cupo_maximo}</strong></div>
+              <div className="offer-capacity">
+                <span>DISPONIBLES / CUPO MÁXIMO</span>
+                <strong>{paralelo.cupos_disponibles} / {paralelo.cupo_maximo}</strong>
+              </div>
               {paralelo.sesiones.length > 0 ? (
                 <ul className="offer-sessions">
                   {paralelo.sesiones.map((sesion) => (
