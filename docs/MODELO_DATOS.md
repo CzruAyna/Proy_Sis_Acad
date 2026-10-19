@@ -26,6 +26,17 @@ El núcleo académico implementa carreras, planes de estudio, materias, prerrequ
 
 Los catálogos de carreras, planes, materias y periodos se exponen en modo de solo lectura mediante la API. La carga y edición del catálogo se realiza desde el admin de Django.
 
+## Oferta académica implementada
+
+| Entidad | Campos principales | Restricciones |
+|---|---|---|
+| Aula | nombre, capacidad, es_laboratorio | Nombre único; capacidad positiva. |
+| DocenteMateria | docente, materia | Par único; solo usuarios con rol docente. |
+| Paralelo | materia, periodo, identificador, docente, cupo_maximo, abierto | Identificador único por materia y periodo; docente habilitado para la materia; cupo positivo. |
+| SesionClase | paralelo, tipo, grupo_lab, aula, dia, hora_inicio, hora_fin | Fin posterior al inicio; el cupo no supera la capacidad del aula; laboratorio requiere aula laboratorio; un aula no puede tener sesiones cruzadas. |
+
+La gestión se realiza en el admin de Django. La API pública solo muestra paralelos abiertos y permite filtrarlos por periodo o materia. La oferta aparece en la interfaz con docente, cupo, aula y sesiones semanales.
+
 | Consulta | Endpoint |
 |---|---|
 | Estado de la API | `GET /api/health/` |
@@ -35,6 +46,9 @@ Los catálogos de carreras, planes, materias y periodos se exponen en modo de so
 | Materias por plan | `GET /api/materias/?plan=<id>` |
 | Materias por semestre | `GET /api/materias/?semestre=<n>` |
 | Periodos académicos | `GET /api/periodos/` |
+| Paralelos abiertos | `GET /api/paralelos/` |
+| Paralelos de un periodo | `GET /api/paralelos/?periodo=<id>` |
+| Paralelos de una materia | `GET /api/paralelos/?materia=<id>` |
 
 ## Decisiones de dominio
 

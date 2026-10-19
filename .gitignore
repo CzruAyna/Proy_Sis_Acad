@@ -11,6 +11,9 @@ venv/
 *.sqlite3
 backend/staticfiles/
 backend/media/
+backend/.postgres-runtime/
+backend/.postgres-data/
+backend/.postgresql-binaries.zip
 
 frontend/node_modules/
 frontend/.next/

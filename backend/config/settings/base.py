@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.usuarios.apps.UsuariosConfig",
     "apps.academico.apps.AcademicoConfig",
+    "apps.oferta.apps.OfertaConfig",
 ]
 
 MIDDLEWARE = [

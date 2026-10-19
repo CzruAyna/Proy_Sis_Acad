@@ -10,13 +10,15 @@ from apps.academico.views import (
     PeriodoAcademicoViewSet,
     PlanEstudioViewSet,
 )
+from apps.oferta.views import ParaleloViewSet
 
 
 router = DefaultRouter()
 router.register("carreras", CarreraViewSet)
 router.register("mallas", PlanEstudioViewSet)
-router.register("materias", MateriaViewSet)
+router.register("materias", MateriaViewSet, basename="materia")
 router.register("periodos", PeriodoAcademicoViewSet)
+router.register("paralelos", ParaleloViewSet, basename="paralelo")
 
 
 def health(request):

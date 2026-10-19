@@ -25,9 +25,9 @@ latex-templates/  Plantillas institucionales (fase posterior)
 
 ## Núcleo académico
 
-El catálogo conecta carreras con sus planes de estudio y materias. Las materias pueden declarar prerrequisitos o corequisitos; el sistema evita relaciones duplicadas, autorreferencias y ciclos en la malla. Los periodos académicos incluyen semestres ordinarios, anuales, verano, invierno y mesas.
+El catálogo conecta carreras con sus planes de estudio y materias. Las materias pueden declarar prerrequisitos o corequisitos; el sistema evita relaciones duplicadas, autorreferencias y ciclos en la malla. Los periodos académicos incluyen semestres ordinarios, anuales, verano, invierno y mesas. La oferta académica permite administrar aulas, docentes habilitados, paralelos y sesiones semanales, y publica los paralelos abiertos desde la API.
 
-La API publica las consultas de carreras, mallas, materias y periodos. El catálogo de la portada consume estos endpoints y presenta planes, materias agrupadas por semestre y sus requisitos.
+La API publica las consultas de carreras, mallas, materias, periodos y paralelos abiertos. La portada consume estos endpoints y presenta planes, materias agrupadas por semestre, requisitos y oferta semanal de paralelos.
 
 ## Documentación del proyecto
 

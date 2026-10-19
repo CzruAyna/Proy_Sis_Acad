@@ -1,4 +1,5 @@
 import { CatalogoAcademico } from "@/components/catalogo-academico";
+import { OfertaAcademica } from "@/components/oferta-academica";
 
 const modules = [
   {
@@ -10,9 +11,9 @@ const modules = [
   },
   {
     number: "02",
-    title: "Inscripciones",
+    title: "Oferta académica",
     description:
-      "Oferta académica y cupos organizados para cada periodo.",
+      "Paralelos, docentes, aulas y sesiones organizados por periodo.",
     label: "OFERTA",
   },
   {
@@ -48,6 +49,7 @@ export default function Home() {
             <a href="#sistema">El sistema</a>
             <a href="#modulos">Módulos</a>
             <a href="#catalogo">Malla</a>
+            <a href="#oferta">Oferta</a>
           </nav>
           <span className="edition-label">CUADERNO 01 <span>·</span> EDICIÓN INICIAL</span>
         </header>
@@ -104,6 +106,7 @@ export default function Home() {
         </section>
 
         <CatalogoAcademico />
+        <OfertaAcademica />
 
         <footer className="sheet-footer">
           <span>SISTEMA DE GESTIÓN ACADÉMICA</span>
@@ -113,4 +116,4 @@ export default function Home() {
       </div>
     </main>
   );
-}\n
+}
