@@ -508,6 +508,159 @@ a {
   font-weight: 700;
 }
 
+.enrollment-section {
+  margin: 0 50px 58px;
+  padding-top: 35px;
+  border-top: 1px solid rgba(25, 25, 23, 0.38);
+}
+
+.student-login {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid rgba(25, 25, 23, 0.4);
+  background: rgba(255, 254, 250, 0.8);
+}
+
+.student-login label {
+  display: grid;
+  gap: 7px;
+}
+
+.student-login label span,
+.enrollment-total,
+.my-enrollment-row div > span,
+.enrollment-offer-row div > span {
+  color: var(--muted-ink);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.student-login input {
+  min-height: 37px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid rgba(25, 25, 23, 0.45);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.student-login button,
+.enrollment-logout,
+.my-enrollment-row button,
+.enrollment-offer-row button {
+  min-height: 37px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.student-login button:disabled,
+.my-enrollment-row button:disabled,
+.enrollment-offer-row button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.enrollment-logout {
+  background: transparent;
+  color: var(--ink);
+}
+
+.enrollment-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.enrollment-total {
+  padding-bottom: 11px;
+}
+
+.my-enrollments,
+.enrollment-offers {
+  margin-top: 25px;
+}
+
+.my-enrollments h3,
+.enrollment-offers h3 {
+  margin: 0 0 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.my-enrollments > p,
+.enrollment-offers > p {
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid rgba(25, 25, 23, 0.2);
+  color: #55544e;
+  font-size: 11px;
+}
+
+.my-enrollment-row,
+.enrollment-offer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(25, 25, 23, 0.2);
+}
+
+.my-enrollment-row div,
+.enrollment-offer-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.my-enrollment-row strong,
+.enrollment-offer-row strong {
+  font-size: 12px;
+}
+
+.enrollment-offer-row small {
+  color: #55544e;
+  font-size: 10px;
+}
+
+.my-enrollment-row button {
+  min-height: 30px;
+  padding: 0 10px;
+  border-color: rgba(25, 25, 23, 0.55);
+  background: transparent;
+  color: var(--ink);
+}
+
+.enrollment-offer-row button {
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.enrollment-message {
+  margin: 17px 0 0;
+  padding: 12px 14px;
+  border: 1px dashed rgba(25, 25, 23, 0.45);
+  color: #4d4c47;
+  font-size: 11px;
+}
+
 .catalog-heading {
   display: flex;
   align-items: end;
@@ -805,6 +958,7 @@ a {
   .modules-section,
   .catalog-section,
   .offer-section,
+  .enrollment-section,
   .sheet-footer {
     margin-right: 34px;
     margin-left: 50px;
@@ -851,6 +1005,7 @@ a {
   .modules-section,
   .catalog-section,
   .offer-section,
+  .enrollment-section,
   .sheet-footer {
     margin-right: 20px;
     margin-left: 31px;
@@ -876,15 +1031,15 @@ a {
   }
 
   .sheet-nav {
-    gap: 13px;
+    gap: 9px;
   }
 
   .sheet-nav a {
-    font-size: 9px;
+    font-size: 8px;
   }
 
-  .sheet-nav a:last-child {
-    display: inline;
+  .sheet-nav a:first-child {
+    display: none;
   }
 
   .hero {
@@ -976,6 +1131,23 @@ a {
 
   .offer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .student-login {
+    grid-template-columns: 1fr;
+  }
+
+  .student-login button {
+    width: 100%;
+  }
+
+  .enrollment-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .enrollment-total {
+    padding-bottom: 0;
   }
 
   .offer-sessions li {

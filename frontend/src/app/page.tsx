@@ -1,5 +1,6 @@
 import { CatalogoAcademico } from "@/components/catalogo-academico";
 import { OfertaAcademica } from "@/components/oferta-academica";
+import { InscripcionesPanel } from "@/components/inscripciones-panel";
 
 const modules = [
   {
@@ -50,6 +51,7 @@ export default function Home() {
             <a href="#modulos">Módulos</a>
             <a href="#catalogo">Malla</a>
             <a href="#oferta">Oferta</a>
+            <a href="#inscripciones">Inscripción</a>
           </nav>
           <span className="edition-label">CUADERNO 01 <span>·</span> EDICIÓN INICIAL</span>
         </header>
@@ -107,6 +109,7 @@ export default function Home() {
 
         <CatalogoAcademico />
         <OfertaAcademica />
+        <InscripcionesPanel />
 
         <footer className="sheet-footer">
           <span>SISTEMA DE GESTIÓN ACADÉMICA</span>

@@ -88,7 +88,7 @@ Notas técnicas fijadas:
     ├── .editorconfig
     ├── .env.example
     ├── .gitignore
-    ├── LICENSE (MIT)
+    ├── LICENSE
     └── README.md
 
 Responsabilidad de cada app backend:

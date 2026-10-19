@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Usuario(AbstractUser):
+    REQUIRED_FIELDS = ["email", "ci"]
+
     class Rol(models.TextChoices):
         ESTUDIANTE = "ESTUDIANTE", "Estudiante"
         DOCENTE = "DOCENTE", "Docente"

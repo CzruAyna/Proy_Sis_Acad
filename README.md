@@ -29,10 +29,10 @@ El catálogo conecta carreras con sus planes de estudio y materias. Las materias
 
 La API publica las consultas de carreras, mallas, materias, periodos y paralelos abiertos. La portada consume estos endpoints y presenta planes, materias agrupadas por semestre, requisitos y oferta semanal de paralelos, con cupos actuales. Las inscripciones autenticadas permiten que cada estudiante reserve un asiento, pase al siguiente paralelo cuando el elegido se llena y retire su propia inscripción.
 
+La portada incluye un acceso para estudiantes que permite consultar sus inscripciones, inscribirse en paralelos disponibles y retirarse de una materia.
+
+El contenido original del proyecto se ofrece bajo la [Licencia de Uso Libre SGA 1.0](LICENSE). Los componentes de terceros mantienen sus propias condiciones.
+
 ## Documentación del proyecto
 
 La especificación funcional está en [`docs/ESPECIFICACION_FUNCIONAL.md`](docs/ESPECIFICACION_FUNCIONAL.md). Las reglas están resumidas en [`docs/REGLAS_NEGOCIO.md`](docs/REGLAS_NEGOCIO.md), las entidades en [`docs/MODELO_DATOS.md`](docs/MODELO_DATOS.md) y las fases previstas en [`docs/ROADMAP.md`](docs/ROADMAP.md).
-
-## Licencia
-
-Este proyecto se distribuye bajo la licencia MIT. Consulta [`LICENSE`](LICENSE).
