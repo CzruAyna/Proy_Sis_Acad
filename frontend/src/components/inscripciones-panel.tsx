@@ -11,6 +11,7 @@ interface Periodo {
 
 interface Paralelo {
   id: number;
+  periodo: number;
   materia_codigo: string;
   materia_nombre: string;
   identificador: string;
@@ -18,6 +19,25 @@ interface Paralelo {
   cupo_maximo: number;
   inscriptos_actuales: number;
   cupos_disponibles: number;
+  sesiones: SesionClase[];
+  elegibilidad?: {
+    habilitada: boolean;
+    motivos: string[];
+    carga_actual: number;
+    limite_materias: number;
+    promedio_ordinario_anterior: number | null;
+  };
+}
+
+interface SesionClase {
+  id: number;
+  dia: number;
+  dia_display: string;
+  hora_inicio: string;
+  hora_fin: string;
+  tipo_display: string;
+  grupo_lab: number;
+  aula: string;
 }
 
 interface Inscripcion {
@@ -36,6 +56,15 @@ async function leerError(response: Response) {
   } catch {
     return `No se pudo completar la operación (${response.status}).`;
   }
+}
+
+function minutos(hora: string) {
+  const [horas, minutos] = hora.split(":").map(Number);
+  return horas * 60 + minutos;
+}
+
+function seCruzan(a: SesionClase, b: SesionClase) {
+  return a.dia === b.dia && minutos(a.hora_inicio) < minutos(b.hora_fin) && minutos(a.hora_fin) > minutos(b.hora_inicio);
 }
 
 export function InscripcionesPanel() {
@@ -79,7 +108,7 @@ export function InscripcionesPanel() {
         const [inscripcionesResponse, paralelosResponse] = await Promise.all([
           fetch(`${apiUrl}/api/inscripciones/`, { headers, signal: controller.signal }),
           periodoId
-            ? fetch(`${apiUrl}/api/paralelos/?periodo=${periodoId}`, { signal: controller.signal })
+            ? fetch(`${apiUrl}/api/inscripciones/elegibilidad/?periodo=${periodoId}`, { headers, signal: controller.signal })
             : Promise.resolve(null),
         ]);
         if (inscripcionesResponse.status === 401 && refreshToken) {
@@ -189,16 +218,27 @@ export function InscripcionesPanel() {
   async function recargar() {
     const [misResponse, paralelosResponse] = await Promise.all([
       fetch(`${apiUrl}/api/inscripciones/`, { headers: { Authorization: `Bearer ${token}` } }),
-      periodoId ? fetch(`${apiUrl}/api/paralelos/?periodo=${periodoId}`) : Promise.resolve(null),
+      periodoId ? fetch(`${apiUrl}/api/inscripciones/elegibilidad/?periodo=${periodoId}`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
     ]);
     if (misResponse.ok) setInscripciones((await misResponse.json()) as Inscripcion[]);
     if (paralelosResponse?.ok) setParalelos((await paralelosResponse.json()) as Paralelo[]);
   }
 
   const activas = inscripciones.filter((inscripcion) => inscripcion.estado_display === "Cursando");
+  const activasPeriodo = activas.filter((inscripcion) => String(inscripcion.paralelo_info.periodo) === periodoId);
+  const resumenElegibilidad = paralelos[0]?.elegibilidad;
   const inscritoEnMateria = new Set(
-    activas.map((inscripcion) => inscripcion.paralelo_info.materia_codigo),
+    activasPeriodo.map((inscripcion) => inscripcion.paralelo_info.materia_codigo),
   );
+  const sesionesActuales = activasPeriodo.flatMap((inscripcion) =>
+    inscripcion.paralelo_info.sesiones.map((sesion) => ({
+      ...sesion,
+      materia: inscripcion.paralelo_info.materia_nombre,
+      codigo: inscripcion.paralelo_info.materia_codigo,
+      paralelo: inscripcion.paralelo_info.identificador,
+    })),
+  );
+  const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
   return (
     <section aria-labelledby="enrollment-title" className="enrollment-section" id="inscripciones">
@@ -232,12 +272,48 @@ export function InscripcionesPanel() {
                 {periodos.map((periodo) => <option key={periodo.id} value={periodo.id}>{periodo.tipo_display} {periodo.anio}</option>)}
               </select>
             </label>
-            <span className="enrollment-total">{activas.length} MATERIA{activas.length === 1 ? "" : "S"} EN CURSO</span>
+            <span className="enrollment-total">{activasPeriodo.length} MATERIA{activasPeriodo.length === 1 ? "" : "S"} EN ESTE PERIODO</span>
+          </div>
+          {resumenElegibilidad && <p className="eligibility-summary">
+            Llevas {resumenElegibilidad.carga_actual} de {resumenElegibilidad.limite_materias} materias permitidas.
+            {resumenElegibilidad.promedio_ordinario_anterior === null
+              ? " La séptima requiere un promedio ponderado de al menos 65 en el periodo ordinario anterior."
+              : ` Promedio ponderado anterior: ${resumenElegibilidad.promedio_ordinario_anterior.toFixed(2)}${resumenElegibilidad.limite_materias === 7 ? ", habilita la séptima materia." : ", no alcanza el umbral de 65 para la séptima."}`}
+          </p>}
+
+          <div className="weekly-schedule" id="horario">
+            <div className="schedule-heading">
+              <div><span>CUADERNO DE HORARIO</span><h3>Mi semana en clases</h3></div>
+              <div className="schedule-tools">
+                <span>{sesionesActuales.length} SESIÓN{sesionesActuales.length === 1 ? "" : "ES"}</span>
+                {sesionesActuales.length > 0 && <button className="schedule-print-button" onClick={() => window.print()} type="button">Imprimir horario</button>}
+              </div>
+            </div>
+            {sesionesActuales.length === 0 ? <p className="schedule-empty">Tus clases aparecerán aquí cuando tus paralelos tengan horarios publicados.</p> : (
+              <div className="schedule-days">
+                {dias.map((dia, index) => {
+                  const sesionesDia = sesionesActuales.filter((sesion) => sesion.dia === index + 1).sort((a, b) => minutos(a.hora_inicio) - minutos(b.hora_inicio));
+                  if (sesionesDia.length === 0) return null;
+                  return <section className="schedule-day" key={dia} aria-label={`Clases del ${dia}`}>
+                    <h4>{dia}</h4>
+                    <div>{sesionesDia.map((sesion, sesionIndex) => {
+                      const hayCruce = sesionesDia.slice(0, sesionIndex).some((anterior) => seCruzan(anterior, sesion));
+                      return <article className={`schedule-class${hayCruce ? " schedule-class-conflict" : ""}`} key={`${sesion.codigo}-${sesion.id}`}>
+                        <time>{sesion.hora_inicio.slice(0, 5)}–{sesion.hora_fin.slice(0, 5)}</time>
+                        <strong>{sesion.codigo} · {sesion.materia}</strong>
+                        <span>{sesion.tipo_display}{sesion.tipo_display === "Laboratorio" ? ` ${sesion.grupo_lab}` : ""} · {sesion.aula} · Paralelo {sesion.paralelo}</span>
+                        {hayCruce && <small>Se cruza con otra clase</small>}
+                      </article>;
+                    })}</div>
+                  </section>;
+                })}
+              </div>
+            )}
           </div>
 
           <div className="my-enrollments">
             <h3>Mis inscripciones</h3>
-            {activas.length === 0 ? <p>Aún no tienes materias inscritas en tu historial.</p> : activas.map((inscripcion) => (
+            {activasPeriodo.length === 0 ? <p>No tienes materias inscritas en este periodo.</p> : activasPeriodo.map((inscripcion) => (
               <article className="my-enrollment-row" key={inscripcion.id}>
                 <div><span>{inscripcion.paralelo_info.materia_codigo} · {inscripcion.paralelo_info.identificador}</span><strong>{inscripcion.paralelo_info.materia_nombre}</strong></div>
                 <button disabled={cargando} onClick={() => void retirar(inscripcion.id)}>Retirar</button>
@@ -249,12 +325,15 @@ export function InscripcionesPanel() {
             <h3>Paralelos disponibles</h3>
             {paralelos.filter((paralelo) => paralelo.cupos_disponibles > 0 && !inscritoEnMateria.has(paralelo.materia_codigo)).length === 0 ? (
               <p>No hay paralelos con cupos para este periodo.</p>
-            ) : paralelos.filter((paralelo) => paralelo.cupos_disponibles > 0 && !inscritoEnMateria.has(paralelo.materia_codigo)).map((paralelo) => (
+            ) : paralelos.filter((paralelo) => paralelo.cupos_disponibles > 0 && !inscritoEnMateria.has(paralelo.materia_codigo)).map((paralelo) => {
+              const cruces = paralelo.sesiones.filter((sesion) => sesionesActuales.some((actual) => seCruzan(sesion, actual)));
+              return (
               <article className="enrollment-offer-row" key={paralelo.id}>
-                <div><span>{paralelo.materia_codigo} · PARALELO {paralelo.identificador}</span><strong>{paralelo.materia_nombre}</strong><small>{paralelo.docente_nombre} · {paralelo.cupos_disponibles} cupo{paralelo.cupos_disponibles === 1 ? "" : "s"}</small></div>
-                <button disabled={cargando} onClick={() => void inscribirse(paralelo.id)}>Inscribirme</button>
+                <div><span>{paralelo.materia_codigo} · PARALELO {paralelo.identificador}</span><strong>{paralelo.materia_nombre}</strong><small>{paralelo.docente_nombre} · {paralelo.cupos_disponibles} cupo{paralelo.cupos_disponibles === 1 ? "" : "s"}</small>{cruces.length > 0 && <small className="schedule-warning">Advertencia: {cruces.length} sesión{cruces.length === 1 ? "" : "es"} coincide{cruces.length === 1 ? "" : "n"} con tu horario.</small>}</div>
+                <button disabled={cargando || !paralelo.elegibilidad?.habilitada} onClick={() => void inscribirse(paralelo.id)}>Inscribirme</button>
+                {paralelo.elegibilidad?.motivos.map((motivo) => <small className="enrollment-block-reason" key={motivo}>{motivo}</small>)}
               </article>
-            ))}
+            );})}
           </div>
         </>
       )}

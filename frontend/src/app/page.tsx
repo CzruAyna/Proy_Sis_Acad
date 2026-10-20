@@ -53,6 +53,7 @@ export default function Home() {
             <a href="#catalogo">Malla</a>
             <a href="#oferta">Oferta</a>
             <a href="#inscripciones">Inscripción</a>
+            <a href="#horario">Horario</a>
             <a href="#actas-docente">Actas</a>
           </nav>
           <span className="edition-label">CUADERNO 01 <span>·</span> EDICIÓN INICIAL</span>
