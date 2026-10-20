@@ -31,6 +31,8 @@ La API publica las consultas de carreras, mallas, materias, periodos y paralelos
 
 La portada incluye un acceso para estudiantes que permite consultar sus inscripciones, inscribirse en paralelos disponibles y retirarse de una materia.
 
+El panel docente permite cargar calificaciones de sus paralelos y cerrar actas completas. Una vez cerradas, las notas quedan bloqueadas; las correcciones administrativas requieren motivo y referencia de trámite y se conservan en auditoría.
+
 El contenido original del proyecto se ofrece bajo la [Licencia de Uso Libre SGA 1.0](LICENSE). Los componentes de terceros mantienen sus propias condiciones.
 
 ## Documentación del proyecto

@@ -12,6 +12,7 @@ from apps.academico.views import (
 )
 from apps.oferta.views import ParaleloViewSet
 from apps.inscripciones.views import InscripcionViewSet
+from apps.notas.views import ActaViewSet
 
 
 router = DefaultRouter()
@@ -21,6 +22,7 @@ router.register("materias", MateriaViewSet, basename="materia")
 router.register("periodos", PeriodoAcademicoViewSet)
 router.register("paralelos", ParaleloViewSet, basename="paralelo")
 router.register("inscripciones", InscripcionViewSet, basename="inscripcion")
+router.register("actas", ActaViewSet, basename="acta")
 
 
 def health(request):

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "apps.academico.apps.AcademicoConfig",
     "apps.oferta.apps.OfertaConfig",
     "apps.inscripciones.apps.InscripcionesConfig",
+    "apps.notas.apps.NotasConfig",
 ]
 
 MIDDLEWARE = [

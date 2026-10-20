@@ -45,6 +45,16 @@ La gestión se realiza en el admin de Django. La API pública solo muestra paral
 
 La inscripción requiere JWT y rol de estudiante. La operación bloquea los paralelos de la misma materia y periodo mientras asigna el asiento; si el seleccionado está lleno, intenta los paralelos siguientes. Retirar una inscripción cambia su estado a `RETIRADA` y libera el asiento. La API devuelve inscriptos actuales y cupos disponibles.
 
+## Actas y calificaciones implementadas
+
+| Entidad | Campos principales | Restricciones |
+|---|---|---|
+| Acta | paralelo, cerrada, creada_en, cerrada_en, cerrada_por | Una por paralelo; se cierra solo con todas las notas de estudiantes cursando; cerrada es inmutable. |
+| Nota | acta, inscripcion, puntaje, actualizada_en | Una por inscripción; puntaje entre 0 y 100; la inscripción debe pertenecer al paralelo del acta. |
+| CorreccionNota | nota, puntaje_anterior, puntaje_nuevo, motivo, referencia_tramite, corregida_por, creada_en | Auditoría de solo lectura, no modificable ni eliminable. |
+
+Los docentes solo gestionan actas de paralelos que tienen asignados. El cierre clasifica las inscripciones con la nota mínima aprobatoria (51). Dirección y Administración pueden corregir una nota cerrada mediante un motivo y referencia de trámite, que queda auditada.
+
 | Consulta | Endpoint |
 |---|---|
 | Estado de la API | `GET /api/health/` |
@@ -60,6 +70,10 @@ La inscripción requiere JWT y rol de estudiante. La operación bloquea los para
 | Inscripciones propias | `GET /api/inscripciones/` (JWT estudiante) |
 | Crear inscripción | `POST /api/inscripciones/` con `{"paralelo_id": <id>}` (JWT estudiante) |
 | Retirar inscripción propia | `DELETE /api/inscripciones/<id>/` (JWT estudiante) |
+| Actas asignadas o administrables | `GET /api/actas/` (JWT docente/Dirección/Administración) |
+| Guardar notas de acta | `PUT /api/actas/<id>/notas/` con `{ "notas": [{"inscripcion_id": <id>, "puntaje": <0–100>}] }` |
+| Cerrar acta | `POST /api/actas/<id>/cerrar/` (JWT docente asignado) |
+| Corregir nota cerrada | `POST /api/actas/<id>/correcciones/` (JWT Dirección/Administración, motivo y referencia de trámite) |
 
 ## Decisiones de dominio
 

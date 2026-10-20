@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -43,7 +44,10 @@ def inscribir_en_paralelo(estudiante, paralelo_id):
         raise ValidationError("Ya tienes una inscripción activa en esta materia y periodo.")
 
     posicion = paralelos.index(seleccionado)
+    Acta = apps.get_model("notas", "Acta")
     for paralelo in paralelos[posicion:]:
+        if Acta.objects.filter(paralelo=paralelo, cerrada=True).exists():
+            continue
         ocupados = Inscripcion.objects.filter(
             paralelo=paralelo, estado=Inscripcion.Estado.CURSANDO
         ).count()

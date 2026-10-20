@@ -23,4 +23,5 @@ Este documento es la referencia inicial para las reglas funcionales. Cada implem
 - El promedio es ponderado por créditos y usa las materias ordinarias del semestre ordinario inmediato anterior con nota registrada.
 - Las materias de verano, invierno y mesa pueden contar para prerrequisitos, pero nunca para dicho promedio.
 - Los choques del horario se muestran como advertencias visibles.
+- Al cerrar un acta, todas las notas de inscripciones cursando deben estar registradas; el acta y sus notas quedan bloqueadas. La corrección requiere Dirección o Administración, motivo y referencia de trámite, y conserva una auditoría inmutable.
 - Los detalles operativos y los desempates están descritos en el enunciado funcional entregado para el proyecto; se irán incorporando aquí al implementar cada regla.
