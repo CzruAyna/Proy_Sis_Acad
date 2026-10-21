@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Sistema de Gestión Académica",
-  description: "Base del sistema de gestión académica universitaria",
+  title: "UNI SIMULATOR",
+  description: "Simulador de vida y gestión universitaria",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

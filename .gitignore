@@ -14,11 +14,17 @@ backend/media/
 backend/.postgres-runtime/
 backend/.postgres-data/
 backend/.postgresql-binaries.zip
+.local-run/
 
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+frontend/release/
 frontend/next-env.d.ts
+
+game/.godot/
+game/.tools/
+game/build/
 
 *.log
 .DS_Store
