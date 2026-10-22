@@ -418,17 +418,37 @@ func _show_programs() -> void:
 		rows.add_child(card)
 		card.add_child(_label(str(program["name"]), 21, GREEN))
 		card.add_child(_label(str(program["summary"]), 15, Color("#5f6257")))
-		card.add_child(_label("Título del juego: " + str(program["title"]) + " · 3 materias de muestra", 14, Color("#767262")))
-		_add_button(card, "Empezar esta carrera", _create_solo_save.bind(str(program["id"])), true, 46)
+		card.add_child(_label("Título del juego: " + str(program["title"]) + " · 3 materias de muestra · menciones de ejemplo", 14, Color("#767262")))
+		_add_button(card, "Ver enfoques de esta carrera", _show_mentions.bind(str(program["id"])), true, 46)
 
 
-func _create_solo_save(program_id: String) -> void:
+func _show_mentions(program_id: String) -> void:
 	var program := Catalog.program_by_id(program_id)
+	if program.is_empty():
+		_show_programs()
+		return
+	var content := _make_page("Elige un enfoque", str(program["name"]) + " · opciones provisionales para probar la partida", _show_programs)
+	var rows := _add_scroll(content)
+	for mention in Catalog.mentions_for_program(program_id):
+		var card := VBoxContainer.new()
+		card.add_theme_constant_override("separation", 5)
+		rows.add_child(card)
+		card.add_child(_label(str(mention["name"]), 21, GREEN))
+		card.add_child(_label(str(mention["focus"]), 15, Color("#5f6257")))
+		card.add_child(_label("Actividad de muestra: " + str(mention["activity"]), 14, Color("#767262")))
+		_add_button(card, "Empezar con este enfoque", _create_solo_save.bind(program_id, str(mention["id"])), true, 46)
+
+
+func _create_solo_save(program_id: String, mention_id: String) -> void:
+	var program := Catalog.program_by_id(program_id)
+	var mention := Catalog.mention_by_id(program_id, mention_id)
 	current_profile = {
 		"slot": active_slot,
 		"mode": "solo",
 		"player_name": draft_player_name,
 		"program_id": program_id,
+		"mention_id": mention_id,
+		"mention_name": mention.get("name", ""),
 		"role_id": "estudiante",
 		"completed_subjects": 0,
 		"partial_index": 0,
@@ -453,7 +473,13 @@ func _show_solo_hub() -> void:
 		_show_solo_slots()
 		return
 	var done := int(current_profile.get("completed_subjects", 0))
-	var content := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), str(program["name"]) + " · " + str(program["faculty"]), _show_solo_slots)
+	var mention := Catalog.mention_by_id(str(program["id"]), str(current_profile.get("mention_id", "")))
+	var subtitle := str(program["name"]) + " · " + str(program["faculty"])
+	if not mention.is_empty():
+		subtitle += " · " + str(mention["name"])
+	var content := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), subtitle, _show_solo_slots)
+	if not mention.is_empty():
+		content.add_child(_label(str(mention["focus"]), 15, Color("#686a5d"), true))
 	content.add_child(_label("Racha de la carrera", 24, GREEN, true))
 	content.add_child(_label("Materias aprobadas: %d / %d    ·    Confianza: %d" % [done, program["subjects"].size(), int(current_profile.get("confidence", 60))], 17, INK, true))
 	if not bool(current_profile.get("career_complete", false)):

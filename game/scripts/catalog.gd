@@ -61,6 +61,51 @@ const PROGRAMS := [
 	]},
 ]
 
+# Opciones de muestra para probar el flujo. Confirmar nombres y alcances con
+# los planes oficiales antes de presentarlos como menciones reales.
+const SAMPLE_MENTIONS := {
+	"civil": [
+		{"id": "obras", "name": "Obras y estructuras", "focus": "Diseño, materiales y planificación de obras.", "activity": "Revisar un plano y decidir qué dato falta antes de construir."},
+		{"id": "agua", "name": "Agua y territorio", "focus": "Infraestructura, drenaje y relación con el terreno.", "activity": "Resolver una acumulación de agua leyendo cotas y pendientes."},
+	],
+	"sistemas": [
+		{"id": "software", "name": "Software y procesos", "focus": "Construcción de herramientas y mejora de procesos.", "activity": "Encontrar por qué se atasca el registro de una materia."},
+		{"id": "datos", "name": "Datos y optimización", "focus": "Análisis de información y apoyo a decisiones.", "activity": "Organizar una fila de atención para reducir esperas."},
+	],
+	"informatica": [
+		{"id": "redes", "name": "Redes y servicios", "focus": "Conectividad, equipos y servicios informáticos.", "activity": "Seguir el recorrido de un paquete entre dos redes."},
+		{"id": "plataformas", "name": "Plataformas y software", "focus": "Programas y sistemas que sostienen servicios digitales.", "activity": "Diagnosticar por qué una aplicación no encuentra sus datos."},
+	],
+	"mecatronica": [
+		{"id": "control", "name": "Control y automatización", "focus": "Sensores, actuadores y respuesta de sistemas.", "activity": "Ajustar un control para que un mecanismo no se pase del objetivo."},
+		{"id": "robotica", "name": "Robótica aplicada", "focus": "Integración de mecanismos, electrónica y programación.", "activity": "Preparar una secuencia segura para un brazo robótico."},
+	],
+	"minas": [
+		{"id": "operaciones", "name": "Operaciones mineras", "focus": "Planificación de labores con atención a seguridad y terreno.", "activity": "Elegir una ruta de trabajo revisando riesgos y datos geológicos."},
+		{"id": "geologia", "name": "Geología y planificación", "focus": "Lectura del yacimiento y planificación responsable.", "activity": "Interpretar una libreta de campo antes de actualizar un plan."},
+	],
+	"economia": [
+		{"id": "analisis", "name": "Análisis económico", "focus": "Indicadores, incentivos y decisiones económicas.", "activity": "Explicar qué puede cambiar cuando sube la demanda."},
+		{"id": "desarrollo", "name": "Economía y desarrollo", "focus": "Decisiones económicas y sus efectos en comunidades.", "activity": "Comparar dos propuestas usando recursos limitados."},
+	],
+	"administracion": [
+		{"id": "organizaciones", "name": "Gestión de organizaciones", "focus": "Equipos, operaciones y objetivos compartidos.", "activity": "Reorganizar tareas cuando aparece un cuello de botella."},
+		{"id": "proyectos", "name": "Proyectos y emprendimiento", "focus": "Planificación y seguimiento de iniciativas.", "activity": "Armar un plan breve con tareas, responsables y fechas."},
+	],
+	"contaduria": [
+		{"id": "auditoria", "name": "Auditoría y control", "focus": "Registros, evidencia y revisión de procesos.", "activity": "Rastrear el origen de una cifra que no coincide."},
+		{"id": "gestion", "name": "Costos y gestión", "focus": "Lectura de costos y apoyo a decisiones organizacionales.", "activity": "Separar costos directos antes de comparar dos opciones."},
+	],
+	"medicina": [
+		{"id": "prevencion", "name": "Prevención y comunidad", "focus": "Promoción de salud y prevención cercana a las personas.", "activity": "Diseñar una actividad de prevención para una comunidad."},
+		{"id": "clinica", "name": "Razonamiento clínico", "focus": "Observación y análisis inicial de situaciones de salud.", "activity": "Ordenar datos de un caso antes de proponer el siguiente paso."},
+	],
+	"derecho": [
+		{"id": "publico", "name": "Derecho público", "focus": "Instituciones, normas y garantías.", "activity": "Analizar un trámite identificando hechos y derechos relevantes."},
+		{"id": "social", "name": "Derecho social y privado", "focus": "Relaciones jurídicas y resolución razonada de conflictos.", "activity": "Preparar argumentos para una mediación entre partes."},
+	],
+}
+
 static func faculty_by_id(faculty_id: String) -> Dictionary:
 	for faculty in FACULTIES:
 		if faculty["id"] == faculty_id:
@@ -79,6 +124,15 @@ static func programs_for_faculty(faculty_id: String) -> Array:
 		if program["faculty"] == faculty_id:
 			result.append(program)
 	return result
+
+static func mentions_for_program(program_id: String) -> Array:
+	return SAMPLE_MENTIONS.get(program_id, []).duplicate(true)
+
+static func mention_by_id(program_id: String, mention_id: String) -> Dictionary:
+	for mention in mentions_for_program(program_id):
+		if mention["id"] == mention_id:
+			return mention
+	return {}
 
 static func course(program_id: String, course_index: int) -> Dictionary:
 	var program := program_by_id(program_id)
