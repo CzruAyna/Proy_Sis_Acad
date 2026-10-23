@@ -34,17 +34,17 @@ const DEAN_CASES := [
 	{"question": "Al cierre del periodo, parte del presupuesto no se ejecutó. ¿Qué haces?", "options": ["Publicar el resultado y proponer ajustes con las áreas involucradas", "Ocultar el saldo para evitar preguntas", "Gastar lo restante sin revisar necesidades"], "best": 0, "good": "Rendir cuentas permite corregir el plan y sostener la confianza.", "bad": "El cierre también requiere explicar resultados y decidir con evidencia."},
 ]
 
-var page_content: VBoxContainer
 var current_profile: Dictionary = {}
 var active_slot := 0
 var selected_faculty := ""
 var draft_player_name := ""
 var draft_source_slot := 0
 var current_question: Dictionary = {}
-var current_case_role := ""
-var current_case_index := 0
-var cv_draft: Array[String] = []
-var settings := {"fullscreen": false, "animations": true, "font_scale": 1.0}
+var cv_draft: Array = []
+var team_name_drafts: Array = []
+var team_name_fields: Array = []
+var team_name_box: VBoxContainer
+var settings := {"fullscreen": false, "animations": true, "font_scale": 1.0, "antialiasing": true}
 var system_font: SystemFont
 var random := RandomNumberGenerator.new()
 
@@ -53,6 +53,8 @@ func _ready() -> void:
 	random.randomize()
 	_load_settings()
 	_setup_theme()
+	get_window().min_size = Vector2i(960, 600)
+	_apply_image_settings()
 	_show_main()
 
 
@@ -60,10 +62,15 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), PAPER)
 	var y := 28.0
 	while y < size.y:
-		draw_line(Vector2(16, y), Vector2(size.x - 16, y), RULE, 1.0)
+		draw_line(Vector2(16, y), Vector2(size.x - 16, y), Color("#e7e0d1"), 1.0, true)
 		y += 34.0
-	draw_line(Vector2(92, 0), Vector2(92, size.y), Color("#d7b4a8"), 1.5)
-	draw_rect(Rect2(Vector2(10, 10), size - Vector2(20, 20)), Color("#b7ab95"), false, 1.0)
+	draw_line(Vector2(92, 0), Vector2(92, size.y), Color("#d7b4a8"), 1.4, true)
+	for hole_y in range(64, int(size.y), 96):
+		var hole := Vector2(48, hole_y)
+		draw_circle(hole, 9.0, Color("#e8e1d2"))
+		draw_arc(hole, 9.0, 0.0, TAU, 28, Color("#c6bca8"), 1.2, true)
+		draw_circle(hole + Vector2(0, 1.5), 4.0, Color("#d8d0bf"))
+	draw_rect(Rect2(Vector2(10, 10), size - Vector2(20, 20)), Color("#c3b8a3"), false, 1.0)
 
 
 func _notification(what: int) -> void:
@@ -74,10 +81,19 @@ func _notification(what: int) -> void:
 func _setup_theme() -> void:
 	system_font = SystemFont.new()
 	system_font.font_names = PackedStringArray(["Segoe Print", "Comic Sans MS", "Arial"])
+	system_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	system_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	var game_theme := Theme.new()
 	game_theme.default_font = system_font
 	game_theme.default_font_size = 18
 	theme = game_theme
+
+
+func _apply_image_settings() -> void:
+	var viewport := get_viewport()
+	if viewport:
+		viewport.msaa_2d = Viewport.MSAA_4X if bool(settings["antialiasing"]) else Viewport.MSAA_DISABLED
+	RenderingServer.set_default_clear_color(PAPER)
 
 
 func _load_settings() -> void:
@@ -86,6 +102,7 @@ func _load_settings() -> void:
 		settings["fullscreen"] = config.get_value("game", "fullscreen", false)
 		settings["animations"] = config.get_value("game", "animations", true)
 		settings["font_scale"] = config.get_value("game", "font_scale", 1.0)
+		settings["antialiasing"] = config.get_value("game", "antialiasing", true)
 	if settings["fullscreen"]:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
@@ -116,11 +133,16 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable()) ->
 	if not title.is_empty():
 		var heading := _label(title, 32, INK, false)
 		layout.add_child(heading)
+		var accent_rule := ColorRect.new()
+		accent_rule.color = GOLD
+		accent_rule.custom_minimum_size = Vector2(58, 3)
+		accent_rule.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		layout.add_child(accent_rule)
 	if not subtitle.is_empty():
 		var subheading := _label(subtitle, 16, Color("#686a5d"), false)
 		layout.add_child(subheading)
 
-	page_content = VBoxContainer.new()
+	var page_content := VBoxContainer.new()
 	page_content.add_theme_constant_override("separation", 13)
 	page_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(page_content)
@@ -129,6 +151,11 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable()) ->
 		footer.alignment = BoxContainer.ALIGNMENT_BEGIN
 		layout.add_child(footer)
 		_add_button(footer, "Volver", back, false, 48)
+	if bool(settings["animations"]):
+		margin.modulate.a = 0.0
+		var intro := margin.create_tween()
+		intro.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		intro.tween_property(margin, "modulate:a", 1.0, 0.16)
 	return page_content
 
 
@@ -137,6 +164,7 @@ func _label(text: String, font_size: int = 18, color: Color = INK, centered: boo
 	label.text = text
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_font_size_override("font_size", int(round(font_size * float(settings["font_scale"]))))
+	label.add_theme_constant_override("line_spacing", 3)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if centered:
@@ -147,19 +175,28 @@ func _label(text: String, font_size: int = 18, color: Color = INK, centered: boo
 func _add_button(parent: Control, text: String, action: Callable, accent: bool = true, height: int = 56) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.icon = load("res://assets/leaf.svg")
-	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	button.icon_max_width = 26
+	button.add_theme_constant_override("icon_max_width", 24)
 	button.add_theme_constant_override("h_separation", 12)
 	button.custom_minimum_size = Vector2(0, height)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", int(round(19 * float(settings["font_scale"]))))
 	button.add_theme_color_override("font_color", Color("#fbf8ee") if accent else INK)
 	button.add_theme_color_override("font_hover_color", Color("#fffdf4") if accent else GREEN)
-	button.add_theme_stylebox_override("normal", _button_style(accent, false))
-	button.add_theme_stylebox_override("hover", _button_style(accent, true))
-	button.add_theme_stylebox_override("pressed", _button_style(accent, true))
-	button.add_theme_stylebox_override("focus", _button_style(accent, true))
+	button.add_theme_color_override("font_pressed_color", Color("#f3ecd8") if accent else GREEN)
+	button.add_theme_color_override("font_focus_color", Color("#fffdf4") if accent else GREEN)
+	button.add_theme_color_override("font_disabled_color", Color("#d8d2c2") if accent else Color("#9c9688"))
+	button.add_theme_stylebox_override("normal", _button_style(accent, "normal"))
+	button.add_theme_stylebox_override("hover", _button_style(accent, "hover"))
+	button.add_theme_stylebox_override("pressed", _button_style(accent, "pressed"))
+	button.add_theme_stylebox_override("disabled", _button_style(accent, "disabled"))
+	button.add_theme_stylebox_override("focus", _focus_style())
+	if accent:
+		button.icon = load("res://assets/leaf.svg")
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_color_override("icon_normal_color", Color("#e8dfc6"))
+		button.add_theme_color_override("icon_hover_color", Color("#fffdf4"))
+		button.add_theme_color_override("icon_pressed_color", Color("#f3ecd8"))
 	if action.is_valid():
 		button.pressed.connect(action)
 	button.mouse_entered.connect(_animate_button.bind(button, true))
@@ -168,12 +205,26 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 	return button
 
 
-func _button_style(accent: bool, hovered: bool) -> StyleBoxFlat:
+func _button_style(accent: bool, state: String) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#455d4b") if accent else Color("#eee8d8")
-	if hovered:
-		style.bg_color = Color("#617c64") if accent else Color("#e0e7d6")
-	style.border_color = Color("#2e4033") if accent else Color("#8c927e")
+	if accent:
+		style.bg_color = Color("#455d4b")
+		if state == "hover":
+			style.bg_color = Color("#5c7861")
+		elif state == "pressed":
+			style.bg_color = Color("#3c5442")
+		elif state == "disabled":
+			style.bg_color = Color("#7d8b7b")
+		style.border_color = Color("#2e4033")
+	else:
+		style.bg_color = Color("#eee8d8")
+		if state == "hover":
+			style.bg_color = Color("#e0e7d6")
+		elif state == "pressed":
+			style.bg_color = Color("#d5ddc9")
+		elif state == "disabled":
+			style.bg_color = Color("#e7e2d4")
+		style.border_color = Color("#8c927e")
 	style.set_border_width_all(1)
 	style.border_width_bottom = 4
 	style.corner_radius_top_left = 12
@@ -182,24 +233,98 @@ func _button_style(accent: bool, hovered: bool) -> StyleBoxFlat:
 	style.corner_radius_bottom_right = 12
 	style.content_margin_left = 18
 	style.content_margin_right = 18
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
+	style.shadow_color = Color(0.12, 0.14, 0.11, 0.12)
+	style.shadow_size = 3
+	style.shadow_offset = Vector2(0, 2)
 	return style
 
 
+func _focus_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.draw_center = false
+	style.border_color = GOLD
+	style.set_border_width_all(2)
+	style.corner_radius_top_left = 12
+	style.corner_radius_top_right = 7
+	style.corner_radius_bottom_left = 7
+	style.corner_radius_bottom_right = 12
+	return style
+
+
+func _card(parent: Control, tinted: bool = false) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", _card_style(tinted))
+	parent.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 7)
+	panel.add_child(box)
+	return box
+
+
+func _card_style(tinted: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#eef1e6") if tinted else Color("#fbf7ec")
+	style.border_color = Color("#c3cdb9") if tinted else Color("#d8cdb8")
+	style.set_border_width_all(1)
+	style.border_width_left = 4
+	style.corner_radius_top_left = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_top_right = 12
+	style.corner_radius_bottom_right = 12
+	style.content_margin_left = 18
+	style.content_margin_right = 16
+	style.content_margin_top = 14
+	style.content_margin_bottom = 14
+	style.shadow_color = Color(0.15, 0.16, 0.13, 0.08)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(0, 2)
+	return style
+
+
+func _input_style(focused: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#fffdf7")
+	style.border_color = GREEN if focused else Color("#b9b09c")
+	style.set_border_width_all(2 if focused else 1)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.content_margin_left = 14
+	style.content_margin_right = 14
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	return style
+
+
+func _style_input(field: LineEdit) -> void:
+	field.add_theme_stylebox_override("normal", _input_style(false))
+	field.add_theme_stylebox_override("focus", _input_style(true))
+	field.add_theme_color_override("font_color", INK)
+	field.add_theme_color_override("font_placeholder_color", Color("#9b9381"))
+	field.add_theme_color_override("caret_color", GREEN)
+	field.add_theme_color_override("selection_color", Color("#d7e0cc"))
+	field.add_theme_font_size_override("font_size", int(round(18 * float(settings["font_scale"]))))
+
+
 func _animate_button(button: Button, hovering: bool) -> void:
-	if not bool(settings["animations"]) or not is_instance_valid(button):
+	if not bool(settings["animations"]) or not is_instance_valid(button) or button.disabled:
 		return
 	button.pivot_offset = button.size / 2.0
 	var tween := button.create_tween()
-	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(button, "scale", Vector2(1.025, 1.025) if hovering else Vector2.ONE, 0.14)
-	tween.parallel().tween_property(button, "rotation_degrees", 0.6 if hovering else 0.0, 0.14)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(button, "scale", Vector2(1.015, 1.015) if hovering else Vector2.ONE, 0.12)
+	tween.parallel().tween_property(button, "rotation_degrees", 0.35 if hovering else 0.0, 0.12)
 
 
 func _add_scroll(parent: Control) -> VBoxContainer:
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page_content.add_child(scroll)
+	parent.add_child(scroll)
 	var rows := VBoxContainer.new()
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows.add_theme_constant_override("separation", 11)
@@ -212,6 +337,7 @@ func _show_main() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(spacer)
+	content.add_child(_label("·  CUADERNO DE CAMPO  ·", 13, GOLD, true))
 	content.add_child(_label("UNI SIMULATOR", 54, INK, true))
 	content.add_child(_label("Tu vida universitaria, con finales que dependen de lo que hagas.", 19, Color("#6c6859"), true))
 	var leafline := _label("❧  cuaderno abierto · aulas · gente · decisiones  ❧", 16, GREEN, true)
@@ -234,14 +360,17 @@ func _show_options() -> void:
 	var content := _make_page("Opciones", "Ajustes simples para esta computadora.", _show_main)
 	_add_button(content, "Pantalla completa: " + ("Sí" if settings["fullscreen"] else "No"), _toggle_fullscreen, false)
 	_add_button(content, "Movimiento de hojas: " + ("Activado" if settings["animations"] else "Reducido"), _toggle_animations, false)
-	content.add_child(_label("Tamaño del texto", 17))
+	_add_button(content, "Bordes suaves: " + ("Activados" if settings["antialiasing"] else "Desactivados"), _toggle_antialiasing, false)
+	var scale_label := _label("Tamaño del texto: %d%%" % int(round(float(settings["font_scale"]) * 100.0)), 17)
+	content.add_child(scale_label)
 	var slider := HSlider.new()
 	slider.min_value = 0.9
 	slider.max_value = 1.25
 	slider.step = 0.05
 	slider.value = settings["font_scale"]
 	slider.custom_minimum_size.y = 28
-	slider.value_changed.connect(_change_font_scale)
+	slider.value_changed.connect(_change_font_scale.bind(scale_label))
+	slider.drag_ended.connect(_rebuild_options)
 	content.add_child(slider)
 	content.add_child(_label("Las preferencias se guardan en este equipo.", 15, Color("#6c6859")))
 	_add_button(content, "Créditos y licencia del motor", _show_credits, false, 48)
@@ -265,9 +394,21 @@ func _toggle_animations() -> void:
 	_show_options()
 
 
-func _change_font_scale(value: float) -> void:
-	settings["font_scale"] = value
+func _toggle_antialiasing() -> void:
+	settings["antialiasing"] = not bool(settings["antialiasing"])
+	_apply_image_settings()
 	_save_settings()
+	_show_options()
+
+
+func _change_font_scale(value: float, scale_label: Label) -> void:
+	settings["font_scale"] = value
+	scale_label.text = "Tamaño del texto: %d%%" % int(round(value * 100.0))
+	_save_settings()
+
+
+func _rebuild_options(_changed: bool) -> void:
+	_show_options.call_deferred()
 
 
 func _show_modes() -> void:
@@ -290,58 +431,55 @@ func _show_multi_slots() -> void:
 
 func _show_slots(mode: String) -> void:
 	var mode_label := "Solo" if mode == "solo" else "Equipo local"
-	var content := _make_page("Partidas guardadas · " + mode_label, "Tres espacios guardados en este equipo.", _show_modes)
+	var content := _make_page("Partidas guardadas · " + mode_label, "Tres espacios para este modo, guardados en este equipo.", _show_modes)
 	var rows := _add_scroll(content)
-	var found_matching := false
-	var free_slot := _find_free_slot()
+	var free_slot := _find_free_slot(mode)
 	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot)
+		var save := _read_save(slot, mode)
+		var slot_card := _card(rows)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
-		rows.add_child(row)
+		slot_card.add_child(row)
 		var description := "Espacio %d · vacío" % slot
 		if not save.is_empty():
-			var saved_mode := "solo" if save.get("mode", "solo") == "solo" else "multi"
-			description = "Espacio %d · %s · %s" % [slot, str(save.get("player_name", "Estudiante")), "Solo" if saved_mode == "solo" else "Equipo"]
-			if saved_mode == "solo":
+			description = "Espacio %d · %s · %s" % [slot, str(save.get("player_name", "Estudiante")), "Solo" if mode == "solo" else "Equipo"]
+			if mode == "solo":
 				var program := Catalog.program_by_id(str(save.get("program_id", "")))
 				description += " · " + str(program.get("name", "Carrera"))
-			if saved_mode == "multi":
+			else:
 				description += " · %s" % str(save.get("role_label", "Auxiliar"))
-			if saved_mode == mode:
-				found_matching = true
+				var names: Array = save.get("player_names", [])
+				var turn_index := int(save.get("current_player", 0))
+				if turn_index >= 0 and turn_index < names.size():
+					description += " · turno de " + str(names[turn_index])
 			var name_label := _label(description, 16)
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(name_label)
-			if saved_mode == mode:
-				_add_button(row, "Continuar", _open_slot.bind(slot, mode), true, 44)
+			_add_button(row, "Continuar", _open_slot.bind(slot, mode), true, 44)
 			_add_button(row, "Borrar", _delete_slot.bind(slot, mode), false, 44)
 		else:
 			var empty_label := _label(description, 16)
 			empty_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(empty_label)
 			if mode == "solo":
-				_add_button(row, "Nueva", _begin_new_game.bind(slot, mode), true, 44)
+				_add_button(row, "Nueva", _begin_new_game.bind(slot), true, 44)
 	if mode == "multi":
 		content.add_child(_label("Para abrir una partida de equipo, termina una carrera y aprueba su examen de competencia en Solo.", 15, Color("#686a5d")))
 		if free_slot > 0 and _has_eligible_solo_save():
 			_add_button(content, "Crear partida de equipo", _choose_team_source, true, 58)
 		elif free_slot == 0:
 			content.add_child(_label("No hay espacios libres. Borra una partida para crear otra.", 15, GOLD))
-	elif not found_matching and free_slot == 0:
+	elif free_slot == 0:
 		content.add_child(_label("No hay espacios libres. Borra una partida para crear otra.", 15, GOLD))
 
 
-func _begin_new_game(slot: int, mode: String) -> void:
+func _begin_new_game(slot: int) -> void:
 	active_slot = slot
-	if mode == "solo":
-		_show_new_solo()
-	else:
-		_show_team_setup(0)
+	_show_new_solo()
 
 
 func _open_slot(slot: int, mode: String) -> void:
-	current_profile = _read_save(slot)
+	current_profile = _read_save(slot, mode)
 	active_slot = slot
 	if current_profile.is_empty():
 		_show_slots(mode)
@@ -349,11 +487,12 @@ func _open_slot(slot: int, mode: String) -> void:
 	if mode == "solo":
 		_show_solo_hub()
 	else:
+		_normalize_team_profile()
 		_show_team_hub()
 
 
 func _delete_slot(slot: int, mode: String) -> void:
-	var save := _read_save(slot)
+	var save := _read_save(slot, mode)
 	var dialog := ConfirmationDialog.new()
 	dialog.title = "Borrar partida"
 	dialog.dialog_text = "¿Borrar la partida de %s del espacio %d? Esta acción no se puede deshacer." % [str(save.get("player_name", "Estudiante")), slot]
@@ -365,15 +504,20 @@ func _delete_slot(slot: int, mode: String) -> void:
 
 func _remove_slot(slot: int, mode: String, dialog: ConfirmationDialog) -> void:
 	dialog.queue_free()
-	var path := _save_path(slot)
+	var path := _save_path(slot, mode)
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	var legacy := _legacy_save_path(slot)
+	if FileAccess.file_exists(legacy):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(legacy))
+		if parsed is Dictionary and str(parsed.get("mode", "solo")) == mode:
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(legacy))
 	_show_slots(mode)
 
 
-func _find_free_slot() -> int:
+func _find_free_slot(mode: String) -> int:
 	for slot in range(1, SAVE_COUNT + 1):
-		if _read_save(slot).is_empty():
+		if _read_save(slot, mode).is_empty():
 			return slot
 	return 0
 
@@ -384,6 +528,7 @@ func _show_new_solo() -> void:
 	name_field.placeholder_text = "Tu nombre o apodo"
 	name_field.custom_minimum_size.y = 54
 	name_field.text = "Estudiante"
+	_style_input(name_field)
 	content.add_child(name_field)
 	_add_button(content, "Elegir facultad", _choose_faculty_from_field.bind(name_field), true)
 
@@ -396,7 +541,7 @@ func _choose_faculty_from_field(name_field: LineEdit) -> void:
 
 
 func _show_faculties() -> void:
-	var content := _make_page("Elige una facultad", "Las carreras y materias de esta primera partida son una muestra provisional.", _show_new_solo)
+	var content := _make_page("Elige una facultad", "Cada carrera es una ruta de tres materias con decisiones y parciales.", _show_new_solo)
 	var rows := _add_scroll(content)
 	for faculty in Catalog.FACULTIES:
 		var button := _add_button(rows, str(faculty["name"]) + "\n" + str(faculty["description"]), _select_faculty.bind(str(faculty["id"])), false, 82)
@@ -410,15 +555,13 @@ func _select_faculty(faculty_id: String) -> void:
 
 func _show_programs() -> void:
 	var faculty := Catalog.faculty_by_id(selected_faculty)
-	var content := _make_page(str(faculty.get("name", "Carreras")), "Malla de muestra: materias cortas y preguntas de nivel inicial.", _show_faculties)
+	var content := _make_page(str(faculty.get("name", "Carreras")), "Ruta de tres materias con un parcial por materia.", _show_faculties)
 	var rows := _add_scroll(content)
 	for program in Catalog.programs_for_faculty(selected_faculty):
-		var card := VBoxContainer.new()
-		card.add_theme_constant_override("separation", 5)
-		rows.add_child(card)
+		var card := _card(rows)
 		card.add_child(_label(str(program["name"]), 21, GREEN))
 		card.add_child(_label(str(program["summary"]), 15, Color("#5f6257")))
-		card.add_child(_label("Título del juego: " + str(program["title"]) + " · 3 materias de muestra · menciones de ejemplo", 14, Color("#767262")))
+		card.add_child(_label("Título al completar: " + str(program["title"]) + " · 3 materias · 2 enfoques", 14, Color("#767262")))
 		_add_button(card, "Ver enfoques de esta carrera", _show_mentions.bind(str(program["id"])), true, 46)
 
 
@@ -427,15 +570,13 @@ func _show_mentions(program_id: String) -> void:
 	if program.is_empty():
 		_show_programs()
 		return
-	var content := _make_page("Elige un enfoque", str(program["name"]) + " · opciones provisionales para probar la partida", _show_programs)
+	var content := _make_page("Elige un enfoque", str(program["name"]) + " · el enfoque define el tono y el título de tu partida", _show_programs)
 	var rows := _add_scroll(content)
 	for mention in Catalog.mentions_for_program(program_id):
-		var card := VBoxContainer.new()
-		card.add_theme_constant_override("separation", 5)
-		rows.add_child(card)
+		var card := _card(rows)
 		card.add_child(_label(str(mention["name"]), 21, GREEN))
 		card.add_child(_label(str(mention["focus"]), 15, Color("#5f6257")))
-		card.add_child(_label("Actividad de muestra: " + str(mention["activity"]), 14, Color("#767262")))
+		card.add_child(_label("Actividad: " + str(mention["activity"]), 14, Color("#767262")))
 		_add_button(card, "Empezar con este enfoque", _create_solo_save.bind(program_id, str(mention["id"])), true, 46)
 
 
@@ -480,16 +621,18 @@ func _show_solo_hub() -> void:
 	var content := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), subtitle, _show_solo_slots)
 	if not mention.is_empty():
 		content.add_child(_label(str(mention["focus"]), 15, Color("#686a5d"), true))
-	content.add_child(_label("Racha de la carrera", 24, GREEN, true))
+	content.add_child(_label("Avance de la carrera", 24, GREEN, true))
 	content.add_child(_label("Materias aprobadas: %d / %d    ·    Confianza: %d" % [done, program["subjects"].size(), int(current_profile.get("confidence", 60))], 17, INK, true))
 	if not bool(current_profile.get("career_complete", false)):
 		var course := Catalog.course(str(program["id"]), done)
+		var partial := int(current_profile.get("partial_index", 0))
+		content.add_child(_label("Materia %d de %d · parcial %d de 3" % [done + 1, program["subjects"].size(), partial + 1], 15, GOLD, true))
 		content.add_child(_label("Siguiente materia: " + str(course.get("name", "")), 21, INK, true))
-		content.add_child(_label("Tres parciales, una pregunta corta en cada uno. Puedes volver a intentar los que no apruebes.", 16, Color("#686a5d"), true))
-		_add_button(content, "Rendir parcial %d" % (int(current_profile.get("partial_index", 0)) + 1), _show_exam, true, 62)
+		content.add_child(_label("Cada parcial tiene una pregunta corta. Si fallas, puedes repasarla y volver a intentarlo.", 16, Color("#686a5d"), true))
+		_add_button(content, "Rendir parcial %d" % (partial + 1), _show_exam, true, 62)
 	else:
 		content.add_child(_label("Carrera completa: " + str(program["title"]), 21, GREEN, true))
-		content.add_child(_label("Tu título del juego ya está en la partida guardada.", 16, Color("#686a5d"), true))
+		content.add_child(_label("Tu título ya está registrado en la partida.", 16, Color("#686a5d"), true))
 		if not bool(current_profile.get("competency_passed", false)):
 			_add_button(content, "Rendir examen de competencia", _show_competency, true, 62)
 		else:
@@ -544,11 +687,12 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 	var course_index := int(current_profile.get("completed_subjects", 0))
 	var partial_index := int(current_profile.get("partial_index", 0))
 	if correct:
-		current_profile["confidence"] = mini(100, int(current_profile.get("confidence", 60)) + 4)
+		if not cheated:
+			current_profile["confidence"] = mini(100, int(current_profile.get("confidence", 60)) + 4)
 		partial_index += 1
 		var message := str(current_question["why"])
 		if cheated:
-			message += " El apunte pasó esta vez, pero tu confianza no sube por una respuesta copiada."
+			message += " El apunte pasó esta vez, pero una respuesta copiada no suma confianza."
 		if partial_index >= 3:
 			current_profile["completed_subjects"] = course_index + 1
 			current_profile["partial_index"] = 0
@@ -611,8 +755,8 @@ func _show_titles() -> void:
 
 func _has_eligible_solo_save() -> bool:
 	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot)
-		if save.get("mode", "") == "solo" and bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
+		var save := _read_save(slot, "solo")
+		if bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
 			return true
 	return false
 
@@ -621,8 +765,8 @@ func _choose_team_source() -> void:
 	var content := _make_page("Elige a quién vas a representar", "Solo aparecen carreras completas con competencia aprobada.", _show_multi_slots)
 	var rows := _add_scroll(content)
 	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot)
-		if save.get("mode", "") == "solo" and bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
+		var save := _read_save(slot, "solo")
+		if bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
 			var program := Catalog.program_by_id(str(save.get("program_id", "")))
 			_add_button(rows, "%s · %s" % [str(save.get("player_name", "Estudiante")), str(program.get("name", "Carrera"))], _show_team_setup.bind(slot), false, 54)
 
@@ -632,41 +776,100 @@ func _show_team_setup(source_slot: int) -> void:
 		_show_multi_slots()
 		return
 	draft_source_slot = source_slot
-	var source := _read_save(source_slot)
-	var content := _make_page("Armen el equipo", "%s puede comenzar como auxiliar. El juego va pasando el turno entre participantes." % str(source.get("player_name", "Estudiante")), _show_multi_slots)
-	content.add_child(_label("¿Cuántas personas van a turnarse en esta computadora?", 18, INK, true))
+	var source := _read_save(source_slot, "solo")
+	var content := _make_page("Armen el equipo", "%s abre la partida como auxiliar. El turno irá rotando entre las personas del equipo." % str(source.get("player_name", "Estudiante")), _show_multi_slots)
+	var form := _card(content)
+	form.add_child(_label("¿Cuántas personas van a turnarse en esta computadora?", 18, INK, true))
 	var players := SpinBox.new()
 	players.min_value = 1
 	players.max_value = 4
 	players.value = 2
 	players.custom_minimum_size = Vector2(160, 48)
 	players.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	content.add_child(players)
-	content.add_child(_label("Modo local por turnos. La conexión por internet se podrá añadir después.", 14, Color("#686a5d"), true))
+	form.add_child(players)
+	players.get_line_edit().alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_style_input(players.get_line_edit())
+	team_name_drafts = [
+		str(source.get("player_name", "Estudiante")),
+		"Jugador 2",
+		"Jugador 3",
+		"Jugador 4",
+	]
+	team_name_box = VBoxContainer.new()
+	team_name_box.add_theme_constant_override("separation", 8)
+	form.add_child(team_name_box)
+	_fill_team_name_fields(int(players.value))
+	players.value_changed.connect(_on_team_players_changed)
+	content.add_child(_label("Cada caso lo resuelve quien tenga el turno. Al terminar, pasa al siguiente jugador.", 14, Color("#686a5d"), true))
 	_add_button(content, "Empezar partida de equipo", _create_team_save.bind(players), true, 60)
 
 
+func _fill_team_name_fields(count: int) -> void:
+	if not is_instance_valid(team_name_box):
+		return
+	for child in team_name_box.get_children():
+		team_name_box.remove_child(child)
+		child.queue_free()
+	team_name_fields.clear()
+	for index in range(count):
+		var field := LineEdit.new()
+		field.placeholder_text = "Nombre del jugador %d" % (index + 1)
+		field.text = str(team_name_drafts[index]) if index < team_name_drafts.size() else "Jugador %d" % (index + 1)
+		field.custom_minimum_size.y = 46
+		_style_input(field)
+		team_name_box.add_child(field)
+		team_name_fields.append(field)
+
+
+func _store_team_names() -> void:
+	for index in range(team_name_fields.size()):
+		if index < team_name_drafts.size():
+			var field: LineEdit = team_name_fields[index]
+			team_name_drafts[index] = field.text
+
+
+func _on_team_players_changed(value: float) -> void:
+	_store_team_names()
+	_fill_team_name_fields(int(value))
+
+
 func _create_team_save(players: SpinBox) -> void:
-	var slot := _find_free_slot()
+	var slot := _find_free_slot("multi")
 	if slot == 0:
 		_show_result("No hay espacio", "Borra una partida guardada antes de crear una partida de equipo.", false, _show_multi_slots)
 		return
-	var source := _read_save(draft_source_slot)
+	active_slot = slot
+	_store_team_names()
+	var count := int(players.value)
+	var names: Array = []
+	var scores: Array = []
+	var confidence: Array = []
+	for index in range(count):
+		var candidate: String = str(team_name_drafts[index]).strip_edges() if index < team_name_drafts.size() else ""
+		if candidate.is_empty():
+			candidate = "Jugador %d" % (index + 1)
+		names.append(candidate)
+		scores.append(0)
+		confidence.append(60)
+	var source := _read_save(draft_source_slot, "solo")
 	var program := Catalog.program_by_id(str(source.get("program_id", "")))
 	current_profile = {
 		"slot": slot,
 		"mode": "multi",
-		"player_name": source.get("player_name", "Estudiante"),
+		"player_name": names[0],
+		"player_names": names,
+		"player_scores": scores,
+		"player_confidence": confidence,
+		"current_player": 0,
 		"program_id": source.get("program_id", ""),
 		"source_slot": draft_source_slot,
-		"players": int(players.value),
+		"players": count,
 		"role_id": "auxiliar",
 		"role_label": "Auxiliar docente",
 		"assistant_cases": 0,
 		"admin_cases": 0,
 		"dean_cases": 0,
 		"team_score": 0,
-		"team_confidence": 60,
 		"cv_items": [],
 		"cv_submitted": false,
 		"titles": [],
@@ -679,16 +882,111 @@ func _create_team_save(players: SpinBox) -> void:
 	_show_team_hub()
 
 
+func _normalize_team_profile() -> void:
+	var count := maxi(1, int(current_profile.get("players", 1)))
+	current_profile["players"] = count
+	var names: Array = current_profile.get("player_names", [])
+	while names.size() < count:
+		if names.is_empty():
+			names.append(str(current_profile.get("player_name", "Jugador 1")))
+		else:
+			names.append("Jugador %d" % (names.size() + 1))
+	while names.size() > count:
+		names.pop_back()
+	current_profile["player_names"] = names
+	var scores: Array = current_profile.get("player_scores", [])
+	while scores.size() < count:
+		scores.append(0)
+	current_profile["player_scores"] = scores
+	var confidence: Array = current_profile.get("player_confidence", [])
+	var base_confidence := int(current_profile.get("team_confidence", 60))
+	while confidence.size() < count:
+		confidence.append(base_confidence)
+	current_profile["player_confidence"] = confidence
+	var current := int(current_profile.get("current_player", 0))
+	current_profile["current_player"] = ((current % count) + count) % count
+
+
+func _current_player_name() -> String:
+	var names: Array = current_profile.get("player_names", [])
+	var index := int(current_profile.get("current_player", 0))
+	if index >= 0 and index < names.size():
+		return str(names[index])
+	return str(current_profile.get("player_name", "Estudiante"))
+
+
+func _advance_team_turn() -> void:
+	var count := maxi(1, int(current_profile.get("players", 1)))
+	current_profile["current_player"] = (int(current_profile.get("current_player", 0)) + 1) % count
+
+
+func _award_team_case(best: bool) -> void:
+	var index := int(current_profile.get("current_player", 0))
+	var scores: Array = current_profile.get("player_scores", [])
+	var confidence: Array = current_profile.get("player_confidence", [])
+	while scores.size() <= index:
+		scores.append(0)
+	while confidence.size() <= index:
+		confidence.append(60)
+	if best:
+		scores[index] = int(scores[index]) + 10
+		confidence[index] = mini(100, int(confidence[index]) + 6)
+	else:
+		confidence[index] = maxi(0, int(confidence[index]) - 5)
+	current_profile["player_scores"] = scores
+	current_profile["player_confidence"] = confidence
+
+
+func _add_team_scoreboard(content: VBoxContainer) -> void:
+	var names: Array = current_profile.get("player_names", [])
+	var scores: Array = current_profile.get("player_scores", [])
+	var confidence: Array = current_profile.get("player_confidence", [])
+	var current := int(current_profile.get("current_player", 0))
+	var board := VBoxContainer.new()
+	board.add_theme_constant_override("separation", 4)
+	var board_card := _card(content, true)
+	board_card.add_child(board)
+	for index in range(names.size()):
+		var active := index == current
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var name_label := _label(("▶  " if active else "    ") + str(names[index]), 16, GREEN if active else INK)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(name_label)
+		var score := int(scores[index]) if index < scores.size() else 0
+		var trust := int(confidence[index]) if index < confidence.size() else 60
+		row.add_child(_label("%d pts · confianza %d" % [score, trust], 14, Color("#686a5d")))
+		board.add_child(row)
+	board.add_child(_label("Experiencia del equipo: %d" % int(current_profile.get("team_score", 0)), 15, INK, true))
+
+
+func _team_mvp() -> Dictionary:
+	var names: Array = current_profile.get("player_names", [])
+	var scores: Array = current_profile.get("player_scores", [])
+	if names.is_empty() or scores.is_empty():
+		return {}
+	var best_index := 0
+	for index in range(scores.size()):
+		if int(scores[index]) > int(scores[best_index]):
+			best_index = index
+	if best_index >= names.size():
+		return {}
+	return {"name": str(names[best_index]), "score": int(scores[best_index])}
+
+
 func _show_team_hub() -> void:
 	if current_profile.is_empty() or current_profile.get("mode", "") != "multi":
 		_show_multi_slots()
 		return
+	_normalize_team_profile()
 	var role := str(current_profile.get("role_id", "auxiliar"))
 	var role_name := "Auxiliar docente" if role == "auxiliar" else "Administrativo" if role == "administrativo" else "Decano"
 	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	var content := _make_page("Equipo de " + str(program.get("name", "la universidad")), "%s personas · turno actual: %s" % [str(current_profile.get("players", 1)), role_name], _show_multi_slots)
-	content.add_child(_label("Turno de " + str(current_profile.get("player_name", "Estudiante")), 18, INK, true))
-	content.add_child(_label("Experiencia del equipo: %d · Confianza: %d" % [int(current_profile.get("team_score", 0)), int(current_profile.get("team_confidence", 60))], 16, Color("#686a5d"), true))
+	var names: Array = current_profile.get("player_names", [])
+	var content := _make_page("Equipo de " + str(program.get("name", "la universidad")), "%d participantes · turno de %s" % [names.size(), _current_player_name()], _show_multi_slots)
+	content.add_child(_label("Turno de " + _current_player_name(), 22, GREEN, true))
+	content.add_child(_label("Rol del equipo: " + role_name, 15, Color("#686a5d"), true))
+	_add_team_scoreboard(content)
 	if role == "auxiliar":
 		var done := int(current_profile.get("assistant_cases", 0))
 		if done < ASSISTANT_CASES.size():
@@ -702,14 +1000,17 @@ func _show_team_hub() -> void:
 			_show_team_case_content(content, ADMIN_CASES[done], role, done)
 		else:
 			content.add_child(_label("Has atendido tres casos y ahora puedes presentar una propuesta al consejo de facultad.", 18, GREEN, true))
-			_add_button(content, "Presentar candidatura a decano", _start_dean_review, true, 62)
+			_add_button(content, "Presentar candidatura a decano", _show_dean_vote, true, 62)
 	else:
 		var done := int(current_profile.get("dean_cases", 0))
 		if done < DEAN_CASES.size():
 			_show_team_case_content(content, DEAN_CASES[done], role, done)
 		else:
 			content.add_child(_label("Terminaste la gestión de facultad. El consejo recibió tus decisiones y su seguimiento.", 19, GREEN, true))
-			content.add_child(_label("Puntaje final: %d · partidas de %d participante(s)" % [int(current_profile.get("team_score", 0)), int(current_profile.get("players", 1))], 16, INK, true))
+			content.add_child(_label("Puntaje final del equipo: %d" % int(current_profile.get("team_score", 0)), 16, INK, true))
+			var mvp := _team_mvp()
+			if not mvp.is_empty():
+				content.add_child(_label("Mejor puntaje individual: %s (%d pts)" % [str(mvp["name"]), int(mvp["score"])], 15, GOLD, true))
 			_add_button(content, "Ver logros", _show_team_titles, false, 48)
 	_add_button(content, "Guardar y volver al inicio", _return_to_menu, false, 48)
 
@@ -717,6 +1018,7 @@ func _show_team_hub() -> void:
 func _show_team_case_content(content: VBoxContainer, simulation: Dictionary, role: String, case_index: int) -> void:
 	var role_title := "Tutoría" if role == "auxiliar" else "Mesa administrativa" if role == "administrativo" else "Consejo de facultad"
 	content.add_child(_label("%s · situación %d de 3" % [role_title, case_index + 1], 23, GREEN, true))
+	content.add_child(_label("Decide " + _current_player_name(), 14, GOLD, true))
 	content.add_child(_label(str(simulation["question"]), 19, INK, true))
 	for option_index in range(simulation["options"].size()):
 		_add_button(content, str(simulation["options"][option_index]), _choose_team_case.bind(role, case_index, option_index), false, 52)
@@ -727,11 +1029,10 @@ func _choose_team_case(role: String, case_index: int, choice_index: int) -> void
 	var simulation: Dictionary = cases[case_index]
 	var best := choice_index == int(simulation["best"])
 	var feedback := str(simulation["good"] if best else simulation["bad"])
+	var deciding_player := _current_player_name()
+	_award_team_case(best)
 	if best:
 		current_profile["team_score"] = int(current_profile.get("team_score", 0)) + 10
-		current_profile["team_confidence"] = mini(100, int(current_profile.get("team_confidence", 60)) + 6)
-	else:
-		current_profile["team_confidence"] = maxi(0, int(current_profile.get("team_confidence", 60)) - 5)
 	if role == "auxiliar":
 		current_profile["assistant_cases"] = case_index + 1
 	elif role == "administrativo":
@@ -742,14 +1043,15 @@ func _choose_team_case(role: String, case_index: int, choice_index: int) -> void
 			var titles: Array = current_profile.get("titles", [])
 			titles.append("Decano de facultad · ciclo de gestión completado")
 			current_profile["titles"] = titles
+	_advance_team_turn()
 	_save_profile()
-	var continuation := Callable(self, "_show_team_hub")
-	_show_result("Decisión registrada", feedback, best, continuation)
+	_show_result("Decisión de " + deciding_player, feedback + " Turno de %s." % _current_player_name(), best, Callable(self, "_show_team_hub"))
 
 
-func _show_cv_builder() -> void:
-	cv_draft = current_profile.get("cv_items", []).duplicate()
-	var content := _make_page("Arma tu CV", "Elige al menos tres experiencias que sí puedas respaldar en la partida.", Callable(self, "_show_team_hub"))
+func _show_cv_builder(reset: bool = true) -> void:
+	if reset:
+		cv_draft = current_profile.get("cv_items", []).duplicate()
+	var content := _make_page("Arma tu CV", "Turno de %s · elige al menos tres experiencias que puedas respaldar." % _current_player_name(), Callable(self, "_show_team_hub"))
 	for skill in CV_SKILLS:
 		var prefix := "☑  " if cv_draft.has(skill) else "□  "
 		_add_button(content, prefix + skill, _toggle_cv_item.bind(skill), false, 50)
@@ -762,7 +1064,7 @@ func _toggle_cv_item(skill: String) -> void:
 		cv_draft.erase(skill)
 	else:
 		cv_draft.append(skill)
-	_show_cv_builder()
+	_show_cv_builder(false)
 
 
 func _submit_cv() -> void:
@@ -776,7 +1078,7 @@ func _submit_cv() -> void:
 
 
 func _show_admin_interview() -> void:
-	var content := _make_page("Entrevista administrativa", "La convocatoria revisa criterio, atención y cuidado de datos.", Callable(self, "_show_cv_builder"))
+	var content := _make_page("Entrevista administrativa", "Responde %s · criterio, atención y cuidado de datos." % _current_player_name(), Callable(self, "_show_cv_builder"))
 	content.add_child(_label("Llegan dos trámites con plazos distintos y a uno le faltan datos. ¿Cómo los atiendes?", 22, INK, true))
 	_add_button(content, "Verifico lo necesario, priorizo el vencimiento y dejo registro de lo pendiente", _answer_admin_interview.bind(true), false, 58)
 	_add_button(content, "Apruebo los dos sin revisar para terminar rápido", _answer_admin_interview.bind(false), false, 58)
@@ -787,21 +1089,19 @@ func _answer_admin_interview(correct: bool) -> void:
 	if not correct:
 		_show_result("La entrevista sigue pendiente", "La convocatoria necesita una decisión verificable y centrada en el trámite. Puedes repasar tu CV e intentarlo otra vez.", false, _show_admin_interview)
 		return
+	var deciding_player := _current_player_name()
 	current_profile["role_id"] = "administrativo"
 	current_profile["role_label"] = "Administrativo"
 	var titles: Array = current_profile.get("titles", [])
-	titles.append("Cargo administrativo · CV y entrevista aprobados")
+	titles.append("Cargo administrativo · CV y entrevista aprobados por %s" % deciding_player)
 	current_profile["titles"] = titles
+	_advance_team_turn()
 	_save_profile()
-	_show_result("Te contrataron", "Tu CV y entrevista abrieron el cargo. Ahora vienen casos de registros, recursos y atención universitaria.", true, _show_team_hub)
-
-
-func _start_dean_review() -> void:
-	_show_dean_vote()
+	_show_result("Te contrataron", "El CV y la entrevista abrieron el cargo. Ahora vienen casos de registros, recursos y atención universitaria. Turno de %s." % _current_player_name(), true, _show_team_hub)
 
 
 func _show_dean_vote() -> void:
-	var content := _make_page("Consejo de facultad", "La experiencia administrativa te permite postular; el consejo revisa tu criterio.", Callable(self, "_show_team_hub"))
+	var content := _make_page("Consejo de facultad", "Responde %s · la experiencia administrativa permite postular y el consejo revisa el criterio." % _current_player_name(), Callable(self, "_show_team_hub"))
 	content.add_child(_label("¿Cómo presentarías el presupuesto anual de 100 puntos?", 22, INK, true))
 	_add_button(content, "Repartirlo con criterios públicos, revisar necesidades y fijar seguimiento", _answer_dean_vote.bind(true), false, 58)
 	_add_button(content, "Asignarlo según popularidad y ver después qué falta", _answer_dean_vote.bind(false), false, 58)
@@ -812,17 +1112,20 @@ func _answer_dean_vote(approved: bool) -> void:
 	if not approved:
 		_show_result("La candidatura sigue en revisión", "El consejo pide una propuesta justificable y con seguimiento del dinero. Puedes ajustar el planteamiento e intentarlo otra vez.", false, _show_dean_vote)
 		return
+	var deciding_player := _current_player_name()
 	current_profile["role_id"] = "decano"
 	current_profile["role_label"] = "Decano"
 	var titles: Array = current_profile.get("titles", [])
-	titles.append("Decano electo · experiencia administrativa completada")
+	titles.append("Decano electo · candidatura presentada por %s" % deciding_player)
 	current_profile["titles"] = titles
+	_advance_team_turn()
 	_save_profile()
-	_show_result("El consejo te eligió", "La candidatura fue aprobada. Ahora tendrás que tomar decisiones de presupuesto, revisar inversiones y rendir cuentas.", true, _show_team_hub)
+	_show_result("El consejo te eligió", "La candidatura fue aprobada. Ahora tendrás que tomar decisiones de presupuesto, revisar inversiones y rendir cuentas. Turno de %s." % _current_player_name(), true, _show_team_hub)
 
 
 func _show_team_titles() -> void:
 	var content := _make_page("Logros del equipo", "Títulos guardados en esta partida local.", _show_team_hub)
+	_add_team_scoreboard(content)
 	var titles: Array = current_profile.get("titles", [])
 	if titles.is_empty():
 		content.add_child(_label("Todavía no hay logros de equipo.", 18, INK, true))
@@ -846,17 +1149,28 @@ func _exit_game() -> void:
 func _show_result(title: String, body: String, positive: bool, next: Callable) -> void:
 	var return_page := Callable(self, "_show_solo_hub") if current_profile.get("mode", "solo") == "solo" else Callable(self, "_show_team_hub")
 	var content := _make_page(title, "", return_page)
-	content.add_child(_label(body, 20, GREEN if positive else INK, true))
+	var card := _card(content)
+	card.add_child(_label(body, 20, GREEN if positive else INK, true))
 	_add_button(content, "Continuar", next, true, 62)
 
 
-func _save_path(slot: int) -> String:
+func _save_path(slot: int, mode: String) -> String:
+	return "%s/%s_partida_%d.json" % [SAVE_DIR, mode, slot]
+
+
+func _legacy_save_path(slot: int) -> String:
 	return "%s/partida_%d.json" % [SAVE_DIR, slot]
 
 
-func _read_save(slot: int) -> Dictionary:
-	var path := _save_path(slot)
+func _read_save(slot: int, mode: String) -> Dictionary:
+	var path := _save_path(slot, mode)
 	if not FileAccess.file_exists(path):
+		var legacy := _legacy_save_path(slot)
+		if not FileAccess.file_exists(legacy):
+			return {}
+		var legacy_parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(legacy))
+		if legacy_parsed is Dictionary and str(legacy_parsed.get("mode", "solo")) == mode:
+			return legacy_parsed
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:
@@ -870,7 +1184,8 @@ func _save_profile() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
 	current_profile["slot"] = active_slot
 	current_profile["updated_at"] = Time.get_datetime_string_from_system()
-	var file := FileAccess.open(_save_path(active_slot), FileAccess.WRITE)
+	var mode := str(current_profile.get("mode", "solo"))
+	var file := FileAccess.open(_save_path(active_slot, mode), FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(current_profile, "\t"))
 		file.close()

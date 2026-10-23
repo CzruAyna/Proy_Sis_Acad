@@ -61,8 +61,6 @@ const PROGRAMS := [
 	]},
 ]
 
-# Opciones de muestra para probar el flujo. Confirmar nombres y alcances con
-# los planes oficiales antes de presentarlos como menciones reales.
 const SAMPLE_MENTIONS := {
 	"civil": [
 		{"id": "obras", "name": "Obras y estructuras", "focus": "Diseño, materiales y planificación de obras.", "activity": "Revisar un plano y decidir qué dato falta antes de construir."},
