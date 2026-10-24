@@ -1,108 +1,160 @@
 class_name UniCatalog
 extends RefCounted
 
+const THEME := {
+	"sistemas": {"bg": Color("#0f1628"), "panel": Color("#16213e"), "accent": Color("#4d9bff"), "text": Color("#e6edf3"), "sub": Color("#9fb3c8"), "grid": Color("#1f2d4a")},
+	"informatica": {"bg": Color("#1a0f14"), "panel": Color("#2a161c"), "accent": Color("#ff4d6d"), "text": Color("#f5e6ea"), "sub": Color("#d9b3bd"), "grid": Color("#3a2028")},
+}
+
 const FACULTIES := [
-	{"id": "ingenieria", "name": "Facultad de Ingeniería", "description": "Planos, código, máquinas y trabajo de campo.", "programs": ["civil", "sistemas", "informatica", "mecatronica", "minas"]},
-	{"id": "economia", "name": "Facultad de Economía", "description": "Números, organizaciones y decisiones con recursos limitados.", "programs": ["economia", "administracion", "contaduria"]},
-	{"id": "medicina", "name": "Facultad de Medicina", "description": "Ciencia, cuidado y salud comunitaria.", "programs": ["medicina"]},
-	{"id": "derecho", "name": "Facultad de Derecho", "description": "Normas, argumentos y resolución de conflictos.", "programs": ["derecho"]},
+	{"id": "ingenieria", "name": "Facultad de Ingeniería", "description": "Software, sistemas, redes y tecnología.", "programs": ["sistemas", "informatica"]},
 ]
 
 const PROGRAMS := [
-	{"id": "civil", "faculty": "ingenieria", "name": "Ingeniería Civil", "title": "Ingeniero civil", "summary": "Estructuras, materiales y obras que conectan comunidades.", "subjects": ["Lectura de planos", "Materiales de construcción", "Agua y territorio"], "questions": [
-		{"q": "En un plano a escala 1:100, ¿qué representa 1 cm en el papel?", "options": ["1 m en la obra", "10 m en la obra", "100 m en la obra"], "answer": 0, "why": "A escala 1:100, cada centímetro representa cien centímetros: un metro."},
-		{"q": "¿Para qué sirve una probeta de hormigón en una práctica básica?", "options": ["Estimar su resistencia a compresión", "Medir el caudal de un río", "Comprobar el color de la arena"], "answer": 0, "why": "La probeta permite aplicar una carga controlada y observar la resistencia del material."},
-		{"q": "Después de una lluvia, ¿qué dato ayuda a ubicar un punto de acumulación de agua?", "options": ["La pendiente y las cotas del terreno", "El número de ventanas de una vivienda", "La marca del equipo de dibujo"], "answer": 0, "why": "Las cotas y pendientes muestran hacia dónde escurre el agua."},
-	]},
-	{"id": "sistemas", "faculty": "ingenieria", "name": "Ingeniería de Sistemas", "title": "Ingeniero de sistemas", "summary": "Procesos, software y soluciones para problemas reales.", "subjects": ["Lógica de programación", "Datos y algoritmos", "Procesos y simulación"], "questions": [
-		{"q": "Una nota aprueba desde 51 puntos. ¿Qué condición refleja esa regla?", "options": ["nota < 51", "nota >= 51", "nota == 0"], "answer": 1, "why": "El operador >= incluye el 51 y cualquier valor mayor."},
-		{"q": "¿Qué estructura funciona como una fila de atención: primero en entrar, primero en salir?", "options": ["Cola", "Pila", "Árbol"], "answer": 0, "why": "Una cola conserva el orden de llegada, como una fila de personas."},
-		{"q": "En una simulación de ventanilla, ¿qué datos sirven para estimar la espera?", "options": ["Llegadas y duración de atención", "Color del edificio y clima", "Nombre del sistema operativo"], "answer": 0, "why": "La tasa de llegada y el tiempo de servicio determinan cómo se forma la fila."},
-	]},
-	{"id": "informatica", "faculty": "ingenieria", "name": "Ingeniería Informática", "title": "Ingeniero informático", "summary": "Computadoras, redes y programas que hacen funcionar servicios.", "subjects": ["Representación de información", "Redes y comunicación", "Sistemas operativos"], "questions": [
-		{"q": "¿Cuántos valores distintos puede representar un bit?", "options": ["Dos", "Ocho", "Diez"], "answer": 0, "why": "Un bit representa dos estados, normalmente escritos como 0 y 1."},
-		{"q": "¿Qué equipo conecta redes distintas y dirige paquetes entre ellas?", "options": ["Router", "Teclado", "Monitor"], "answer": 0, "why": "El router reenvía paquetes entre redes según sus direcciones."},
-		{"q": "¿Qué tarea cumple principalmente un sistema operativo?", "options": ["Gestionar recursos y ofrecer servicios a los programas", "Diseñar todas las páginas web automáticamente", "Reemplazar los componentes físicos"], "answer": 0, "why": "El sistema operativo coordina memoria, procesos, archivos y dispositivos."},
-	]},
-	{"id": "mecatronica", "faculty": "ingenieria", "name": "Ingeniería Mecatrónica", "title": "Ingeniero mecatrónico", "summary": "Sensores, mecanismos y control trabajando en conjunto.", "subjects": ["Sensores y medición", "Mecanismos básicos", "Control de movimiento"], "questions": [
-		{"q": "¿Qué convierte un sensor en una señal que puede usar un controlador?", "options": ["Una magnitud física medida", "Una opinión del operador", "El color del gabinete"], "answer": 0, "why": "El sensor detecta una magnitud como temperatura, distancia o presión y la convierte en señal."},
-		{"q": "¿Qué elemento transmite movimiento entre dos ejes mediante dientes?", "options": ["Engranaje", "Fusible", "Termómetro"], "answer": 0, "why": "Los engranajes transmiten movimiento y pueden cambiar velocidad o torque."},
-		{"q": "Un robot se pasa del punto objetivo. ¿Qué ajuste conviene revisar primero?", "options": ["La realimentación y la respuesta del controlador", "El color de la carcasa", "La etiqueta del cable de alimentación"], "answer": 0, "why": "La realimentación permite comparar posición real y deseada para corregir el movimiento."},
-	]},
-	{"id": "minas", "faculty": "ingenieria", "name": "Ingeniería de Minas", "title": "Ingeniero de minas", "summary": "Geología, seguridad y planificación responsable de operaciones.", "subjects": ["Geología de campo", "Ventilación y seguridad", "Planificación minera"], "questions": [
-		{"q": "En una salida de campo, ¿qué información ayuda a reconocer una unidad de roca?", "options": ["Minerales, textura y relaciones con otras capas", "El número de vehículos en el camino", "La hora en que se tomó la fotografía"], "answer": 0, "why": "La composición, textura y posición relativa ayudan a describir e interpretar rocas."},
-		{"q": "¿Por qué se controla la ventilación en una labor subterránea?", "options": ["Para renovar el aire y reducir contaminantes", "Para aumentar el tamaño de las herramientas", "Para evitar registrar las labores"], "answer": 0, "why": "La ventilación ayuda a mantener condiciones respirables y controlar gases, polvo y calor."},
-		{"q": "Antes de cambiar un plan de extracción, ¿qué conviene revisar?", "options": ["Seguridad, estabilidad y datos del yacimiento", "Solo el color del mineral", "El nombre del turno anterior"], "answer": 0, "why": "La decisión debe considerar riesgos de seguridad, estabilidad y evidencia geológica."},
-	]},
-	{"id": "economia", "faculty": "economia", "name": "Economía", "title": "Economista", "summary": "Incentivos, datos y efectos de decisiones en la sociedad.", "subjects": ["Economía cotidiana", "Oferta y demanda", "Indicadores económicos"], "questions": [
-		{"q": "Si usas una tarde para trabajar en vez de estudiar, ¿qué es el costo de oportunidad?", "options": ["El valor de la mejor alternativa que dejaste", "El total de cosas que existen", "Un gasto del mes pasado"], "answer": 0, "why": "El costo de oportunidad es el valor de la mejor opción sacrificada."},
-		{"q": "Si aumenta la demanda de un producto y la oferta no cambia, ¿qué suele pasar al precio de equilibrio?", "options": ["Tiende a subir", "Siempre cae a cero", "No puede cambiar"], "answer": 0, "why": "Con oferta fija, una demanda mayor suele presionar el precio hacia arriba."},
-		{"q": "¿Qué mide el PIB real de forma aproximada?", "options": ["Producción final ajustada por cambios de precios", "El ingreso exacto de cada familia", "Solo las ventas al exterior"], "answer": 0, "why": "El PIB real separa el cambio en producción del efecto de los precios."},
-	]},
-	{"id": "administracion", "faculty": "economia", "name": "Administración de Empresas", "title": "Administrador de empresas", "summary": "Organización, personas y proyectos con objetivos claros.", "subjects": ["Planificación", "Personas y equipos", "Operaciones"], "questions": [
-		{"q": "¿Para qué sirve definir objetivos antes de repartir tareas?", "options": ["Para orientar acciones y revisar avances", "Para evitar medir resultados", "Para que todo el mundo haga lo mismo"], "answer": 0, "why": "Los objetivos dan dirección y ayudan a evaluar el trabajo."},
-		{"q": "Ante un desacuerdo en el equipo, ¿qué facilita una salida de trabajo?", "options": ["Aclarar el objetivo y escuchar a ambas partes", "Buscar culpables sin revisar hechos", "Ignorar el problema"], "answer": 0, "why": "Escuchar las restricciones permite repartir responsabilidades de manera realista."},
-		{"q": "Un proceso siempre se demora en el mismo paso. ¿Qué conviene observar?", "options": ["La capacidad y las causas del cuello de botella", "Cambiar el nombre del proceso", "Comprar inventario sin revisar demanda"], "answer": 0, "why": "El cuello de botella limita el flujo y muestra dónde enfocar mejoras."},
-	]},
-	{"id": "contaduria", "faculty": "economia", "name": "Contaduría Pública", "title": "Contador público", "summary": "Registros, evidencia y lectura responsable de cuentas.", "subjects": ["Ecuación contable", "Costos y registros", "Control y auditoría"], "questions": [
-		{"q": "¿Cuál es la ecuación contable básica?", "options": ["Activo = Pasivo + Patrimonio", "Ventas = Inventario + Efectivo", "Gasto = Activo + Impuesto"], "answer": 0, "why": "Los activos se financian con obligaciones y recursos propios."},
-		{"q": "En una panadería, la harina usada en cada lote suele ser…", "options": ["Un costo directo de producción", "Un gasto financiero", "Un ingreso diferido"], "answer": 0, "why": "La harina puede asociarse directamente al producto fabricado."},
-		{"q": "¿Qué fortalece una revisión contable?", "options": ["Evidencia vinculada al criterio revisado", "Una impresión sin respaldo", "Una cifra aislada sin origen"], "answer": 0, "why": "Las conclusiones deben apoyarse en evidencia pertinente y verificable."},
-	]},
-	{"id": "medicina", "faculty": "medicina", "name": "Medicina", "title": "Médico", "summary": "Observación, prevención y cuidado centrado en las personas.", "subjects": ["Cuerpo humano", "Salud y prevención", "Razonamiento clínico inicial"], "questions": [
-		{"q": "¿Qué sistema transporta oxígeno y nutrientes por el organismo?", "options": ["Circulatorio", "Tegumentario", "Urinario"], "answer": 0, "why": "La sangre circula por el sistema cardiovascular y distribuye oxígeno y nutrientes."},
-		{"q": "¿Qué describe mejor la homeostasis?", "options": ["Regular condiciones internas dentro de rangos compatibles con la vida", "Evitar cualquier cambio externo", "Detener el metabolismo al dormir"], "answer": 0, "why": "El cuerpo regula variables internas aunque fluctúen dentro de ciertos límites."},
-		{"q": "Una campaña busca evitar una enfermedad antes de que aparezcan síntomas. ¿Qué prioriza?", "options": ["Prevención primaria", "Rehabilitación", "Cuidados paliativos"], "answer": 0, "why": "La prevención primaria actúa antes del inicio de la enfermedad."},
-	]},
-	{"id": "derecho", "faculty": "derecho", "name": "Derecho", "title": "Abogado", "summary": "Normas, argumentos y respuestas justas a conflictos.", "subjects": ["Normas jurídicas", "Derechos y garantías", "Argumentación"], "questions": [
-		{"q": "¿Qué conviene identificar primero al analizar un conflicto jurídico?", "options": ["Hechos y derechos involucrados", "La opinión más popular", "Los datos personales para publicarlos"], "answer": 0, "why": "Un análisis responsable empieza por precisar hechos y derechos relevantes."},
-		{"q": "¿Qué papel tiene el acreedor en una obligación?", "options": ["Puede exigir la prestación conforme a la relación jurídica", "Siempre presta el servicio", "No participa en la relación"], "answer": 0, "why": "El acreedor puede exigir al deudor la prestación debida."},
-		{"q": "¿Qué fortalece una conclusión jurídica?", "options": ["Vincular hechos probados, normas y razonamiento", "Repetir una conclusión", "Usar solo una frase emotiva"], "answer": 0, "why": "Una conclusión sólida explica cómo se conectan evidencia y norma."},
-	]},
+	{
+		"id": "sistemas",
+		"faculty": "ingenieria",
+		"name": "Ingeniería de Sistemas",
+		"title": "Ingeniero de Sistemas",
+		"summary": "Procesos, información, organización y desarrollo de soluciones basadas en sistemas computacionales.",
+		"focus_color": Color("#4d9bff"),
+		"description": "Forma profesionales para analizar, modelar, diseñar e implementar soluciones informáticas que apoyan la toma de decisiones y la automatización de procesos en organizaciones.",
+		"mentions": [
+			{"id": "gestion_sistemas", "name": "Dirección y Gestión de Sistemas Empresariales", "focus": "Gestión, organización y sistemas para empresas.", "activity": "Analizar un proceso organizativo y proponer una solución basada en sistemas."}
+		],
+		"semesters": [
+			{"order": 1, "name": "PRIMER SEMESTRE", "subjects": [
+				{"sigla": "FIS 1100", "name": "FÍSICA I", "prereq": ["INGRESO"], "desc": "Cinemática, dinámica, leyes de Newton, trabajo y energía. Base para entender el comportamiento físico aplicable a la ingeniería.", "topics": ["Cinemática", "Dinámica", "Trabajo y energía", "Cantidad de movimiento"]},
+				{"sigla": "MAT 1100", "name": "ÁLGEBRA I", "prereq": ["INGRESO"], "desc": "Álgebra elemental, ecuaciones, matrices y fundamentos para el razonamiento matemático.", "topics": ["Conjuntos", "Ecuaciones e inecuaciones", "Matrices", "Sistemas lineales"]},
+				{"sigla": "MAT 1101", "name": "CÁLCULO I", "prereq": ["INGRESO"], "desc": "Límites, derivadas y sus aplicaciones al análisis de funciones.", "topics": ["Límites", "Derivadas", "Aplicaciones de la derivada", "Optimización"]},
+				{"sigla": "QMC 1100", "name": "QUÍMICA GENERAL", "prereq": ["INGRESO"], "desc": "Estructura atómica, enlace químico, estequiometría y fundamentos de química general.", "topics": ["Átomos y moléculas", "Enlace químico", "Estequiometría", "Soluciones"]},
+				{"sigla": "SIS 1110", "name": "METODOLOGÍA DE LA PROGRAMACIÓN I", "prereq": ["INGRESO"], "desc": "Introducción a la lógica, algoritmos y programación estructurada con enfoque a resolución de problemas.", "topics": ["Algoritmos", "Tipos de datos", "Estructuras secuenciales/condicionales/repetitivas", "Arreglos"]}
+			]},
+			{"order": 2, "name": "SEGUNDO SEMESTRE", "subjects": [
+				{"sigla": "FIS 1102", "name": "FÍSICA II", "prereq": ["FIS 1100"], "desc": "Electricidad, magnetismo y fundamentos electromagnéticos.", "topics": ["Electrostática", "Corriente eléctrica", "Magnetismo", "Campos electromagnéticos"]},
+				{"sigla": "INF 1210", "name": "ANÁLISIS DISCRETO", "prereq": ["SIS 1110"], "desc": "Lógica matemática, conjuntos, relaciones, funciones y fundamentos discretos para computación.", "topics": ["Lógica proposicional", "Conjuntos", "Relaciones y funciones", "Inducción y recursión"]},
+				{"sigla": "MAT 1102", "name": "CÁLCULO II", "prereq": ["MAT 1101"], "desc": "Integrales, técnicas de integración y aplicaciones.", "topics": ["Integral definida/indefinida", "Técnicas de integración", "Aplicaciones", "Integrales impropias"]},
+				{"sigla": "MAT 1103", "name": "ÁLGEBRA II", "prereq": ["MAT 1100"], "desc": "Espacios vectoriales, transformaciones lineales y diagonalización.", "topics": ["Espacios vectoriales", "Bases y dimensión", "Transformaciones lineales", "Autovalores y autovectores"]},
+				{"sigla": "SIS 2210", "name": "METODOLOGÍA DE LA PROGRAMACIÓN II", "prereq": ["SIS 1110"], "desc": "Programación modular, estructuras de datos básicas y buenas prácticas.", "topics": ["Funciones", "Estructuras", "Archivos", "Manejo de errores"]},
+				{"sigla": "SIS 2220", "name": "ANÁLISIS DE BALANCE", "prereq": ["QMC 1100"], "desc": "Balances de materia y energía con enfoque a procesos.", "topics": ["Balances de materia", "Balances con reacción", "Balances de energía", "Sistemas con recirculación"]}
+			]},
+			{"order": 3, "name": "TERCER SEMESTRE", "subjects": [
+				{"sigla": "FIS 1200", "name": "FÍSICA III", "prereq": ["FIS 1102"], "desc": "Óptica, ondas, termodinámica aplicada.", "topics": ["Ondas", "Óptica geométrica/física", "Termodinámica", "Fluidos"]},
+				{"sigla": "MAT 1135", "name": "ESTADÍSTICA I", "prereq": ["MAT 1101"], "desc": "Estadística descriptiva, probabilidad y variables aleatorias.", "topics": ["Estadística descriptiva", "Probabilidad", "Distribuciones discretas/continuas", "Teorema central del límite"]},
+				{"sigla": "MAT 1207", "name": "ECUACIONES DIFERENCIALES I", "prereq": ["MAT 1102"], "desc": "EDO de primer y segundo orden y aplicaciones.", "topics": ["EDO primer orden", "EDO lineales", "Sistemas", "Aplicaciones a ingeniería"]},
+				{"sigla": "SIS 2310", "name": "ESTRUCTURA DE DATOS", "prereq": ["INF 1210"], "desc": "Estructuras lineales y no lineales, algoritmos de búsqueda/ordenamiento.", "topics": ["Listas, pilas, colas", "Árboles", "Grafos", "Complejidad algorítmica"]},
+				{"sigla": "SIS 2320", "name": "MODELOS ADMINISTRATIVOS", "prereq": ["SIS 2220"], "desc": "Teoría organizativa, funciones gerenciales y enfoque sistémico.", "topics": ["Organización", "Planificación", "Control", "Enfoque sistémico"]}
+			]},
+			{"order": 4, "name": "CUARTO SEMESTRE", "subjects": [
+				{"sigla": "INF 2410", "name": "ESTRUCTURA DE COMPUTADORES I", "prereq": ["FIS 1200"], "desc": "Arquitectura de computadores, lógica digital y organización.", "topics": ["Sistemas numéricos", "Álgebra booleana", "Circuitos combinacionales/secuenciales", "CPU y memoria"]},
+				{"sigla": "INF 2430", "name": "BASE DE DATOS I", "prereq": ["SIS 2320"], "desc": "Modelo relacional, SQL, normalización y diseño de BD.", "topics": ["Modelo entidad-relación", "Álgebra relacional", "SQL", "Normalización"]}
+			]},
+			{"order": 5, "name": "QUINTO SEMESTRE", "subjects": [
+				{"sigla": "INF 2510", "name": "ARQUITECTURA DE COMPUTADORES", "prereq": ["INF 2410"], "desc": "Arquitectura, pipeline, jerarquía de memoria y rendimiento.", "topics": ["ISA", "Pipeline", "Memoria caché", "I/O y rendimiento"]},
+				{"sigla": "INF 2520", "name": "BASE DE DATOS II", "prereq": ["INF 2430"], "desc": "Transacciones, concurrencia, optimización y BD avanzadas.", "topics": ["Transacciones", "Bloqueos", "Índices y optimización", "Procedimientos almacenados"]},
+				{"sigla": "SIS 2530", "name": "INVESTIGACIÓN OPERATIVA I", "prereq": ["MAT 1135", "SIS 2310"], "desc": "Programación lineal, modelos y métodos cuantitativos.", "topics": ["PL", "Método simplex", "Transporte", "Asignación"]},
+				{"sigla": "SIS 2540", "name": "ANÁLISIS Y DISEÑO DE SISTEMAS", "prereq": ["SIS 2310", "SIS 2320"], "desc": "Metodologías, levantamiento, análisis y diseño de sistemas.", "topics": ["Ciclo de vida", "Levantamiento de requisitos", "Casos de uso", "Diagramas UML"]}
+			]},
+			{"order": 6, "name": "SEXTO SEMESTRE", "subjects": [
+				{"sigla": "INF 3610", "name": "SISTEMAS OPERATIVOS", "prereq": ["INF 2510"], "desc": "Procesos, memoria, archivos, sincronización y seguridad.", "topics": ["Procesos e hilos", "Planificación", "Memoria virtual", "Sistemas de archivos"]},
+				{"sigla": "INF 3620", "name": "REDES DE COMPUTADORAS I", "prereq": ["INF 2510"], "desc": "Modelos OSI/TCP-IP, direccionamiento, enrutamiento básico.", "topics": ["Capas", "Ethernet/IP", "Subnetting", "Routing básico"]},
+				{"sigla": "SIS 3630", "name": "INVESTIGACIÓN OPERATIVA II", "prereq": ["SIS 2530"], "desc": "Modelos probabilísticos, simulación y toma de decisiones.", "topics": ["Teoría de colas", "Simulación", "Árboles de decisión", "Inventarios"]},
+				{"sigla": "SIS 3640", "name": "INGENIERÍA DE SOFTWARE I", "prereq": ["SIS 2540"], "desc": "Requisitos, diseño, pruebas y gestión de proyectos SW.", "topics": ["Requisitos", "Arquitectura", "Calidad", "Metodologías ágiles"]},
+				{"sigla": "SIS 3650", "name": "DISEÑO DE SISTEMAS I", "prereq": ["SIS 2540"], "desc": "Diseño detallado, arquitectura de aplicaciones y prototipado.", "topics": ["Diseño lógico/físico", "Patrones", "Prototipado", "Documentación"]}
+			]},
+			{"order": 7, "name": "SEPTIMO SEMESTRE", "subjects": [
+				{"sigla": "INF 3710", "name": "REDES DE COMPUTADORAS II", "prereq": ["INF 3620"], "desc": "Enrutamiento avanzado, VLANs, servicios de red.", "topics": ["VLANs", "OSPF/RIP", "ACLs", "Servicios de red"]},
+				{"sigla": "INF 3720", "name": "SEGURIDAD INFORMÁTICA", "prereq": ["INF 3620"], "desc": "Criptografía, amenazas, vulnerabilidades y protección.", "topics": ["Amenazas", "Criptografía", "Autenticación", "Seguridad perimetral"]},
+				{"sigla": "SIS 3730", "name": "INGENIERÍA DE SOFTWARE II", "prereq": ["SIS 3640"], "desc": "Pruebas, despliegue, mantenimiento y calidad.", "topics": ["Pruebas", "CI/CD", "Mantenimiento", "Gestión de configuración"]},
+				{"sigla": "SIS 3740", "name": "SISTEMAS DE INFORMACIÓN", "prereq": ["SIS 3640"], "desc": "SI empresariales, ERP, CRM y alineación estratégica.", "topics": ["SI estratégico", "ERP/CRM", "Gobierno TI", "Arquitectura empresarial"]},
+				{"sigla": "SIS 3750", "name": "DISEÑO DE SISTEMAS II", "prereq": ["SIS 3650"], "desc": "Implementación, integración y validación de sistemas.", "topics": ["Integración", "Pruebas de sistema", "Despliegue", "Capacitación"]}
+			]},
+			{"order": 8, "name": "OCTAVO SEMESTRE", "subjects": [
+				{"sigla": "INF 4810", "name": "ADMINISTRACIÓN DE REDES", "prereq": ["INF 3710"], "desc": "Monitoreo, administración, troubleshooting y gestión de red.", "topics": ["SNMP", "Monitoreo", "Resolución de incidencias", "Políticas de red"]},
+				{"sigla": "SIS 4820", "name": "AUDITORÍA DE SISTEMAS", "prereq": ["SIS 3740", "INF 3720"], "desc": "Auditoría informática, controles, normativas y riesgos.", "topics": ["Normativas", "Riesgo y control", "Evidencia", "Informe de auditoría"]},
+				{"sigla": "SIS 4830", "name": "GESTIÓN DE PROYECTOS INFORMÁTICOS", "prereq": ["SIS 3730"], "desc": "Planificación, alcance, cronograma, costos y seguimiento.", "topics": ["PMI/Ágil", "Alcance", "Cronograma", "Riesgos"]},
+				{"sigla": "SIS 4840", "name": "INTELIGENCIA DE NEGOCIOS", "prereq": ["INF 2520", "SIS 3740"], "desc": "Data warehouse, BI, dashboards y toma de decisiones.", "topics": ["ETL", "Modelado dimensional", "KPI", "Visualización"]},
+				{"sigla": "SIS 4850", "name": "TALLER DE GRADO I", "prereq": ["SIS 3750"], "desc": "Propuesta de proyecto de grado, anteproyecto y metodología.", "topics": ["Planteamiento", "Marco teórico", "Metodología", "Cronograma"]}
+			]},
+			{"order": 9, "name": "NOVENO SEMESTRE", "subjects": [
+				{"sigla": "SIS 4910", "name": "GESTIÓN EMPRESARIAL", "prereq": ["SIS 4830"], "desc": "Dirección estratégica, liderazgo y gestión organizativa.", "topics": ["Estrategia", "Liderazgo", "Cambio organizativo", "Ética profesional"]},
+				{"sigla": "SIS 4920", "name": "SISTEMAS EMPRESARIALES", "prereq": ["SIS 4840"], "desc": "Integración empresarial, procesos y soluciones corporativas.", "topics": ["Procesos empresariales", "Integración", "BPM", "Transformación digital"]},
+				{"sigla": "SIS 4930", "name": "ÉTICA PROFESIONAL", "prereq": ["SIS 4820"], "desc": "Ética, responsabilidad profesional, legislación y ejercicio profesional.", "topics": ["Ética", "Responsabilidad", "Propiedad intelectual", "Marco legal"]},
+				{"sigla": "SIS 4940", "name": "TALLER DE GRADO II", "prereq": ["SIS 4850"], "desc": "Desarrollo, implementación, pruebas y defensa del proyecto.", "topics": ["Desarrollo", "Pruebas", "Documentación", "Defensa"]}
+			]},
+		]
+	},
+	{
+		"id": "informatica",
+		"faculty": "ingenieria",
+		"name": "Ingeniería Informática",
+		"title": "Ingeniero Informático",
+		"summary": "Computación, redes, sistemas operativos, software y servicios digitales.",
+		"focus_color": Color("#ff4d6d"),
+		"description": "Forma profesionales para diseñar, desarrollar, implementar y administrar sistemas informáticos, redes, bases de datos y soluciones de software con enfoque a servicios y plataformas digitales.",
+		"mentions": [
+			{"id": "desarrollo_sw", "name": "Desarrollo de Software", "focus": "Programación, aplicaciones y plataformas digitales.", "activity": "Analizar un problema y proponer una solución aplicativa funcional."}
+		],
+		"semesters": [
+			{"order": 1, "name": "PRIMER SEMESTRE", "subjects": [
+				{"sigla": "FIS 1100", "name": "FÍSICA I", "prereq": ["INGRESO"], "desc": "Fundamentos de mecánica aplicados a la computación y sistemas.", "topics": ["Cinemática", "Dinámica", "Trabajo y energía", "Cantidad de movimiento"]},
+				{"sigla": "MAT 1100", "name": "ÁLGEBRA I", "prereq": ["INGRESO"], "desc": "Álgebra y fundamentos matemáticos para informática.", "topics": ["Conjuntos", "Ecuaciones", "Matrices", "Sistemas"]},
+				{"sigla": "MAT 1101", "name": "CÁLCULO I", "prereq": ["INGRESO"], "desc": "Funciones, límites, derivadas.", "topics": ["Límites", "Derivadas", "Aplicaciones"]},
+				{"sigla": "QMC 1100", "name": "QUÍMICA GENERAL", "prereq": ["INGRESO"], "desc": "Fundamentos de química general.", "topics": ["Materia", "Enlace", "Estequiometría"]},
+				{"sigla": "SIS 1110", "name": "METODOLOGÍA DE LA PROGRAMACIÓN I", "prereq": ["INGRESO"], "desc": "Lógica, algoritmos y programación estructurada.", "topics": ["Algoritmos", "Secuencial/condicional/repetitivo", "Arreglos"]}
+			]},
+			{"order": 2, "name": "SEGUNDO SEMESTRE", "subjects": [
+				{"sigla": "FIS 1102", "name": "FÍSICA II", "prereq": ["FIS 1100"], "desc": "Electricidad y magnetismo con aplicación a circuitos.", "topics": ["Electrostática", "Corriente", "Magnetismo", "Circuitos básicos"]},
+				{"sigla": "INF 1210", "name": "ANÁLISIS DISCRETO", "prereq": ["MAT 1100", "SIS 1110"], "desc": "Lógica, conjuntos, combinatoria y grafos.", "topics": ["Lógica", "Conjuntos", "Combinatoria", "Grafos"]},
+				{"sigla": "MAT 1102", "name": "CÁLCULO II", "prereq": ["MAT 1101"], "desc": "Integrales y aplicaciones.", "topics": ["Integrales", "Técnicas", "Aplicaciones"]},
+				{"sigla": "MAT 1103", "name": "ÁLGEBRA II", "prereq": ["MAT 1100"], "desc": "Álgebra lineal aplicada a computación.", "topics": ["Espacios vectoriales", "Matrices", "Transformaciones lineales"]},
+				{"sigla": "SIS 2210", "name": "METODOLOGÍA DE LA PROGRAMACIÓN II", "prereq": ["SIS 1110"], "desc": "Programación modular y estructuras.", "topics": ["Funciones", "Estructuras", "Punteros básicos", "Archivos"]}
+			]},
+			{"order": 3, "name": "TERCER SEMESTRE", "subjects": [
+				{"sigla": "INF 2310", "name": "SISTEMAS OPERATIVOS I", "prereq": ["INF 1210"], "desc": "Fundamentos de sistemas operativos y gestión de procesos.", "topics": ["Historia/SO", "Procesos", "Planificación", "Recursos"]},
+				{"sigla": "MAT 1207", "name": "ECUACIONES DIFERENCIALES I", "prereq": ["MAT 1102"], "desc": "EDO y aplicaciones.", "topics": ["EDO primer/segundo orden", "Aplicaciones"]},
+				{"sigla": "SIS 2310", "name": "ESTRUCTURA DE DATOS", "prereq": ["INF 1210"], "desc": "Estructuras de datos y análisis de algoritmos.", "topics": ["Listas", "Pilas/colas", "Árboles", "Grafos", "Ordenamiento/búsqueda"]}
+			]},
+			{"order": 4, "name": "CUARTO SEMESTRE", "subjects": [
+				{"sigla": "INF 2410", "name": "ESTRUCTURA DE COMPUTADORES I", "prereq": ["FIS 1102"], "desc": "Organización y arquitectura de computadores.", "topics": ["Lógica digital", "Unidad central", "Memoria", "Buses"]},
+				{"sigla": "INF 2430", "name": "BASE DE DATOS I", "prereq": ["SIS 2310"], "desc": "Diseño relacional, SQL.", "topics": ["MER", "Modelo relacional", "SQL", "Normalización"]},
+				{"sigla": "INF 3420", "name": "SISTEMAS OPERATIVOS II", "prereq": ["INF 2310"], "desc": "Memoria virtual, sincronización, archivos y seguridad.", "topics": ["Memoria", "Sincronización", "Sistemas de archivos", "Seguridad SO"]},
+				{"sigla": "INF 3520", "name": "BASE DE DATOS II", "prereq": ["INF 2430"], "desc": "Transacciones, PL/SQL, optimización.", "topics": ["Transacciones", "Concurrencia", "Triggers", "Optimización"]},
+				{"sigla": "INF 3530", "name": "ESTRUCTURA DE COMPUTADORES II", "prereq": ["INF 2410"], "desc": "Arquitectura avanzada, pipeline, multiprocesamiento.", "topics": ["Pipeline", "Jerarquía de memoria", "Paralelismo", "RISC/CISC"]}
+			]},
+			{"order": 5, "name": "QUINTO SEMESTRE", "subjects": [
+				{"sigla": "INF 3510", "name": "PROGRAMACIÓN ORIENTADA A OBJETOS", "prereq": ["SIS 2310"], "desc": "POO, herencia, polimorfismo, patrones básicos.", "topics": ["Clases/objetos", "Herencia", "Polimorfismo", "Excepciones"]},
+				{"sigla": "INF 3540", "name": "REDES DE COMPUTADORAS I", "prereq": ["INF 3530"], "desc": "Fundamentos de redes, TCP/IP.", "topics": ["OSI/TCP-IP", "Direccionamiento", "Subredes", "Aplicaciones"]},
+				{"sigla": "INF 3550", "name": "ANÁLISIS Y DISEÑO DE SISTEMAS", "prereq": ["INF 3510"], "desc": "Levantamiento, análisis, UML.", "topics": ["Requisitos", "Casos de uso", "Diagramas", "Prototipo"]},
+				{"sigla": "INF 3560", "name": "LENGUAJES DE PROGRAMACIÓN", "prereq": ["INF 3510"], "desc": "Paradigmas, compiladores, intérpretes.", "topics": ["Paradigmas", "Sintaxis/semántica", "Compilación", "Máquinas virtuales"]}
+			]},
+			{"order": 6, "name": "SEXTO SEMESTRE", "subjects": [
+				{"sigla": "INF 3610", "name": "REDES DE COMPUTADORAS II", "prereq": ["INF 3540"], "desc": "Enrutamiento, VLANs, servicios.", "topics": ["Ruteo", "VLAN", "NAT", "Servicios"]},
+				{"sigla": "INF 3620", "name": "INGENIERÍA DE SOFTWARE I", "prereq": ["INF 3550"], "desc": "Proceso de software, requisitos, diseño.", "topics": ["Ciclo de vida", "Requisitos", "Arquitectura", "Gestión"]},
+				{"sigla": "INF 3630", "name": "PROGRAMACIÓN WEB I", "prereq": ["INF 3510", "INF 3520"], "desc": "HTML, CSS, JS, fundamentos web.", "topics": ["Frontend", "HTTP", "Formularios", "Datos"]},
+				{"sigla": "INF 3640", "name": "SISTEMAS DISTRIBUIDOS", "prereq": ["INF 3610"], "desc": "Computación distribuida, RPC, comunicación.", "topics": ["Arquitecturas distribuidas", "Comunicación", "Sincronización", "Tolerancia a fallos"]}
+			]},
+			{"order": 7, "name": "SEPTIMO SEMESTRE", "subjects": [
+				{"sigla": "INF 4710", "name": "SEGURIDAD INFORMÁTICA", "prereq": ["INF 3610"], "desc": "Seguridad, criptografía, ataques y contramedidas.", "topics": ["Criptografía", "Amenazas", "Firewalls", "Auditoría"]},
+				{"sigla": "INF 4720", "name": "INGENIERÍA DE SOFTWARE II", "prereq": ["INF 3620"], "desc": "Pruebas, calidad, despliegue.", "topics": ["Pruebas", "QA", "CI/CD", "Mantenimiento"]},
+				{"sigla": "INF 4730", "name": "PROGRAMACIÓN WEB II", "prereq": ["INF 3630"], "desc": "Backend, APIs, autenticación, BD web.", "topics": ["Backend", "REST", "Autenticación", "Despliegue"]},
+				{"sigla": "INF 4740", "name": "INTELIGENCIA ARTIFICIAL", "prereq": ["INF 3510", "MAT 1207"], "desc": "Búsqueda, heurísticas, fundamentos de IA.", "topics": ["Búsqueda", "Heurísticas", "Conocimiento", "Aprendizaje básico"]}
+			]},
+			{"order": 8, "name": "OCTAVO SEMESTRE", "subjects": [
+				{"sigla": "INF 4810", "name": "ADMINISTRACIÓN DE REDES", "prereq": ["INF 3610"], "desc": "Gestión, monitoreo, configuración avanzada.", "topics": ["Administración", "Monitoreo", "Seguridad de red", "Troubleshooting"]},
+				{"sigla": "INF 4820", "name": "DESARROLLO MÓVIL", "prereq": ["INF 4730"], "desc": "Aplicaciones móviles, APIs, UI/UX.", "topics": ["Android/Multiplataforma", "UI", "Datos móviles", "Publicación"]},
+				{"sigla": "INF 4830", "name": "GESTIÓN DE PROYECTOS INFORMÁTICOS", "prereq": ["INF 4720"], "desc": "Planificación, seguimiento, SCRUM.", "topics": ["Alcance", "Cronograma", "Riesgos", "Agile"]},
+				{"sigla": "INF 4840", "name": "TALLER DE GRADO I", "prereq": ["INF 4720"], "desc": "Anteproyecto de grado.", "topics": ["Propuesta", "Marco teórico", "Metodología"]}
+			]},
+			{"order": 9, "name": "NOVENO SEMESTRE", "subjects": [
+				{"sigla": "INF 4910", "name": "COMPUTACIÓN EN LA NUBE", "prereq": ["INF 4730"], "desc": "Cloud, servicios, despliegue, escalabilidad.", "topics": ["IaaS/PaaS/SaaS", "Contenedores", "Despliegue", "Monitoreo"]},
+				{"sigla": "INF 4920", "name": "ÉTICA PROFESIONAL", "prereq": ["INF 4830"], "desc": "Ética, responsabilidad y marco legal.", "topics": ["Ética", "Propiedad intelectual", "Responsabilidad", "Legislación"]},
+				{"sigla": "INF 4930", "name": "PRÁCTICAS PROFESIONALES", "prereq": ["INF 4830"], "desc": "Práctica supervisada en entorno real.", "topics": ["Aplicación práctica", "Informe", "Supervisión"]},
+				{"sigla": "INF 4940", "name": "TALLER DE GRADO II", "prereq": ["INF 4840"], "desc": "Desarrollo, defensa de proyecto de grado.", "topics": ["Implementación", "Pruebas", "Documentación", "Defensa"]}
+			]},
+		]
+	},
 ]
-
-const SAMPLE_MENTIONS := {
-	"civil": [
-		{"id": "obras", "name": "Obras y estructuras", "focus": "Diseño, materiales y planificación de obras.", "activity": "Revisar un plano y decidir qué dato falta antes de construir."},
-		{"id": "agua", "name": "Agua y territorio", "focus": "Infraestructura, drenaje y relación con el terreno.", "activity": "Resolver una acumulación de agua leyendo cotas y pendientes."},
-	],
-	"sistemas": [
-		{"id": "software", "name": "Software y procesos", "focus": "Construcción de herramientas y mejora de procesos.", "activity": "Encontrar por qué se atasca el registro de una materia."},
-		{"id": "datos", "name": "Datos y optimización", "focus": "Análisis de información y apoyo a decisiones.", "activity": "Organizar una fila de atención para reducir esperas."},
-	],
-	"informatica": [
-		{"id": "redes", "name": "Redes y servicios", "focus": "Conectividad, equipos y servicios informáticos.", "activity": "Seguir el recorrido de un paquete entre dos redes."},
-		{"id": "plataformas", "name": "Plataformas y software", "focus": "Programas y sistemas que sostienen servicios digitales.", "activity": "Diagnosticar por qué una aplicación no encuentra sus datos."},
-	],
-	"mecatronica": [
-		{"id": "control", "name": "Control y automatización", "focus": "Sensores, actuadores y respuesta de sistemas.", "activity": "Ajustar un control para que un mecanismo no se pase del objetivo."},
-		{"id": "robotica", "name": "Robótica aplicada", "focus": "Integración de mecanismos, electrónica y programación.", "activity": "Preparar una secuencia segura para un brazo robótico."},
-	],
-	"minas": [
-		{"id": "operaciones", "name": "Operaciones mineras", "focus": "Planificación de labores con atención a seguridad y terreno.", "activity": "Elegir una ruta de trabajo revisando riesgos y datos geológicos."},
-		{"id": "geologia", "name": "Geología y planificación", "focus": "Lectura del yacimiento y planificación responsable.", "activity": "Interpretar una libreta de campo antes de actualizar un plan."},
-	],
-	"economia": [
-		{"id": "analisis", "name": "Análisis económico", "focus": "Indicadores, incentivos y decisiones económicas.", "activity": "Explicar qué puede cambiar cuando sube la demanda."},
-		{"id": "desarrollo", "name": "Economía y desarrollo", "focus": "Decisiones económicas y sus efectos en comunidades.", "activity": "Comparar dos propuestas usando recursos limitados."},
-	],
-	"administracion": [
-		{"id": "organizaciones", "name": "Gestión de organizaciones", "focus": "Equipos, operaciones y objetivos compartidos.", "activity": "Reorganizar tareas cuando aparece un cuello de botella."},
-		{"id": "proyectos", "name": "Proyectos y emprendimiento", "focus": "Planificación y seguimiento de iniciativas.", "activity": "Armar un plan breve con tareas, responsables y fechas."},
-	],
-	"contaduria": [
-		{"id": "auditoria", "name": "Auditoría y control", "focus": "Registros, evidencia y revisión de procesos.", "activity": "Rastrear el origen de una cifra que no coincide."},
-		{"id": "gestion", "name": "Costos y gestión", "focus": "Lectura de costos y apoyo a decisiones organizacionales.", "activity": "Separar costos directos antes de comparar dos opciones."},
-	],
-	"medicina": [
-		{"id": "prevencion", "name": "Prevención y comunidad", "focus": "Promoción de salud y prevención cercana a las personas.", "activity": "Diseñar una actividad de prevención para una comunidad."},
-		{"id": "clinica", "name": "Razonamiento clínico", "focus": "Observación y análisis inicial de situaciones de salud.", "activity": "Ordenar datos de un caso antes de proponer el siguiente paso."},
-	],
-	"derecho": [
-		{"id": "publico", "name": "Derecho público", "focus": "Instituciones, normas y garantías.", "activity": "Analizar un trámite identificando hechos y derechos relevantes."},
-		{"id": "social", "name": "Derecho social y privado", "focus": "Relaciones jurídicas y resolución razonada de conflictos.", "activity": "Preparar argumentos para una mediación entre partes."},
-	],
-}
 
 static func faculty_by_id(faculty_id: String) -> Dictionary:
 	for faculty in FACULTIES:
@@ -124,7 +176,10 @@ static func programs_for_faculty(faculty_id: String) -> Array:
 	return result
 
 static func mentions_for_program(program_id: String) -> Array:
-	return SAMPLE_MENTIONS.get(program_id, []).duplicate(true)
+	var program := program_by_id(program_id)
+	if program.is_empty(): return []
+	var mentions: Array = program.get("mentions", [])
+	return mentions.duplicate(true)
 
 static func mention_by_id(program_id: String, mention_id: String) -> Dictionary:
 	for mention in mentions_for_program(program_id):
@@ -132,14 +187,40 @@ static func mention_by_id(program_id: String, mention_id: String) -> Dictionary:
 			return mention
 	return {}
 
-static func course(program_id: String, course_index: int) -> Dictionary:
+static func get_theme(program_id: String) -> Dictionary:
+	return THEME.get(program_id, THEME["sistemas"])
+
+static func all_subjects(program_id: String) -> Array:
 	var program := program_by_id(program_id)
-	if program.is_empty():
+	if program.is_empty(): return []
+	var result: Array = []
+	for sem in program.get("semesters", []):
+		for sub in sem.get("subjects", []):
+			var copy: Dictionary = sub.duplicate(true)
+			copy["semester"] = sem.get("order", 0)
+			copy["semester_name"] = sem.get("name", "")
+			result.append(copy)
+	return result
+
+static func subject_by_sigla(program_id: String, sigla: String) -> Dictionary:
+	for sub in all_subjects(program_id):
+		if sub.get("sigla", "") == sigla:
+			return sub
+	return {}
+
+static func course(program_id: String, course_index: int) -> Dictionary:
+	var subjects := all_subjects(program_id)
+	if subjects.is_empty() or course_index < 0 or course_index >= subjects.size():
 		return {}
-	var questions: Array = program["questions"]
+	var sub: Dictionary = subjects[course_index].duplicate(true)
+	var questions := [
+		{"q": "Según el temario de %s, ¿qué concepto es fundamental para iniciar esta unidad?" % sub["name"], "options": ["Identificar definiciones y reglas básicas", "Memorizar nombres sin contexto", "Saltar directamente a resultados"], "answer": 0, "why": "Todo tema parte de sus conceptos fundamentales para luego aplicarlos."},
+		{"q": "En %s, ¿qué enfoque es más acertado para resolver un ejercicio tipo?" % sub["name"], "options": ["Leer el enunciado, identificar datos y aplicar el procedimiento", "Adivinar la respuesta sin análisis", "Copiar sin entender los pasos"], "answer": 0, "why": "El método paso a paso permite detectar errores y comprender la solución."},
+		{"q": "Para dominar %s, ¿qué actividad refuerza mejor el aprendizaje?" % sub["name"], "options": ["Practicar con ejercicios y verificar resultados", "Solo leer el título de cada tema", "Repasar una sola vez la noche antes"], "answer": 0, "why": "La práctica deliberada con verificación consolida el conocimiento."},
+	]
 	var partials: Array = []
 	for partial_index in range(3):
-		var question: Dictionary = questions[(course_index + partial_index) % questions.size()].duplicate(true)
-		question["difficulty"] = partial_index + 1
-		partials.append(question)
-	return {"name": program["subjects"][course_index], "partials": partials}
+		var q: Dictionary = questions[partial_index].duplicate(true)
+		q["difficulty"] = partial_index + 1
+		partials.append(q)
+	return {"name": sub["name"], "sigla": sub["sigla"], "semester": sub.get("semester", 0), "desc": sub.get("desc", ""), "topics": sub.get("topics", []), "prereq": sub.get("prereq", []), "partials": partials}

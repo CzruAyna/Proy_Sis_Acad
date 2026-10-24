@@ -55,6 +55,10 @@ func _ready() -> void:
 	_setup_theme()
 	get_window().min_size = Vector2i(960, 600)
 	_apply_image_settings()
+	if bool(settings["fullscreen"]):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	_show_main()
 
 
@@ -105,6 +109,8 @@ func _load_settings() -> void:
 		settings["antialiasing"] = config.get_value("game", "antialiasing", true)
 	if settings["fullscreen"]:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 
 func _save_settings() -> void:
@@ -383,7 +389,10 @@ func _show_credits() -> void:
 
 func _toggle_fullscreen() -> void:
 	settings["fullscreen"] = not bool(settings["fullscreen"])
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings["fullscreen"] else DisplayServer.WINDOW_MODE_WINDOWED)
+	if settings["fullscreen"]:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	_save_settings()
 	_show_options()
 
@@ -541,7 +550,7 @@ func _choose_faculty_from_field(name_field: LineEdit) -> void:
 
 
 func _show_faculties() -> void:
-	var content := _make_page("Elige una facultad", "Cada carrera es una ruta de tres materias con decisiones y parciales.", _show_new_solo)
+	var content := _make_page("Elige una facultad", "Facultad de Ingeniería · Ingeniería de Sistemas e Ingeniería Informática.", _show_new_solo)
 	var rows := _add_scroll(content)
 	for faculty in Catalog.FACULTIES:
 		var button := _add_button(rows, str(faculty["name"]) + "\n" + str(faculty["description"]), _select_faculty.bind(str(faculty["id"])), false, 82)
@@ -555,14 +564,17 @@ func _select_faculty(faculty_id: String) -> void:
 
 func _show_programs() -> void:
 	var faculty := Catalog.faculty_by_id(selected_faculty)
-	var content := _make_page(str(faculty.get("name", "Carreras")), "Ruta de tres materias con un parcial por materia.", _show_faculties)
+	var content := _make_page(str(faculty.get("name", "Carreras")), "Plan de estudios por semestres con prerrequisitos.", _show_faculties)
 	var rows := _add_scroll(content)
 	for program in Catalog.programs_for_faculty(selected_faculty):
 		var card := _card(rows)
-		card.add_child(_label(str(program["name"]), 21, GREEN))
+		var theme := Catalog.get_theme(str(program["id"]))
+		var accent := theme.get("accent", GREEN)
+		card.add_child(_label(str(program["name"]), 21, accent))
 		card.add_child(_label(str(program["summary"]), 15, Color("#5f6257")))
-		card.add_child(_label("Título al completar: " + str(program["title"]) + " · 3 materias · 2 enfoques", 14, Color("#767262")))
-		_add_button(card, "Ver enfoques de esta carrera", _show_mentions.bind(str(program["id"])), true, 46)
+		card.add_child(_label(str(program.get("description", "")), 14, Color("#6c6859")))
+		card.add_child(_label("Título al completar: " + str(program["title"]), 14, Color("#767262")))
+		_add_button(card, "Ver mención y empezar", _show_mentions.bind(str(program["id"])), true, 46)
 
 
 func _show_mentions(program_id: String) -> void:
@@ -570,14 +582,20 @@ func _show_mentions(program_id: String) -> void:
 	if program.is_empty():
 		_show_programs()
 		return
-	var content := _make_page("Elige un enfoque", str(program["name"]) + " · el enfoque define el tono y el título de tu partida", _show_programs)
+	var theme := Catalog.get_theme(program_id)
+	var accent := theme.get("accent", GREEN)
+	var content := _make_page("Mención / Enfoque", str(program["name"]), _show_programs)
 	var rows := _add_scroll(content)
+	var info_card := _card(rows)
+	info_card.add_child(_label(str(program["name"]), 21, accent))
+	info_card.add_child(_label(str(program.get("description", "")), 15, Color("#5f6257")))
 	for mention in Catalog.mentions_for_program(program_id):
 		var card := _card(rows)
-		card.add_child(_label(str(mention["name"]), 21, GREEN))
+		card.add_child(_label(str(mention["name"]), 19, accent))
 		card.add_child(_label(str(mention["focus"]), 15, Color("#5f6257")))
 		card.add_child(_label("Actividad: " + str(mention["activity"]), 14, Color("#767262")))
-		_add_button(card, "Empezar con este enfoque", _create_solo_save.bind(program_id, str(mention["id"])), true, 46)
+		_add_button(card, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 46)
+	_add_button(content, "Ver plan de estudios (grafo)", Callable(self, "_show_curriculum").bind(program_id), false, 48)
 
 
 func _create_solo_save(program_id: String, mention_id: String) -> void:
@@ -613,22 +631,33 @@ func _show_solo_hub() -> void:
 	if program.is_empty():
 		_show_solo_slots()
 		return
+	var theme := Catalog.get_theme(str(program["id"]))
+	var accent := theme.get("accent", GREEN)
 	var done := int(current_profile.get("completed_subjects", 0))
 	var mention := Catalog.mention_by_id(str(program["id"]), str(current_profile.get("mention_id", "")))
-	var subtitle := str(program["name"]) + " · " + str(program["faculty"])
+	var subjects := Catalog.all_subjects(str(program["id"]))
+	var subtitle := str(program["name"])
 	if not mention.is_empty():
 		subtitle += " · " + str(mention["name"])
 	var content := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), subtitle, _show_solo_slots)
-	if not mention.is_empty():
-		content.add_child(_label(str(mention["focus"]), 15, Color("#686a5d"), true))
-	content.add_child(_label("Avance de la carrera", 24, GREEN, true))
-	content.add_child(_label("Materias aprobadas: %d / %d    ·    Confianza: %d" % [done, program["subjects"].size(), int(current_profile.get("confidence", 60))], 17, INK, true))
+	var header := _card(content)
+	header.add_child(_label(str(program.get("description", "")), 15, Color("#5f6257")))
+	content.add_child(_label("Avance", 24, accent, true))
+	content.add_child(_label("Materias aprobadas: %d / %d    ·    Confianza: %d" % [done, subjects.size(), int(current_profile.get("confidence", 60))], 17, INK, true))
 	if not bool(current_profile.get("career_complete", false)):
 		var course := Catalog.course(str(program["id"]), done)
 		var partial := int(current_profile.get("partial_index", 0))
-		content.add_child(_label("Materia %d de %d · parcial %d de 3" % [done + 1, program["subjects"].size(), partial + 1], 15, GOLD, true))
-		content.add_child(_label("Siguiente materia: " + str(course.get("name", "")), 21, INK, true))
-		content.add_child(_label("Cada parcial tiene una pregunta corta. Si fallas, puedes repasarla y volver a intentarlo.", 16, Color("#686a5d"), true))
+		var info := _card(content)
+		info.add_child(_label("%s - Semestre %d" % [str(course.get("sigla", "")), int(course.get("semester", 0))], 14, Color("#6c6859")))
+		info.add_child(_label(str(course.get("name", "")), 21, INK))
+		info.add_child(_label(str(course.get("desc", "")), 15, Color("#5f6257")))
+		var topics: Array = course.get("topics", [])
+		if not topics.is_empty():
+			info.add_child(_label("Temas: " + ", ".join(topics), 14, Color("#686a5d")))
+		var prereq: Array = course.get("prereq", [])
+		if not prereq.is_empty():
+			info.add_child(_label("Prerrequisitos: " + ", ".join(prereq), 14, Color("#686a5d")))
+		content.add_child(_label("Parcial %d de 3" % (partial + 1), 15, GOLD, true))
 		_add_button(content, "Rendir parcial %d" % (partial + 1), _show_exam, true, 62)
 	else:
 		content.add_child(_label("Carrera completa: " + str(program["title"]), 21, GREEN, true))
@@ -637,21 +666,33 @@ func _show_solo_hub() -> void:
 			_add_button(content, "Rendir examen de competencia", _show_competency, true, 62)
 		else:
 			content.add_child(_label("Competencia aprobada · Auxiliar disponible en el modo de equipo.", 17, GREEN, true))
+	_add_button(content, "Ver plan de estudios (grafo)", Callable(self, "_show_curriculum").bind(str(program["id"])), false, 48)
 	_add_button(content, "Ver títulos y logros", _show_titles, false, 48)
 	_add_button(content, "Guardar y volver al inicio", _return_to_menu, false, 48)
 
 
 func _show_exam() -> void:
 	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
+	var subjects := Catalog.all_subjects(str(program["id"]))
 	var course_index := int(current_profile.get("completed_subjects", 0))
 	var partial_index := int(current_profile.get("partial_index", 0))
-	if course_index >= program.get("subjects", []).size():
+	if course_index >= subjects.size():
 		_show_solo_hub()
 		return
 	var course := Catalog.course(str(program["id"]), course_index)
 	current_question = course["partials"][partial_index]
-	var content := _make_page("Parcial %d · %s" % [partial_index + 1, str(course["name"])], "Dificultad %d de 3 · responde y revisa por qué." % int(current_question["difficulty"]), Callable(self, "_show_solo_hub"))
-	content.add_child(_label(str(current_question["q"]), 25, INK, true))
+	var theme := Catalog.get_theme(str(program["id"]))
+	var accent := theme.get("accent", GREEN)
+	var content := _make_page("Parcial %d · %s (%s)" % [partial_index + 1, str(course["name"]), str(course.get("sigla",""))], "Semestre %d · Dificultad %d de 3" % [int(course.get("semester",0)), int(current_question["difficulty"])], Callable(self, "_show_solo_hub"))
+	var info := _card(content)
+	info.add_child(_label(str(course.get("desc","")), 15, Color("#5f6257")))
+	var topics: Array = course.get("topics", [])
+	if not topics.is_empty():
+		info.add_child(_label("Temas: " + ", ".join(topics), 14, Color("#686a5d")))
+	var prereq: Array = course.get("prereq", [])
+	if not prereq.is_empty():
+		info.add_child(_label("Prerrequisitos: " + ", ".join(prereq), 14, Color("#686a5d")))
+	content.add_child(_label(str(current_question["q"]), 23, accent, true))
 	for option_index in range(current_question["options"].size()):
 		_add_button(content, str(current_question["options"][option_index]), _answer_subject.bind(option_index), false, 55)
 	var key := "%d:%d" % [course_index, partial_index]
@@ -659,7 +700,7 @@ func _show_exam() -> void:
 	var cheat_button := _add_button(content, "Chanchullo: mirar el apunte escondido", _try_chanchullo.bind(key), true, 50)
 	if used.has(key):
 		cheat_button.disabled = true
-		content.add_child(_label("Ya usaste el chanchullo en este parcial. Si te pillaron, todavía puedes responder normal.", 14, GOLD, true))
+		content.add_child(_label("Ya usaste el chanchullo en este parcial.", 14, GOLD, true))
 	else:
 		content.add_child(_label("La jugada puede salir bien o pillarse; solo hay una oportunidad por parcial.", 14, Color("#686a5d"), true))
 
@@ -684,6 +725,7 @@ func _try_chanchullo(key: String) -> void:
 
 func _finish_subject_question(correct: bool, cheated: bool) -> void:
 	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
+	var subjects := Catalog.all_subjects(str(program["id"]))
 	var course_index := int(current_profile.get("completed_subjects", 0))
 	var partial_index := int(current_profile.get("partial_index", 0))
 	if correct:
@@ -696,13 +738,14 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 		if partial_index >= 3:
 			current_profile["completed_subjects"] = course_index + 1
 			current_profile["partial_index"] = 0
-			message += " Aprobaste los tres parciales de %s." % str(program["subjects"][course_index])
-			if int(current_profile["completed_subjects"]) >= program["subjects"].size():
+			var course := Catalog.course(str(program["id"]), course_index)
+			message += " Aprobaste los tres parciales de %s (%s)." % [str(course.get("name","")), str(course.get("sigla",""))]
+			if int(current_profile["completed_subjects"]) >= subjects.size():
 				current_profile["career_complete"] = true
 				var titles: Array = current_profile.get("titles", [])
 				titles.append("Título: " + str(program["title"]))
 				current_profile["titles"] = titles
-				message += " Completaste la carrera y ganaste el título «%s»." % str(program["title"])
+				message += " Completaste el plan de estudios y ganaste el título «%s»." % str(program["title"])
 		else:
 			current_profile["partial_index"] = partial_index
 			message += " Parcial aprobado. El siguiente es el %d." % (partial_index + 1)
@@ -711,7 +754,7 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 	else:
 		current_profile["confidence"] = maxi(0, int(current_profile.get("confidence", 60)) - 3)
 		_save_profile()
-		_show_result("Parcial pendiente", str(current_question["why"]) + " Puedes probar de nuevo.", false, _show_exam)
+		_show_result("Parcial pendiente", str(current_question["why"]) + " Puedes repasar y volver a intentarlo.", false, _show_exam)
 
 
 func _show_competency() -> void:
@@ -1189,3 +1232,30 @@ func _save_profile() -> void:
 	if file:
 		file.store_string(JSON.stringify(current_profile, "\t"))
 		file.close()
+
+
+func _show_curriculum(program_id: String) -> void:
+	var program := Catalog.program_by_id(program_id)
+	if program.is_empty():
+		return
+	var theme := Catalog.get_theme(program_id)
+	var accent := theme.get("accent", GREEN)
+	var content := _make_page("Plan de estudios", str(program.get("name","")), Callable(self, "_show_mentions").bind(program_id))
+	var rows := _add_scroll(content)
+	for sem in program.get("semesters", []):
+		var card := _card(rows)
+		card.add_child(_label(str(sem.get("name","")), 19, accent))
+		for sub in sem.get("subjects", []):
+			var info := VBoxContainer.new()
+			info.add_theme_constant_override("separation", 4)
+			card.add_child(info)
+			info.add_child(_label(str(sub.get("sigla","")) + " - " + str(sub.get("name","")), 16, INK))
+			var prereq: Array = sub.get("prereq", [])
+			if prereq.is_empty() or (prereq.size() == 1 and prereq[0] == "INGRESO"):
+				info.add_child(_label("  Requisito: INGRESO", 13, Color("#686a5d")))
+			else:
+				info.add_child(_label("  Prerrequisitos: " + ", ".join(prereq), 13, Color("#686a5d")))
+			info.add_child(_label("  " + str(sub.get("desc","")), 13, Color("#6c6859")))
+			var topics: Array = sub.get("topics", [])
+			if not topics.is_empty():
+				info.add_child(_label("  Temas: " + ", ".join(topics), 13, Color("#767262")))
