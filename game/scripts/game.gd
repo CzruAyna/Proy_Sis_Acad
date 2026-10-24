@@ -3,12 +3,14 @@ extends Control
 const Catalog = preload("res://scripts/catalog.gd")
 const SAVE_DIR := "user://partidas"
 const SAVE_COUNT := 3
+const GLOBAL_PROFILE_PATH := "user://perfil_global.json"
 const INK := Color("#272b25")
 const PAPER := Color("#f5f0e5")
 const RULE := Color("#ddd5c5")
 const GREEN := Color("#526b57")
 const GOLD := Color("#b77a43")
 const NEUTRAL_THEME := {"bg": Color("#101216"), "panel": Color("#1b1f25"), "accent": Color("#56636d"), "text": Color("#ece9e2"), "sub": Color("#a2a8ad"), "grid": Color("#30353b")}
+const NEON_THEME := {"bg": Color("#050713"), "panel": Color("#0b1322"), "accent": Color("#42eaff"), "text": Color("#e9fbff"), "sub": Color("#adc4d5"), "grid": Color("#18324a")}
 const HOME_NAME := "CAMPUS EN JUEGO"
 const HOME_CURVE_DURATION := 5.5
 const HOME_VISIBLE_FORMULAS := 24
@@ -54,6 +56,27 @@ const HOME_QUOTES := [
 const HOME_CURVES := ["sin", "cos", "tan", "parabola", "cubic", "sqrt", "log", "exp", "gaussian", "heart", "rose", "lissajous", "spiral", "butterfly"]
 const HOME_COSMIC_EVENTS := ["black_hole", "sun", "nebula", "eclipse", "pulsar"]
 
+
+class MenuTransitionEffect extends Control:
+	var progress: float = 0.0:
+		set(value):
+			progress = value
+			queue_redraw()
+	var center := Vector2.ZERO
+
+	func _draw() -> void:
+		var radius := Vector2(size.x, size.y).length() * 1.35 * progress
+		for layer in range(8, 0, -1):
+			draw_circle(center, radius * (1.0 + float(layer) * 0.055), Color("#ff582c", 0.025 + progress * 0.025))
+		draw_circle(center, radius, Color("#ff862e", 0.96 * progress))
+		draw_circle(center, radius * 0.72, Color("#ffd76d", 0.68 * progress))
+		draw_circle(center, radius * 0.46, Color("#fff4c4", 0.8 * progress))
+		if progress > 0.08:
+			for ray in range(12):
+				var angle := TAU * float(ray) / 12.0 + progress * 0.18
+				var direction := Vector2(cos(angle), sin(angle))
+				draw_line(center + direction * radius * 0.84, center + direction * radius * 1.12, Color("#fff0b0", 0.72 * progress), 2.0 + progress * 2.0, true)
+
 var _current_theme: Dictionary = {}
 
 const CV_SKILLS := [
@@ -82,6 +105,7 @@ const DEAN_CASES := [
 ]
 
 var current_profile: Dictionary = {}
+var global_profile: Dictionary = {"achievements": [], "completed_programs": [], "completed_subjects": []}
 var active_slot := 0
 var selected_faculty := ""
 var draft_player_name := ""
@@ -91,16 +115,20 @@ var cv_draft: Array = []
 var team_name_drafts: Array = []
 var team_name_fields: Array = []
 var team_name_box: VBoxContainer
-var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false}
+var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false, "low_performance": false}
 var system_font: SystemFont
 var formula_font: SystemFont
 var random := RandomNumberGenerator.new()
 var _active_back := Callable()
 var _home_art := false
+var _menu_backdrop_active := false
+var _transitioning := false
+var _transition_revealing := false
+var _transition_overlay: Control
 var _home_curve_index := 0
 var _home_curve_time := 0.0
-var _home_curve_forward := PackedVector2Array()
-var _home_curve_backward := PackedVector2Array()
+var _home_curve_forward: Array[PackedVector2Array] = []
+var _home_curve_backward: Array[PackedVector2Array] = []
 var _home_formula_bodies: Array[Dictionary] = []
 var _home_formula_order: Array = []
 var _home_formula_cursor := 0
@@ -110,6 +138,7 @@ var _home_quote_index := 0
 var _home_quote_time := 0.0
 var _home_stars: Array[Dictionary] = []
 var _home_nebulae: Array[Dictionary] = []
+var _home_sparks: Array[Dictionary] = []
 var _home_cosmic_event := "nebula"
 var _home_cosmic_center := Vector2(0.75, 0.5)
 var _home_cosmic_time := 0.0
@@ -119,8 +148,9 @@ func _ready() -> void:
 	random.randomize()
 	_load_settings()
 	settings["fullscreen"] = true
+	_load_global_profile()
 	_setup_theme()
-	_use_neutral_theme()
+	_use_menu_theme()
 	get_window().min_size = Vector2i(900, 640)
 	_apply_image_settings()
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
@@ -184,18 +214,34 @@ func _draw_home_black_hole(center: Vector2) -> void:
 
 func _draw_home_sun(center: Vector2) -> void:
 	var pulse := 1.0 + 0.045 * sin(_home_cosmic_time * 2.1)
-	for layer in range(12, 0, -1):
+	var detail_layers := 6 if bool(settings.get("low_performance", false)) else 12
+	for layer in range(detail_layers, 0, -1):
 		var radius := (26.0 + layer * 11.0) * pulse
-		var glow := Color("#ff4a20", 0.018 + float(12 - layer) * 0.002)
+		var glow := Color("#ff4a20", 0.016 + float(detail_layers - layer) * 0.002)
 		if layer < 5:
-			glow = Color("#ff9d26", 0.035 + float(5 - layer) * 0.012)
+			glow = Color("#ff9d26", 0.03 + float(5 - layer) * 0.012)
 		draw_circle(center, radius, glow)
 	draw_circle(center, 30.0 * pulse, Color("#ff7a19"))
 	draw_circle(center, 23.0 * pulse, Color("#ffe88a"))
-	for ray in range(12):
-		var angle := TAU * float(ray) / 12.0 + _home_cosmic_time * 0.11
+	var ray_count := 8 if bool(settings.get("low_performance", false)) else 12
+	for ray in range(ray_count):
+		var angle := TAU * float(ray) / float(ray_count) + _home_cosmic_time * 0.11
 		var direction := Vector2(cos(angle), sin(angle))
 		draw_line(center + direction * 36.0, center + direction * (54.0 + 8.0 * sin(_home_cosmic_time + ray)), Color("#ffad39", 0.42), 2.0, true)
+	for flare in range(5):
+		var angle := TAU * float(flare) / 5.0 + _home_cosmic_time * 0.08
+		var direction := Vector2(cos(angle), sin(angle))
+		var tangent := Vector2(-direction.y, direction.x)
+		var height := 10.0 + 17.0 * (0.5 + 0.5 * sin(_home_cosmic_time * 1.7 + float(flare) * 2.1))
+		var base := center + direction * 27.0 * pulse
+		var flare_points := PackedVector2Array([
+			base - tangent * 3.5,
+			base + direction * height * 0.45 - tangent * 1.8,
+			base + direction * height + tangent * 1.2,
+			base + direction * height * 0.45 + tangent * 4.0,
+			base + tangent * 3.5
+		])
+		draw_polyline(flare_points, Color("#ffb34c", 0.72), 2.2, true)
 
 
 func _draw_home_eclipse(center: Vector2) -> void:
@@ -221,8 +267,9 @@ func _draw_home_pulsar(center: Vector2) -> void:
 
 func _draw_cosmic_ellipse(center: Vector2, radius: float, flattening: float, rotation: float, color: Color, width: float) -> void:
 	var points := PackedVector2Array()
-	for step in range(97):
-		var angle := TAU * float(step) / 96.0
+	var steps := 48 if bool(settings.get("low_performance", false)) else 96
+	for step in range(steps + 1):
+		var angle := TAU * float(step) / float(steps)
 		var local := Vector2(cos(angle) * radius, sin(angle) * radius * flattening).rotated(rotation)
 		points.append(center + local)
 	draw_polyline(points, color, width, true)
@@ -246,13 +293,6 @@ func _draw_home_science() -> void:
 		var horizontal_step := int(round((y - center.y) / step))
 		draw_line(Vector2(0, y), Vector2(size.x, y), major_grid_color if horizontal_step % 5 == 0 else grid_color, 1.0)
 		y += step
-	draw_line(Vector2(0, center.y), Vector2(size.x - 14, center.y), axis_color, 1.8)
-	draw_line(Vector2(center.x, size.y), Vector2(center.x, 14), axis_color, 1.8)
-	draw_colored_polygon(PackedVector2Array([Vector2(size.x - 3, center.y), Vector2(size.x - 15, center.y - 5), Vector2(size.x - 15, center.y + 5)]), axis_color)
-	draw_colored_polygon(PackedVector2Array([Vector2(center.x, 3), Vector2(center.x - 5, 15), Vector2(center.x + 5, 15)]), axis_color)
-	draw_string(ThemeDB.fallback_font, Vector2(size.x - 25, center.y - 10), "x", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
-	draw_string(ThemeDB.fallback_font, Vector2(center.x + 9, 18), "y", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
-	draw_string(ThemeDB.fallback_font, center + Vector2(8, 17), "0", HORIZONTAL_ALIGNMENT_LEFT, 12, 10, Color("#ffffff", 0.78))
 	var horizontal_range := int(ceil(center.x / scale_px))
 	var vertical_range := int(ceil(center.y / scale_px))
 	for tick in range(-maxi(horizontal_range, vertical_range), maxi(horizontal_range, vertical_range) + 1):
@@ -260,19 +300,46 @@ func _draw_home_science() -> void:
 			continue
 		var tx := center.x + float(tick) * scale_px
 		if tx >= 0 and tx <= size.x:
-			draw_line(Vector2(tx, center.y - 4), Vector2(tx, center.y + 4), axis_color, 1.0)
 			if tick % 5 == 0:
-				draw_string(ThemeDB.fallback_font, Vector2(tx + 3, center.y + 15), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#aab6bb", 0.48))
+				draw_string(ThemeDB.fallback_font, Vector2(tx + 3, center.y + 15), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#aab6bb", 0.62))
 		var ty := center.y - float(tick) * scale_px
 		if ty >= 0 and ty <= size.y:
-			draw_line(Vector2(center.x - 4, ty), Vector2(center.x + 4, ty), axis_color, 1.0)
 			if tick % 5 == 0:
 				draw_string(ThemeDB.fallback_font, Vector2(center.x + 7, ty - 3), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#ffffff", 0.72))
 	var curve_color := Color("#ffffff", 0.94) if str(HOME_CURVES[_home_curve_index]) not in ["heart", "rose", "lissajous", "spiral", "butterfly"] else _home_curve_color()
+	_draw_home_axes(center, axis_color)
 	_draw_home_trace(_home_curve_forward, curve_color)
 	_draw_home_trace(_home_curve_backward, curve_color)
 	for body in _home_formula_bodies:
 		_draw_home_formula(body)
+	for spark in _home_sparks:
+		var life_ratio := clampf(float(spark["life"]) / float(spark["duration"]), 0.0, 1.0)
+		var spark_color: Color = spark["color"]
+		spark_color.a *= 1.0 - life_ratio
+		var spark_position: Vector2 = spark["position"]
+		draw_line(spark_position, spark_position - Vector2(0.0, 5.0 + 8.0 * (1.0 - life_ratio)), spark_color, 1.5, true)
+		draw_circle(spark_position, 1.0 + (1.0 - life_ratio), spark_color)
+
+
+func _draw_home_axes(center: Vector2, axis_color: Color) -> void:
+	draw_line(Vector2(0, center.y), Vector2(size.x - 14, center.y), axis_color, 1.8, true)
+	draw_line(Vector2(center.x, size.y), Vector2(center.x, 14), axis_color, 1.8, true)
+	draw_colored_polygon(PackedVector2Array([Vector2(size.x - 3, center.y), Vector2(size.x - 15, center.y - 5), Vector2(size.x - 15, center.y + 5)]), axis_color)
+	draw_colored_polygon(PackedVector2Array([Vector2(center.x, 3), Vector2(center.x - 5, 15), Vector2(center.x + 5, 15)]), axis_color)
+	draw_string(ThemeDB.fallback_font, Vector2(size.x - 25, center.y - 10), "x", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
+	draw_string(ThemeDB.fallback_font, Vector2(center.x + 9, 18), "y", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
+	draw_string(ThemeDB.fallback_font, center + Vector2(8, 17), "0", HORIZONTAL_ALIGNMENT_LEFT, 12, 10, Color("#ffffff", 0.78))
+	var scale_px := minf(size.x, size.y) / 24.0
+	var tick_range := int(ceil(maxf(center.x, center.y) / scale_px))
+	for tick in range(-tick_range, tick_range + 1):
+		if tick == 0:
+			continue
+		var tx := center.x + float(tick) * scale_px
+		if tx >= 0 and tx <= size.x:
+			draw_line(Vector2(tx, center.y - 4), Vector2(tx, center.y + 4), axis_color, 1.0, true)
+		var ty := center.y - float(tick) * scale_px
+		if ty >= 0 and ty <= size.y:
+			draw_line(Vector2(center.x - 4, ty), Vector2(center.x + 4, ty), axis_color, 1.0, true)
 
 
 func _draw_home_formula(body: Dictionary) -> void:
@@ -284,6 +351,8 @@ func _draw_home_formula(body: Dictionary) -> void:
 		color = color.lerp(Color("#ff3d16"), burn * 0.92)
 		color.a *= 1.0 - burn * 0.35
 	var glow := Color(color, color.a * 0.17)
+	if _home_cosmic_event == "sun" and burn > 0.08:
+		_draw_home_flames(body, burn)
 	var kind := str(body.get("kind", "text"))
 	if kind in ["integral", "definite_integral"]:
 		var symbol_size := int(round(font_size * 1.58))
@@ -308,21 +377,36 @@ func _draw_home_formula(body: Dictionary) -> void:
 	draw_string(formula_font, baseline, str(body["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
-func _draw_home_trace(points: PackedVector2Array, color: Color) -> void:
-	if points.size() < 2:
-		return
-	var visible_points := PackedVector2Array()
-	for point in points:
-		visible_points.append(_home_curve_visual_point(point))
+func _draw_home_flames(body: Dictionary, burn: float) -> void:
+	var position: Vector2 = body["pos"]
+	var extent: Vector2 = body["extent"]
+	var flame_count := clampi(int(extent.x / 20.0), 2, 8)
+	for flame in range(flame_count):
+		var phase := _home_cosmic_time * 8.0 + float(flame) * 1.71 + float(body["font_size"])
+		var x := position.x + extent.x * (float(flame) + 0.5) / float(flame_count)
+		var base := position.y + extent.y - 1.0
+		var height := burn * (4.0 + 8.0 * (0.5 + 0.5 * sin(phase)))
+		var tip := Vector2(x + sin(phase * 0.7) * height * 0.22, base - height)
+		draw_line(Vector2(x, base), tip, Color("#ff682b", 0.72 * burn), 1.6, true)
+		draw_circle(tip, 1.2 + burn, Color("#ffd46b", 0.68 * burn))
+
+
+func _draw_home_trace(segments: Array[PackedVector2Array], color: Color) -> void:
 	var aura := _home_curve_aura()
-	if str(HOME_CURVES[_home_curve_index]) != "tan":
-		draw_polyline(visible_points, Color(aura, 0.2), 8.0, true)
-		draw_polyline(visible_points, color, 2.4, true)
-		return
-	for i in range(1, visible_points.size()):
-		if absf(visible_points[i].y - visible_points[i - 1].y) < minf(size.y * 0.15, 120.0):
-			draw_line(visible_points[i - 1], visible_points[i], Color(aura, 0.2), 8.0, true)
-			draw_line(visible_points[i - 1], visible_points[i], color, 2.4, true)
+	for segment in segments:
+		if segment.size() < 2:
+			continue
+		var visible_points := PackedVector2Array()
+		for point in segment:
+			visible_points.append(_home_curve_visual_point(point))
+		if str(HOME_CURVES[_home_curve_index]) != "tan":
+			draw_polyline(visible_points, Color(aura, 0.2), 8.0, true)
+			draw_polyline(visible_points, color, 2.4, true)
+			continue
+		for i in range(1, visible_points.size()):
+			if absf(visible_points[i].y - visible_points[i - 1].y) < minf(size.y * 0.15, 120.0):
+				draw_line(visible_points[i - 1], visible_points[i], Color(aura, 0.2), 8.0, true)
+				draw_line(visible_points[i - 1], visible_points[i], color, 2.4, true)
 
 
 func _home_curve_aura() -> Color:
@@ -355,7 +439,7 @@ func _home_curve_visual_point(point: Vector2) -> Vector2:
 
 
 func _process(delta: float) -> void:
-	if not _home_art or not bool(settings.get("animations", true)):
+	if (_transitioning and not _transition_revealing) or not _home_art or not bool(settings.get("animations", true)):
 		return
 	_home_formula_time += delta
 	if _home_formula_time >= 2.4 and not _home_formula_order.is_empty():
@@ -396,6 +480,7 @@ func _process(delta: float) -> void:
 		body = _apply_home_cosmic_effect(body, delta)
 		_home_formula_bodies[body_index] = body
 	_resolve_formula_collisions()
+	_advance_home_sparks(delta)
 	_advance_home_curve(delta)
 	queue_redraw()
 
@@ -414,29 +499,53 @@ func _advance_home_curve(delta: float) -> void:
 		var start_angle := old_fraction * angle_range
 		var end_angle := minf(angle_range, maxf(start_angle + 0.005, new_fraction * angle_range))
 		var curve_points := PackedVector2Array()
-		var samples := maxi(2, int((end_angle - start_angle) * 70.0))
+		var sample_rate := 38.0 if bool(settings.get("low_performance", false)) else 70.0
+		var samples := maxi(2, int((end_angle - start_angle) * sample_rate))
 		for j in range(samples + 1):
 			var angle := lerpf(start_angle, end_angle, float(j) / samples)
 			curve_points.append(_home_parametric_point(name, angle, scale_px))
 		if curve_points.size() > 1:
-			_home_curve_forward.append_array(curve_points)
+			if _home_curve_forward.is_empty() or _home_curve_forward.back().is_empty():
+				_home_curve_forward.append(curve_points)
+			else:
+				var segment: PackedVector2Array = _home_curve_forward.back()
+				segment.append_array(curve_points.slice(1))
+				_home_curve_forward[_home_curve_forward.size() - 1] = segment
 		return
 	var first_x := maxf(0.0, old_progress)
 	var last_x := new_progress
-	var samples_count := maxi(1, int((last_x - first_x) / 0.012))
+	var sample_step := 0.02 if bool(settings.get("low_performance", false)) else 0.012
+	var samples_count := maxi(1, int((last_x - first_x) / sample_step))
 	for j in range(samples_count + 1):
 		var x_value := lerpf(first_x, last_x, float(j) / samples_count)
 		var y_value := _home_function_value(name, x_value)
 		if is_finite(y_value) and absf(y_value) < y_extent:
-			_home_curve_forward.append(Vector2(size.x * 0.5 + x_value * scale_px, size.y * 0.5 - y_value * scale_px))
+			_append_home_curve_point(_home_curve_forward, Vector2(size.x * 0.5 + x_value * scale_px, size.y * 0.5 - y_value * scale_px))
+		else:
+			_break_home_curve(_home_curve_forward)
 		if name != "log":
 			var back_y := _home_function_value(name, -x_value)
 			if is_finite(back_y) and absf(back_y) < y_extent:
-				_home_curve_backward.append(Vector2(size.x * 0.5 - x_value * scale_px, size.y * 0.5 - back_y * scale_px))
-	while _home_curve_forward.size() > 1800:
+				_append_home_curve_point(_home_curve_backward, Vector2(size.x * 0.5 - x_value * scale_px, size.y * 0.5 - back_y * scale_px))
+			else:
+				_break_home_curve(_home_curve_backward)
+	while _home_curve_forward.size() > 4:
 		_home_curve_forward.remove_at(0)
-	while _home_curve_backward.size() > 1800:
+	while _home_curve_backward.size() > 4:
 		_home_curve_backward.remove_at(0)
+
+
+func _append_home_curve_point(segments: Array[PackedVector2Array], point: Vector2) -> void:
+	if segments.is_empty() or segments.back().is_empty():
+		segments.append(PackedVector2Array())
+	var segment: PackedVector2Array = segments.back()
+	segment.append(point)
+	segments[segments.size() - 1] = segment
+
+
+func _break_home_curve(segments: Array[PackedVector2Array]) -> void:
+	if not segments.is_empty() and not segments.back().is_empty():
+		segments.append(PackedVector2Array())
 
 
 func _home_function_value(name: String, x: float) -> float:
@@ -494,7 +603,8 @@ func _initialize_home_formulas() -> void:
 	_home_formula_order.shuffle()
 	_home_formula_cursor = 0
 	_home_formula_time = 0.0
-	var count := mini(HOME_VISIBLE_FORMULAS, _home_formula_order.size())
+	var formula_limit := 10 if bool(settings.get("low_performance", false)) else HOME_VISIBLE_FORMULAS
+	var count := mini(formula_limit, _home_formula_order.size())
 	for i in range(count):
 		_home_formula_bodies.append(_make_home_body(_home_formula_order[i]))
 	_home_formula_cursor = count
@@ -505,14 +615,13 @@ func _initialize_home_cosmos() -> void:
 	_home_cosmic_event = HOME_COSMIC_EVENTS[random.randi_range(0, HOME_COSMIC_EVENTS.size() - 1)]
 	if HOME_COSMIC_EVENTS.size() > 1 and _home_cosmic_event == previous_event:
 		_home_cosmic_event = HOME_COSMIC_EVENTS[(HOME_COSMIC_EVENTS.find(_home_cosmic_event) + 1) % HOME_COSMIC_EVENTS.size()]
-	var center_min_x := 0.86 if size.x < 1000.0 else 0.63
-	var center_max_x := 0.98 if size.x < 1000.0 else 0.86
-	_home_cosmic_center = Vector2(random.randf_range(center_min_x, center_max_x), random.randf_range(0.2, 0.78))
+	_home_cosmic_center = Vector2(random.randf_range(0.18, 0.82), random.randf_range(0.18, 0.82))
 	_home_cosmic_time = 0.0
 	_home_stars.clear()
 	_home_nebulae.clear()
+	_home_sparks.clear()
 	var star_colors := [Color("#ffffff"), Color("#bde8ff"), Color("#ffe3bd"), Color("#d4c5ff")]
-	var star_count := 96 if size.x < 900.0 else 150
+	var star_count := 52 if bool(settings.get("low_performance", false)) else (96 if size.x < 900.0 else 150)
 	for i in range(star_count):
 		_home_stars.append({
 			"position": Vector2(random.randf(), random.randf()),
@@ -522,7 +631,8 @@ func _initialize_home_cosmos() -> void:
 			"color": star_colors[random.randi_range(0, star_colors.size() - 1)]
 		})
 	var cloud_colors := [Color("#633cff"), Color("#008ce0"), Color("#ff3d95"), Color("#15bfa7")]
-	for i in range(5):
+	var cloud_count := 2 if bool(settings.get("low_performance", false)) else 5
+	for i in range(cloud_count):
 		_home_nebulae.append({
 			"position": Vector2(random.randf(), random.randf()),
 			"radius": random.randf_range(0.17, 0.34),
@@ -627,6 +737,10 @@ func _apply_home_cosmic_effect(body: Dictionary, delta: float) -> Dictionary:
 		if distance < radius:
 			var heat := 1.0 - distance / radius
 			burn += delta * (0.8 + heat * 0.8)
+			if _home_cosmic_event == "sun" and random.randf() < 0.28:
+				var body_position: Vector2 = body["pos"]
+				var body_extent: Vector2 = body["extent"]
+				_spawn_home_spark(body_position + Vector2(random.randf_range(0.0, body_extent.x), random.randf_range(0.0, body_extent.y)))
 			if burn >= 1.0:
 				return _recompose_home_body(body, true)
 		else:
@@ -638,6 +752,31 @@ func _apply_home_cosmic_effect(body: Dictionary, delta: float) -> Dictionary:
 		velocity += Vector2(-(position - center).y, (position - center).x).normalized() * pulse * 180.0 * delta
 		body["velocity"] = velocity
 	return body
+
+
+func _spawn_home_spark(position: Vector2) -> void:
+	var spark_limit := 24 if bool(settings.get("low_performance", false)) else 72
+	if _home_sparks.size() >= spark_limit:
+		return
+	_home_sparks.append({
+		"position": position,
+		"velocity": Vector2(random.randf_range(-16.0, 16.0), random.randf_range(-28.0, -8.0)),
+		"life": 0.0,
+		"duration": random.randf_range(0.28, 0.7),
+		"color": Color("#ffb750") if random.randf() < 0.5 else Color("#fff0a2")
+	})
+
+
+func _advance_home_sparks(delta: float) -> void:
+	for index in range(_home_sparks.size() - 1, -1, -1):
+		var spark: Dictionary = _home_sparks[index]
+		spark["life"] = float(spark["life"]) + delta
+		if float(spark["life"]) >= float(spark["duration"]):
+			_home_sparks.remove_at(index)
+			continue
+		spark["position"] = Vector2(spark["position"]) + Vector2(spark["velocity"]) * delta
+		spark["velocity"] = Vector2(spark["velocity"]) + Vector2(0.0, 18.0 * delta)
+		_home_sparks[index] = spark
 
 
 func _resolve_formula_collisions() -> void:
@@ -686,14 +825,31 @@ func _use_neutral_theme() -> void:
 	queue_redraw()
 
 
+func _use_menu_theme() -> void:
+	_current_theme = NEON_THEME.duplicate()
+	match _home_cosmic_event:
+		"sun": _current_theme["accent"] = Color("#ffae48")
+		"black_hole": _current_theme["accent"] = Color("#b78aff")
+		"eclipse": _current_theme["accent"] = Color("#43eaff")
+		"pulsar": _current_theme["accent"] = Color("#91a9ff")
+		_: _current_theme["accent"] = Color("#ff67d8")
+	RenderingServer.set_default_clear_color(NEON_THEME["bg"])
+	queue_redraw()
+
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
+	if _transitioning:
+		return
 	if event.is_action_pressed("ui_cancel") and _active_back.is_valid():
-		_active_back.call()
+		if _menu_backdrop_active:
+			_transition_to(_active_back)
+		else:
+			_active_back.call()
 		get_viewport().set_input_as_handled()
 
 
@@ -716,6 +872,7 @@ func _apply_image_settings() -> void:
 	var viewport := get_viewport()
 	if viewport:
 		viewport.msaa_2d = Viewport.MSAA_4X if bool(settings["antialiasing"]) else Viewport.MSAA_DISABLED
+	Engine.max_fps = 30 if bool(settings.get("low_performance", false)) else 0
 	RenderingServer.set_default_clear_color(_current_theme.get("bg", PAPER))
 
 
@@ -726,6 +883,7 @@ func _load_settings() -> void:
 		settings["animations"] = config.get_value("game", "animations", true)
 		settings["font_scale"] = config.get_value("game", "font_scale", 1.0)
 		settings["antialiasing"] = config.get_value("game", "antialiasing", false)
+		settings["low_performance"] = config.get_value("game", "low_performance", false)
 
 
 func _save_settings() -> void:
@@ -735,24 +893,157 @@ func _save_settings() -> void:
 	config.save("user://settings.cfg")
 
 
-func _make_page(title: String, subtitle: String, back: Callable = Callable()) -> VBoxContainer:
-	_home_art = false
-	set_process(false)
+func _load_global_profile() -> void:
+	global_profile = {"achievements": [], "completed_programs": [], "completed_subjects": []}
+	if FileAccess.file_exists(GLOBAL_PROFILE_PATH):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(GLOBAL_PROFILE_PATH))
+		if parsed is Dictionary:
+			global_profile = parsed
+	for key in ["achievements", "completed_programs", "completed_subjects"]:
+		if not (global_profile.get(key, []) is Array):
+			global_profile[key] = []
+	var changed := false
+	for mode in ["solo", "multi"]:
+		for slot in range(1, SAVE_COUNT + 1):
+			var save := _read_save(slot, mode)
+			if save.is_empty():
+				continue
+			for title in save.get("titles", []):
+				changed = _append_global_achievement(str(title)) or changed
+			if mode == "solo":
+				var program_id := str(save.get("program_id", ""))
+				var program := Catalog.program_by_id(program_id)
+				if bool(save.get("career_complete", false)) and not program.is_empty():
+					changed = _record_completed_career(program_id, str(program.get("title", program.get("name", "Carrera"))), false) or changed
+				var passed: Array = save.get("passed_subjects", [])
+				for sigla in passed:
+					changed = _record_completed_subject(program_id, str(save.get("mention_id", "")), str(sigla), false) or changed
+				if bool(save.get("competency_passed", false)):
+					changed = _append_global_achievement("Auxiliar docente · examen de competencia aprobado") or changed
+	if global_profile["completed_subjects"].size() >= 5:
+		changed = _append_global_achievement("Ritmo constante · aprobaste cinco materias en total") or changed
+	if global_profile["completed_subjects"].size() >= 20:
+		changed = _append_global_achievement("Estudiante incansable · aprobaste veinte materias distintas") or changed
+	if global_profile["completed_programs"].size() >= 3:
+		changed = _append_global_achievement("Explorador académico · completaste tres carreras diferentes") or changed
+	if changed:
+		_save_global_profile()
+
+
+func _append_global_achievement(title: String) -> bool:
+	var achievements: Array = global_profile.get("achievements", [])
+	if achievements.has(title):
+		return false
+	achievements.append(title)
+	global_profile["achievements"] = achievements
+	return true
+
+
+func _award_title_once(title: String) -> void:
+	if _append_global_achievement(title):
+		_save_global_profile()
+
+
+func _record_completed_subject(program_id: String, mention_id: String, sigla: String, persist: bool = true) -> bool:
+	var completed: Array = global_profile.get("completed_subjects", [])
+	var key := "%s:%s:%s" % [program_id, mention_id, sigla]
+	var changed := false
+	if not completed.has(key):
+		completed.append(key)
+		global_profile["completed_subjects"] = completed
+		changed = true
+	if completed.size() >= 5:
+		changed = _append_global_achievement("Ritmo constante · aprobaste cinco materias en total") or changed
+	if completed.size() >= 20:
+		changed = _append_global_achievement("Estudiante incansable · aprobaste veinte materias distintas") or changed
+	if persist and changed:
+		_save_global_profile()
+	return changed
+
+
+func _record_completed_career(program_id: String, career_title: String, persist: bool = true) -> bool:
+	var completed: Array = global_profile.get("completed_programs", [])
+	var changed := false
+	if not completed.has(program_id):
+		completed.append(program_id)
+		global_profile["completed_programs"] = completed
+		changed = true
+	changed = _append_global_achievement("Título: " + career_title) or changed
+	if completed.size() >= 3:
+		changed = _append_global_achievement("Explorador académico · completaste tres carreras diferentes") or changed
+	if persist and changed:
+		_save_global_profile()
+	return changed
+
+
+func _save_global_profile() -> void:
+	var file := FileAccess.open(GLOBAL_PROFILE_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(global_profile, "\t"))
+		file.close()
+
+
+func _show_global_achievements(back: Callable = Callable(), menu_backdrop: bool = true) -> void:
+	if not back.is_valid():
+		back = Callable(self, "_show_main")
+	var content := _make_page("Logros globales", "Se conservan entre partidas y no se borran al eliminar una partida guardada.", back, menu_backdrop)
+	var achievements: Array = global_profile.get("achievements", [])
+	content.add_child(_label("%d logros desbloqueados" % achievements.size(), 17, _current_theme.get("accent", GREEN), true))
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size.y = 300
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 7)
+	scroll.add_child(list)
+	if achievements.is_empty():
+		list.add_child(_label("Todavía no hay logros. Los progresos de tus partidas cuentan para este perfil general.", 16, _current_theme.get("sub", INK), true))
+	else:
+		for title in achievements:
+			var card := _card(list, true)
+			card.add_child(_label("✦  " + str(title), 16, _current_theme.get("accent", GREEN)))
+	if menu_backdrop:
+		_add_menu_button(content, "Volver", back, false, 42)
+	else:
+		_add_button(content, "Volver", back, false, 42)
+
+
+func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false) -> VBoxContainer:
+	if menu_backdrop:
+		_activate_menu_backdrop()
+	else:
+		_menu_backdrop_active = false
+		_home_art = false
+		set_process(false)
 	_active_back = back
 	for child in get_children():
+		if child == _transition_overlay:
+			continue
 		remove_child(child)
 		child.queue_free()
 
 	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 42)
-	margin.add_theme_constant_override("margin_right", 42)
-	margin.add_theme_constant_override("margin_top", 26)
-	margin.add_theme_constant_override("margin_bottom", 22)
-	add_child(margin)
+	if menu_backdrop:
+		var centering := CenterContainer.new()
+		centering.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(centering)
+		var shell := PanelContainer.new()
+		shell.custom_minimum_size = Vector2(minf(size.x - 56.0, 820.0), 0.0)
+		shell.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		shell.add_theme_stylebox_override("panel", _home_panel_style())
+		centering.add_child(shell)
+		shell.add_child(margin)
+	else:
+		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(margin)
+	margin.add_theme_constant_override("margin_left", 22 if menu_backdrop else 42)
+	margin.add_theme_constant_override("margin_right", 22 if menu_backdrop else 42)
+	margin.add_theme_constant_override("margin_top", 20 if menu_backdrop else 26)
+	margin.add_theme_constant_override("margin_bottom", 18 if menu_backdrop else 22)
 
 	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 15)
+	layout.add_theme_constant_override("separation", 11 if menu_backdrop else 15)
 	margin.add_child(layout)
 	if not title.is_empty():
 		var heading := _label(title, 28, _current_theme.get("text", INK), false)
@@ -774,12 +1065,13 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable()) ->
 		var footer := HBoxContainer.new()
 		footer.alignment = BoxContainer.ALIGNMENT_BEGIN
 		layout.add_child(footer)
-		_add_button(footer, "← Atrás", back, false, 44)
+		var back_action := Callable(self, "_transition_to").bind(back) if menu_backdrop else back
+		_add_button(footer, "← Atrás", back_action, false, 42)
 	if bool(settings["animations"]):
 		margin.modulate.a = 0.0
 		var intro := margin.create_tween()
 		intro.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		intro.tween_property(margin, "modulate:a", 1.0, 0.16)
+		intro.tween_property(margin, "modulate:a", 1.0, 0.24 if menu_backdrop else 0.16)
 	return page_content
 
 
@@ -794,6 +1086,9 @@ func _label(text: String, font_size: int = 18, color: Color = INK, centered: boo
 	label.add_theme_color_override("font_color", tcolor)
 	label.add_theme_font_size_override("font_size", int(round(font_size * float(settings["font_scale"]))))
 	label.add_theme_constant_override("line_spacing", 3)
+	if _menu_backdrop_active:
+		label.add_theme_color_override("font_outline_color", Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.38))
+		label.add_theme_constant_override("outline_size", 1)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if centered:
@@ -839,9 +1134,32 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 	return button
 
 
+func _add_menu_button(parent: Control, text: String, action: Callable, accent: bool = true, height: int = 48) -> Button:
+	return _add_button(parent, text, Callable(self, "_transition_to").bind(action), accent, height)
+
+
 func _button_style(accent: bool, state: String) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	var accent_color = _current_theme.get("accent", GREEN)
+	if _menu_backdrop_active:
+		style.bg_color = Color(accent_color, 0.19 if accent else 0.12)
+		if state == "hover":
+			style.bg_color = Color(accent_color, 0.32)
+		elif state == "pressed":
+			style.bg_color = Color(accent_color, 0.46)
+		elif state == "disabled":
+			style.bg_color = Color(accent_color, 0.07)
+		style.border_color = Color(accent_color, 0.92 if state == "hover" else 0.64)
+		style.set_border_width_all(2 if accent else 1)
+		style.set_corner_radius_all(18)
+		style.content_margin_left = 15
+		style.content_margin_right = 15
+		style.content_margin_top = 5
+		style.content_margin_bottom = 5
+		style.shadow_color = Color(accent_color, 0.28 if state == "hover" else 0.12)
+		style.shadow_size = 9 if state == "hover" else 4
+		style.shadow_offset = Vector2.ZERO
+		return style
 	if accent:
 		style.bg_color = accent_color
 		if state == "hover":
@@ -881,6 +1199,9 @@ func _focus_style() -> StyleBoxFlat:
 	style.shadow_color = Color(0, 0, 0, 0.3)
 	style.shadow_size = 1
 	style.shadow_offset = Vector2(1, 1)
+	if _menu_backdrop_active:
+		style.shadow_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.42)
+		style.shadow_size = 7
 	return style
 
 
@@ -901,6 +1222,9 @@ func _card_style(tinted: bool) -> StyleBoxFlat:
 		_current_theme = Catalog.THEME.get("sistemas", {})
 	style.bg_color = _current_theme.get("panel", Color("#fbf7ec"))
 	style.border_color = _current_theme.get("grid", Color("#d8cdb8"))
+	if _menu_backdrop_active:
+		style.bg_color = Color("#09111d", 0.82)
+		style.border_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.5)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(14)
 	style.content_margin_left = 16
@@ -910,6 +1234,9 @@ func _card_style(tinted: bool) -> StyleBoxFlat:
 	style.shadow_color = Color(0, 0, 0, 0.25)
 	style.shadow_size = 2
 	style.shadow_offset = Vector2(2, 2)
+	if _menu_backdrop_active:
+		style.shadow_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.12)
+		style.shadow_size = 8
 	return style
 
 
@@ -959,51 +1286,45 @@ func _add_compact_list(parent: Control) -> VBoxContainer:
 
 
 func _show_main() -> void:
-	_use_neutral_theme()
-	_home_art = true
-	set_process(false)
 	_active_back = Callable()
 	for child in get_children():
+		if child == _transition_overlay:
+			continue
 		remove_child(child)
 		child.queue_free()
 	var stage := Control.new()
 	stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(stage)
-	_home_art = true
-	_home_curve_index = 0
-	_home_curve_time = 0.0
-	_home_curve_forward.clear()
-	_home_curve_backward.clear()
 	_home_quote_index = randi_range(0, HOME_QUOTES.size() - 1)
 	_home_quote_time = 0.0
-	_initialize_home_cosmos()
-	_initialize_home_formulas()
-	set_process(true)
-	queue_redraw()
+	_activate_menu_backdrop()
 	var menu_panel := PanelContainer.new()
 	menu_panel.position = Vector2(24, 24)
-	menu_panel.custom_minimum_size = Vector2(340, 0)
+	menu_panel.custom_minimum_size = Vector2(332, 0)
 	menu_panel.add_theme_stylebox_override("panel", _home_panel_style())
 	stage.add_child(menu_panel)
 	var menu := VBoxContainer.new()
 	menu.add_theme_constant_override("separation", 10)
 	menu_panel.add_child(menu)
-	var eyebrow := _label("CIENCIA · CAMPUS · DECISIONES", 12, Color("#9ed8dc"))
+	var eyebrow := _label("CIENCIA · CAMPUS · DECISIONES", 12, Color("#8ff5ff"))
 	menu.add_child(eyebrow)
-	var title := _label(HOME_NAME, 34, Color("#f6f5f0"))
+	var title := _label(HOME_NAME, 32, Color("#f4fdff"))
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	menu.add_child(title)
 	menu.add_child(_label("Una vida universitaria para explorar, materia a materia.", 15, Color("#c6d0d4")))
 	var menu_gap := Control.new()
 	menu_gap.custom_minimum_size.y = 5
 	menu.add_child(menu_gap)
-	var play_button := _add_button(menu, "Jugar", _show_modes, true, 52)
+	var play_button := _add_menu_button(menu, "Jugar", _show_modes, true, 48)
 	play_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	play_button.custom_minimum_size.x = 0
-	var options_button := _add_button(menu, "Opciones", _show_options, false, 46)
+	var options_button := _add_menu_button(menu, "Opciones", _show_options, false, 43)
 	options_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	options_button.custom_minimum_size.x = 0
-	var exit_button := _add_button(menu, "Salir", _exit_game, false, 46)
+	var achievements_button := _add_menu_button(menu, "Logros globales", _show_global_achievements.bind(Callable(self, "_show_main")), false, 43)
+	achievements_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	achievements_button.custom_minimum_size.x = 0
+	var exit_button := _add_button(menu, "Salir", Callable(self, "_exit_game"), false, 43)
 	exit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	exit_button.custom_minimum_size.x = 0
 	_home_quote_label = _label("", 14, Color("#d1d4d2"), true)
@@ -1024,26 +1345,94 @@ func _show_main() -> void:
 
 func _home_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#111820", 0.76)
-	style.border_color = Color("#dce5ed", 0.42)
-	style.set_border_width_all(1)
+	style.bg_color = Color("#07101b", 0.82)
+	var accent: Color = _current_theme.get("accent", NEON_THEME["accent"])
+	style.border_color = Color(accent, 0.76)
+	style.set_border_width_all(2)
 	style.set_corner_radius_all(22)
 	style.content_margin_left = 20
 	style.content_margin_right = 20
 	style.content_margin_top = 17
 	style.content_margin_bottom = 17
-	style.shadow_color = Color(0, 0, 0, 0.45)
-	style.shadow_size = 12
-	style.shadow_offset = Vector2(0, 4)
+	style.shadow_color = Color(accent, 0.18)
+	style.shadow_size = 18
+	style.shadow_offset = Vector2.ZERO
 	return style
+
+
+func _activate_menu_backdrop() -> void:
+	_menu_backdrop_active = true
+	_home_art = true
+	_home_curve_index = random.randi_range(0, HOME_CURVES.size() - 1)
+	_home_curve_time = 0.0
+	_home_curve_forward.clear()
+	_home_curve_backward.clear()
+	_initialize_home_cosmos()
+	_initialize_home_formulas()
+	_use_menu_theme()
+	set_process(bool(settings.get("animations", true)))
+	queue_redraw()
+
+
+func _transition_to(action: Callable) -> void:
+	if _transitioning or not action.is_valid():
+		return
+	if not _menu_backdrop_active or not bool(settings.get("animations", true)):
+		action.call()
+		return
+	_transitioning = true
+	_home_cosmic_event = "sun"
+	_home_cosmic_center = Vector2(random.randf_range(0.18, 0.82), random.randf_range(0.18, 0.82))
+	var effect := MenuTransitionEffect.new()
+	effect.center = _home_cosmic_center * size
+	effect.z_index = 4096
+	effect.mouse_filter = Control.MOUSE_FILTER_STOP
+	effect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(effect)
+	_transition_overlay = effect
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(effect, "progress", 1.0, 0.34)
+	tween.tween_callback(Callable(self, "_reveal_menu_target").bind(action, effect))
+
+
+func _reveal_menu_target(action: Callable, effect: Control) -> void:
+	if action.is_valid():
+		action.call()
+	if not is_instance_valid(effect):
+		_complete_menu_transition(effect)
+		return
+	_transition_revealing = true
+	var reveal := create_tween()
+	reveal.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	reveal.tween_property(effect, "progress", 0.0, 0.48)
+	reveal.tween_callback(Callable(self, "_complete_menu_transition").bind(effect))
+
+
+func _complete_menu_transition(effect: Control) -> void:
+	if is_instance_valid(effect):
+		effect.queue_free()
+	if _transition_overlay == effect:
+		_transition_overlay = null
+	_transition_revealing = false
+	_transitioning = false
+	set_process(_home_art and bool(settings.get("animations", true)))
+	queue_redraw()
 
 
 func _show_options() -> void:
 	_use_neutral_theme()
-	var content := _make_page("Opciones", "Ajustes simples para esta computadora.", _show_main)
-	_add_button(content, "Pantalla completa: " + ("Sí" if settings["fullscreen"] else "No"), _toggle_fullscreen, false)
-	_add_button(content, "Movimiento de hojas: " + ("Activado" if settings["animations"] else "Reducido"), _toggle_animations, false)
-	_add_button(content, "Bordes suaves: " + ("Activados" if settings["antialiasing"] else "Desactivados"), _toggle_antialiasing, false)
+	var content := _make_page("Opciones", "Ajustes visuales para este equipo.", Callable(self, "_show_main"), true)
+	var options_grid := GridContainer.new()
+	options_grid.columns = 2
+	options_grid.add_theme_constant_override("h_separation", 10)
+	options_grid.add_theme_constant_override("v_separation", 8)
+	content.add_child(options_grid)
+	_add_button(options_grid, "Pantalla completa: " + ("Sí" if settings["fullscreen"] else "No"), _toggle_fullscreen, false, 42)
+	_add_button(options_grid, "Animaciones: " + ("Activadas" if settings["animations"] else "Reducidas"), _toggle_animations, false, 42)
+	_add_button(options_grid, "Suavizado: " + ("Activado" if settings["antialiasing"] else "Desactivado"), _toggle_antialiasing, false, 42)
+	_add_button(options_grid, "Bajo consumo: " + ("Sí" if settings["low_performance"] else "No"), _toggle_low_performance, false, 42)
+	content.add_child(_label("Bajo consumo reduce partículas y detalles, y limita la animación a 30 FPS.", 13, Color("#9db6c8"), true))
 	var scale_label := _label("Tamaño del texto: %d%%" % int(round(float(settings["font_scale"]) * 100.0)), 17)
 	content.add_child(scale_label)
 	var slider := HSlider.new()
@@ -1055,12 +1444,8 @@ func _show_options() -> void:
 	slider.value_changed.connect(_change_font_scale.bind(scale_label))
 	slider.drag_ended.connect(_rebuild_options)
 	content.add_child(slider)
-	content.add_child(_label("Las preferencias se guardan en este equipo.", 15, Color("#6c6859")))
-	var engine_notice := LinkButton.new()
-	engine_notice.text = "Aviso legal del motor Godot"
-	engine_notice.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	engine_notice.pressed.connect(OS.shell_open.bind("https://godotengine.org/license/"))
-	content.add_child(engine_notice)
+	content.add_child(_label("Las preferencias se guardan en este equipo.", 14, Color("#9db6c8"), true))
+	_add_menu_button(content, "Ver logros globales", _show_global_achievements.bind(Callable(self, "_show_options")), false, 42)
 
 
 func _toggle_fullscreen() -> void:
@@ -1086,6 +1471,13 @@ func _toggle_antialiasing() -> void:
 	_show_options()
 
 
+func _toggle_low_performance() -> void:
+	settings["low_performance"] = not bool(settings["low_performance"])
+	_apply_image_settings()
+	_save_settings()
+	_show_options()
+
+
 func _change_font_scale(value: float, scale_label: Label) -> void:
 	settings["font_scale"] = value
 	scale_label.text = "Tamaño del texto: %d%%" % int(round(value * 100.0))
@@ -1098,13 +1490,20 @@ func _rebuild_options(_changed: bool) -> void:
 
 func _show_modes() -> void:
 	_use_neutral_theme()
-	var content := _make_page("Elige cómo jugar", "La partida individual y la de equipo se guardan por separado.", _show_main)
-	content.add_child(_label("SOLO", 27, GREEN, true))
-	content.add_child(_label("Avanza por materias, rinde tres parciales y termina una carrera. Después puedes probar la competencia para auxiliar.", 17, INK, true))
-	_add_button(content, "Partida solo", _show_solo_slots, true, 62)
-	content.add_child(_label("MULTIJUGADOR", 27, GREEN, true))
-	content.add_child(_label("Pasa el turno entre jugadores en este equipo: auxiliar, administrativo y decano. Requiere una carrera terminada.", 17, INK, true))
-	_add_button(content, "Partida de equipo", _show_multi_slots, true, 62)
+	var content := _make_page("Elige cómo jugar", "Elige una forma de recorrer el campus.", Callable(self, "_show_main"), true)
+	var modes := HBoxContainer.new()
+	modes.add_theme_constant_override("separation", 14)
+	content.add_child(modes)
+	var solo_card := _card(modes, true)
+	solo_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	solo_card.add_child(_label("SOLO", 24, _current_theme["accent"], true))
+	solo_card.add_child(_label("Avanza por materias, rinde tres parciales y completa una carrera. Después puedes postular a auxiliar.", 15, Color("#b9cad5"), true))
+	_add_menu_button(solo_card, "Partida solo", _show_solo_slots, true, 46)
+	var team_card := _card(modes, true)
+	team_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	team_card.add_child(_label("EQUIPO", 24, _current_theme["accent"], true))
+	team_card.add_child(_label("Comparte los turnos para resolver tutorías, trámites y decisiones de facultad.", 15, Color("#b9cad5"), true))
+	_add_menu_button(team_card, "Partida de equipo", _show_multi_slots, true, 46)
 
 
 func _show_solo_slots() -> void:
@@ -1118,7 +1517,7 @@ func _show_multi_slots() -> void:
 func _show_slots(mode: String) -> void:
 	_use_neutral_theme()
 	var mode_label := "Solo" if mode == "solo" else "Equipo local"
-	var content := _make_page("Partidas guardadas · " + mode_label, "Tres espacios para este modo, guardados en este equipo.", _show_modes)
+	var content := _make_page("Partidas guardadas · " + mode_label, "Tres espacios para este modo, guardados en este equipo.", Callable(self, "_show_modes"), true)
 	var rows := _add_compact_list(content)
 	var free_slot := _find_free_slot(mode)
 	for slot in range(1, SAVE_COUNT + 1):
@@ -1142,18 +1541,18 @@ func _show_slots(mode: String) -> void:
 			var name_label := _label(description, 16)
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(name_label)
-			_add_button(row, "Continuar", _open_slot.bind(slot, mode), true, 44)
+			_add_menu_button(row, "Continuar", _open_slot.bind(slot, mode), true, 42)
 			_add_button(row, "Borrar", _delete_slot.bind(slot, mode), false, 44)
 		else:
 			var empty_label := _label(description, 16)
 			empty_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(empty_label)
 			if mode == "solo":
-				_add_button(row, "Nueva", _begin_new_game.bind(slot), true, 44)
+				_add_menu_button(row, "Nueva", _begin_new_game.bind(slot), true, 42)
 	if mode == "multi":
 		content.add_child(_label("Para abrir una partida de equipo, termina una carrera y aprueba su examen de competencia en Solo.", 15, Color("#686a5d")))
 		if free_slot > 0 and _has_eligible_solo_save():
-			_add_button(content, "Crear partida de equipo", _choose_team_source, true, 58)
+			_add_menu_button(content, "Crear partida de equipo", _choose_team_source, true, 46)
 		elif free_slot == 0:
 			content.add_child(_label("No hay espacios libres. Borra una partida para crear otra.", 15, GOLD))
 	elif free_slot == 0:
@@ -1317,7 +1716,6 @@ func _create_solo_save(program_id: String, mention_id: String) -> void:
 		"competency_passed": false,
 		"confidence": 60,
 		"credits": 100,
-		"titles": [],
 		"chanchullo_used": [],
 		"created_at": Time.get_datetime_string_from_system(),
 	}
@@ -1370,11 +1768,7 @@ func _show_solo_hub() -> void:
 			break
 	if current_sem > semesters.size() and not bool(current_profile.get("career_complete", false)):
 		current_profile["career_complete"] = true
-		var titles: Array = current_profile.get("titles", [])
-		var career_title := "Título: " + str(program["title"])
-		if not titles.has(career_title):
-			titles.append(career_title)
-		current_profile["titles"] = titles
+		_record_completed_career(str(program["id"]), str(program["title"]))
 		_save_profile()
 		_show_solo_hub()
 		return
@@ -1547,13 +1941,6 @@ func _answer_subject(option_index: int) -> void:
 	_finish_subject_question(option_index == int(current_question["answer"]), false)
 
 
-func _award_title_once(title: String) -> void:
-	var titles: Array = current_profile.get("titles", [])
-	if not titles.has(title):
-		titles.append(title)
-		current_profile["titles"] = titles
-
-
 func _try_chanchullo(key: String) -> void:
 	var used: Array = current_profile.get("chanchullo_used", [])
 	if used.has(key):
@@ -1604,8 +1991,7 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 			current_profile["subject_progress"] = sprog
 			if not passed.has(sigla):
 				passed.append(sigla)
-			if passed.size() == 5:
-				_award_title_once("Ritmo constante · aprobaste cinco materias")
+				_record_completed_subject(str(program["id"]), mention_id, sigla)
 			var used_partials: Array = current_profile.get("chanchullo_used", [])
 			var subject_used_cheat := false
 			for partial_number in range(3):
@@ -1623,9 +2009,7 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 			message += " Aprobaste los tres parciales de %s (%s)." % [str(course.get("name","")), sigla]
 			if passed.size() >= subjects.size():
 				current_profile["career_complete"] = true
-				var titles: Array = current_profile.get("titles", [])
-				titles.append("Título: " + str(program["title"]))
-				current_profile["titles"] = titles
+				_record_completed_career(str(program["id"]), str(program["title"]))
 				message += " Completaste el plan de estudios y ganaste el título «%s»." % str(program["title"])
 			_save_profile()
 			_show_result("Materia aprobada", message, true, _show_solo_hub)
@@ -1674,9 +2058,7 @@ func _answer_competency(option_index: int) -> void:
 	if option_index == int(current_question["answer"]):
 		current_profile["competency_passed"] = true
 		current_profile["role_id"] = "auxiliar"
-		var titles: Array = current_profile.get("titles", [])
-		titles.append("Auxiliar docente · examen de competencia aprobado")
-		current_profile["titles"] = titles
+		_award_title_once("Auxiliar docente · examen de competencia aprobado")
 		_save_profile()
 		_show_result("Competencia aprobada", "Ya puedes iniciar una partida de equipo como auxiliar docente.", true, _show_solo_hub)
 	else:
@@ -1684,14 +2066,7 @@ func _answer_competency(option_index: int) -> void:
 
 
 func _show_titles() -> void:
-	var content := _make_page("Títulos y logros", "Lo que ya quedó registrado en esta partida.", _show_solo_hub)
-	var titles: Array = current_profile.get("titles", [])
-	if titles.is_empty():
-		content.add_child(_label("Todavía no hay títulos. Cada materia aprobada acerca el siguiente.", 18, INK, true))
-	else:
-		for earned in titles:
-			content.add_child(_label("✦  " + str(earned), 18, GREEN))
-	_add_button(content, "Volver a la carrera", _show_solo_hub, true)
+	_show_global_achievements(Callable(self, "_show_solo_hub"), false)
 
 
 func _has_eligible_solo_save() -> bool:
@@ -1813,7 +2188,6 @@ func _create_team_save(players: SpinBox) -> void:
 		"team_score": 0,
 		"cv_items": [],
 		"cv_submitted": false,
-		"titles": [],
 		"created_at": Time.get_datetime_string_from_system(),
 	}
 	if program.is_empty():
@@ -1976,14 +2350,16 @@ func _choose_team_case(role: String, case_index: int, choice_index: int) -> void
 		current_profile["team_score"] = int(current_profile.get("team_score", 0)) + 10
 	if role == "auxiliar":
 		current_profile["assistant_cases"] = case_index + 1
+		if int(current_profile["assistant_cases"]) == ASSISTANT_CASES.size():
+			_award_title_once("Auxiliar atento · completaste las tres tutorías")
 	elif role == "administrativo":
 		current_profile["admin_cases"] = case_index + 1
+		if int(current_profile["admin_cases"]) == ADMIN_CASES.size():
+			_award_title_once("Gestión universitaria · resolviste tres trámites")
 	else:
 		current_profile["dean_cases"] = case_index + 1
 		if int(current_profile["dean_cases"]) == DEAN_CASES.size():
-			var titles: Array = current_profile.get("titles", [])
-			titles.append("Decano de facultad · ciclo de gestión completado")
-			current_profile["titles"] = titles
+			_award_title_once("Decano de facultad · ciclo de gestión completado")
 	_advance_team_turn()
 	_save_profile()
 	_show_result("Decisión de " + deciding_player, feedback + " Turno de %s." % _current_player_name(), best, Callable(self, "_show_team_hub"))
@@ -2030,12 +2406,9 @@ func _answer_admin_interview(correct: bool) -> void:
 	if not correct:
 		_show_result("La entrevista sigue pendiente", "La convocatoria necesita una decisión verificable y centrada en el trámite. Puedes repasar tu CV e intentarlo otra vez.", false, _show_admin_interview)
 		return
-	var deciding_player := _current_player_name()
 	current_profile["role_id"] = "administrativo"
 	current_profile["role_label"] = "Administrativo"
-	var titles: Array = current_profile.get("titles", [])
-	titles.append("Cargo administrativo · CV y entrevista aprobados por %s" % deciding_player)
-	current_profile["titles"] = titles
+	_award_title_once("Gestión responsable · CV y entrevista aprobados")
 	_advance_team_turn()
 	_save_profile()
 	_show_result("Te contrataron", "El CV y la entrevista abrieron el cargo. Ahora vienen casos de registros, recursos y atención universitaria. Turno de %s." % _current_player_name(), true, _show_team_hub)
@@ -2053,27 +2426,16 @@ func _answer_dean_vote(approved: bool) -> void:
 	if not approved:
 		_show_result("La candidatura sigue en revisión", "El consejo pide una propuesta justificable y con seguimiento del dinero. Puedes ajustar el planteamiento e intentarlo otra vez.", false, _show_dean_vote)
 		return
-	var deciding_player := _current_player_name()
 	current_profile["role_id"] = "decano"
 	current_profile["role_label"] = "Decano"
-	var titles: Array = current_profile.get("titles", [])
-	titles.append("Decano electo · candidatura presentada por %s" % deciding_player)
-	current_profile["titles"] = titles
+	_award_title_once("Decano electo · candidatura aprobada")
 	_advance_team_turn()
 	_save_profile()
 	_show_result("El consejo te eligió", "La candidatura fue aprobada. Ahora tendrás que tomar decisiones de presupuesto, revisar inversiones y rendir cuentas. Turno de %s." % _current_player_name(), true, _show_team_hub)
 
 
 func _show_team_titles() -> void:
-	var content := _make_page("Logros del equipo", "Títulos guardados en esta partida local.", _show_team_hub)
-	_add_team_scoreboard(content)
-	var titles: Array = current_profile.get("titles", [])
-	if titles.is_empty():
-		content.add_child(_label("Todavía no hay logros de equipo.", 18, INK, true))
-	else:
-		for earned in titles:
-			content.add_child(_label("✦  " + str(earned), 17, GREEN))
-	_add_button(content, "Volver a la partida", _show_team_hub, true)
+	_show_global_achievements(Callable(self, "_show_team_hub"), false)
 
 
 func _return_to_menu() -> void:
