@@ -42,4 +42,4 @@ game/
 
 ## Base de datos
 
-**No es necesaria para este juego.** Usa archivos JSON en `user://partidas/`. El PostgreSQL/Django solo aplica al sistema académico (`backend/`), que se mantiene intacto. No se ha añadido ni eliminado lógica de BDD en `game/`.
+**No es necesaria para este juego.** Usa archivos JSON en `user://partidas/`. El PostgreSQL/Django solo aplica al sistema académico (`backend/`), que se mantiene intacto.

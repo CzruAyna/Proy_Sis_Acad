@@ -15,7 +15,7 @@ window/size/viewport_height=720
 window/size/mode=0
 window/size/borderless=false
 window/size/resizable=true
-window/size/minimum_size=Vector2i(960, 600)
+window/size/minimum_size=Vector2i(800, 520)
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
@@ -23,6 +23,6 @@ window/stretch/aspect="expand"
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-anti_aliasing/quality/msaa_2d=2
+anti_aliasing/quality/msaa_2d=0
 textures/canvas_textures/default_texture_filter=1
 environment/defaults/default_clear_color=Color(0.960784, 0.941176, 0.898039, 1)
