@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://drgqfkfb0h6et"
-path="res://.godot/imported/leaf.svg-0a37728ee9ff1fe03a41607127a71092.ctex"
+uid="uid://bar3vkwrgq2se"
+path="res://.godot/imported/campus_vector.svg-24d7eb3526f99799a4b5deb7a903cc65.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/leaf.svg"
-dest_files=["res://.godot/imported/leaf.svg-0a37728ee9ff1fe03a41607127a71092.ctex"]
+source_file="res://assets/campus_vector.svg"
+dest_files=["res://.godot/imported/campus_vector.svg-24d7eb3526f99799a4b5deb7a903cc65.ctex"]
 
 [params]
 

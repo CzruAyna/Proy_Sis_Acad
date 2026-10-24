@@ -2,113 +2,197 @@ class_name CurriculumGraph
 extends Control
 
 signal subject_selected(sigla: String, data: Dictionary)
+signal semester_changed(index: int, count: int)
 
-const NODE_SIZE := Vector2(184, 62)
-const COLUMN_GAP := 224.0
-const ROW_GAP := 96.0
+const NODE_RADIUS := 36.0
+const SOURCE_RADIUS := 32.0
+const PALETTE := [Color("#8bb5c4"), Color("#d0ae74"), Color("#9f91c6"), Color("#80ad8d"), Color("#c98670"), Color("#75a9a0")]
 
 var program_id := ""
+var mention_id := ""
 var graph_theme: Dictionary = {}
-var nodes: Array[Dictionary] = []
+var semesters: Array = []
+var visible_nodes: Array[Dictionary] = []
 var edges: Array[Vector2i] = []
-var semester_labels: Array[Dictionary] = []
 var hovered := -1
 var selected := -1
-var mention_id := ""
+var semester_index := 0
+var graph_width := 660.0
+var motion_time := 0.0
+var refresh_time := 0.0
 
 
-func setup(pid: String, selected_mention: String = "") -> void:
+func _ready() -> void:
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	motion_time += delta
+	refresh_time += delta
+	if refresh_time >= 0.1:
+		refresh_time = 0.0
+		queue_redraw()
+
+
+func setup(pid: String, selected_mention: String = "", available_width: float = 660.0) -> void:
 	program_id = pid
 	mention_id = selected_mention
+	graph_width = maxf(available_width, 500.0)
 	graph_theme = UniCatalog.get_theme(pid)
-	_build()
+	semesters = UniCatalog.semesters_for(program_id, mention_id)
+	semester_index = 0
+	_build_semester()
 
 
-func _build() -> void:
-	nodes.clear()
-	edges.clear()
-	semester_labels.clear()
-	var program := UniCatalog.program_by_id(program_id)
-	if program.is_empty():
-		custom_minimum_size = Vector2(800, 480)
+func move_semester(step: int) -> void:
+	var next_index := clampi(semester_index + step, 0, maxi(semesters.size() - 1, 0))
+	if next_index == semester_index:
 		return
-	var subjects := UniCatalog.all_subjects(program_id, mention_id)
-	var semester_counts: Dictionary = {}
-	var maximum_rows := 1
+	semester_index = next_index
+	_build_semester()
+	modulate.a = 0.72
+	var transition := create_tween()
+	transition.tween_property(self, "modulate:a", 1.0, 0.2)
+	semester_changed.emit(semester_index, semesters.size())
+
+
+func _build_semester() -> void:
+	visible_nodes.clear()
+	edges.clear()
+	hovered = -1
+	selected = -1
+	if semesters.is_empty() or semester_index >= semesters.size():
+		custom_minimum_size = Vector2(graph_width, 300)
+		queue_redraw()
+		return
+	var semester: Dictionary = semesters[semester_index]
+	var subjects: Array = semester.get("subjects", [])
+	var prerequisites: Array = []
+	var seen := {}
 	for subject in subjects:
-		var semester := int(subject.get("semester", 1))
-		semester_counts[semester] = int(semester_counts.get(semester, 0)) + 1
-		maximum_rows = maxi(maximum_rows, int(semester_counts[semester]))
-	var semesters: Array = UniCatalog.semesters_for(program_id, mention_id)
-	var width := 300.0 + float(semesters.size()) * COLUMN_GAP
-	var height := maxf(480.0, 150.0 + float(maximum_rows) * ROW_GAP)
-	custom_minimum_size = Vector2(width, height)
-	var center_y := height * 0.5
-	var root := {"id": "INGRESO", "sigla": "INGRESO", "name": "Ingreso", "semester": 0, "semester_name": "Inicio", "prereq": [], "desc": "Punto de partida del recorrido académico.", "topics": [], "pos": Vector2(106, center_y)}
-	nodes.append(root)
-	var index_by_sigla := {"INGRESO": 0}
-	for semester in semesters:
-		var semester_number := int(semester.get("order", 1))
-		var semester_subjects: Array = semester.get("subjects", [])
-		var start_y := center_y - float(semester_subjects.size() - 1) * ROW_GAP * 0.5
-		semester_labels.append({"name": str(semester.get("name", "SEMESTRE %d" % semester_number)), "pos": Vector2(260.0 + float(semester_number - 1) * COLUMN_GAP, 28)})
-		for index in range(semester_subjects.size()):
-			var subject: Dictionary = semester_subjects[index]
-			var sigla := str(subject.get("sigla", ""))
-			var node := subject.duplicate(true)
-			node["id"] = sigla
-			node["semester"] = semester_number
-			node["semester_name"] = semester.get("name", "")
-			node["pos"] = Vector2(260.0 + float(semester_number - 1) * COLUMN_GAP, start_y + float(index) * ROW_GAP)
-			index_by_sigla[sigla] = nodes.size()
-			nodes.append(node)
-	for index in range(1, nodes.size()):
-		var prerequisites: Array = nodes[index].get("prereq", [])
-		for prerequisite in prerequisites:
-			var source_index := int(index_by_sigla.get(str(prerequisite), -1))
+		for requirement in subject.get("prereq", []):
+			var prerequisite := str(requirement)
+			if prerequisite != "INGRESO" and not seen.has(prerequisite):
+				var source := UniCatalog.subject_by_sigla(program_id, prerequisite, mention_id)
+				if not source.is_empty():
+					seen[prerequisite] = true
+					prerequisites.append(source)
+	var row_count := maxi(ceili(float(maxi(subjects.size(), prerequisites.size())) / 2.0), 1)
+	var area_height := maxf(320.0, float(row_count - 1) * 100.0 + 144.0)
+	custom_minimum_size = Vector2(graph_width, area_height)
+	var index_by_sigla := {}
+	if semester_index == 0:
+		var root := {
+			"sigla": "INGRESO",
+			"name": "Vía de ingreso",
+			"source": true,
+			"admission": true,
+			"pos": Vector2(graph_width * 0.22, area_height * 0.5),
+			"color": Color("#d0ae74"),
+			"desc": "Antes del primer semestre, la FNI habilita modalidades de admisión. La convocatoria define cuáles se abren para cada periodo y carrera.",
+			"admission_modes": [
+				"Examen de admisión o Prueba de Suficiencia Académica.",
+				"Curso propedéutico o preuniversitario, con preparación y evaluación.",
+				"Excelencia académica, según condiciones de la convocatoria.",
+				"Traspaso desde otra universidad pública, sujeto a revisión.",
+				"Beca deportiva u otras modalidades especiales cuando sean convocadas."
+			],
+			"notice": "Revisa la convocatoria vigente de la FNI para requisitos, fechas, materias, cupos y modalidades disponibles."
+		}
+		index_by_sigla["INGRESO"] = 0
+		visible_nodes.append(root)
+	for index in range(prerequisites.size()):
+		var item: Dictionary = prerequisites[index].duplicate(true)
+		item["source"] = true
+		item["pos"] = _grid_position(index, prerequisites.size(), true, area_height)
+		item["color"] = PALETTE[posmod(semester_index - 1, PALETTE.size())]
+		index_by_sigla[str(item.get("sigla", ""))] = visible_nodes.size()
+		visible_nodes.append(item)
+	for index in range(subjects.size()):
+		var item: Dictionary = subjects[index].duplicate(true)
+		item["source"] = false
+		item["semester"] = semester_index + 1
+		item["pos"] = _grid_position(index, subjects.size(), false, area_height)
+		item["color"] = PALETTE[posmod(semester_index, PALETTE.size())]
+		var target_index := visible_nodes.size()
+		visible_nodes.append(item)
+		for requirement in item.get("prereq", []):
+			var source_index := int(index_by_sigla.get(str(requirement), -1))
 			if source_index >= 0:
-				edges.append(Vector2i(source_index, index))
+				edges.append(Vector2i(source_index, target_index))
+			elif semester_index == 0 and str(requirement) == "INGRESO":
+				edges.append(Vector2i(0, target_index))
 	queue_redraw()
 
 
+func _grid_position(index: int, count: int, source: bool, area_height: float) -> Vector2:
+	var column := index % 2
+	var row := floori(float(index) / 2.0)
+	var rows := maxi(ceili(float(count) / 2.0), 1)
+	var x_slots := [0.16, 0.35] if source else [0.65, 0.84]
+	var x := graph_width * float(x_slots[column])
+	var y := area_height * 0.5 + (float(row) - float(rows - 1) * 0.5) * 100.0
+	return Vector2(x, y)
+
+
+func _animated_position(index: int) -> Vector2:
+	var base: Vector2 = visible_nodes[index].get("pos", Vector2.ZERO)
+	var phase := motion_time * 1.2 + float(index) * 0.92
+	return base + Vector2(sin(phase) * 2.1, cos(phase * 0.8) * 2.1)
+
+
 func _draw() -> void:
-	if nodes.is_empty():
+	if semesters.is_empty():
 		return
-	var accent: Color = graph_theme.get("accent", Color("#4d9bff"))
-	var line: Color = graph_theme.get("grid", Color("#2a3550"))
-	var panel: Color = graph_theme.get("panel", Color("#16213e"))
 	var text: Color = graph_theme.get("text", Color("#e6edf3"))
 	var secondary: Color = graph_theme.get("sub", Color("#9fb3c8"))
-	for semester in semester_labels:
-		draw_string(ThemeDB.fallback_font, semester["pos"], str(semester["name"]), HORIZONTAL_ALIGNMENT_CENTER, 200, 12, secondary)
-	for edge in edges:
-		var from_position: Vector2 = nodes[edge.x]["pos"]
-		var to_position: Vector2 = nodes[edge.y]["pos"]
-		var start := from_position + Vector2(NODE_SIZE.x * 0.5, 0)
-		var finish := to_position - Vector2(NODE_SIZE.x * 0.5 + 5, 0)
-		draw_line(start, finish, line, 2.0)
-		draw_colored_polygon(PackedVector2Array([finish, finish + Vector2(-8, -5), finish + Vector2(-8, 5)]), accent)
-	for index in range(nodes.size()):
-		var node: Dictionary = nodes[index]
-		var position: Vector2 = node["pos"]
-		var rect := Rect2(position - NODE_SIZE * 0.5, NODE_SIZE)
-		var is_active := index == hovered or index == selected
-		var fill: Color = accent.darkened(0.28) if index == selected else panel.lightened(0.1) if index == hovered else panel
-		draw_rect(rect, fill)
-		draw_rect(rect, accent if is_active else line, false, 2.0)
-		draw_string(ThemeDB.fallback_font, position + Vector2(-NODE_SIZE.x * 0.5 + 8, -4), str(node.get("sigla", "")), HORIZONTAL_ALIGNMENT_LEFT, NODE_SIZE.x - 16, 13, text)
-		draw_string(ThemeDB.fallback_font, position + Vector2(-NODE_SIZE.x * 0.5 + 8, 17), str(node.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, NODE_SIZE.x - 16, 11, secondary, TextServer.JUSTIFICATION_WORD_BOUND)
-	if hovered >= 0 and hovered < nodes.size():
-		var node: Dictionary = nodes[hovered]
-		var tooltip_size := Vector2(300, 64)
-		var tooltip_pos := get_local_mouse_position() + Vector2(14, 14)
-		tooltip_pos.x = clampf(tooltip_pos.x, 4, size.x - tooltip_size.x - 4)
-		tooltip_pos.y = clampf(tooltip_pos.y, 4, size.y - tooltip_size.y - 4)
-		var tooltip := Rect2(tooltip_pos, tooltip_size)
-		draw_rect(tooltip, panel)
-		draw_rect(tooltip, accent, false, 2.0)
-		draw_string(ThemeDB.fallback_font, tooltip_pos + Vector2(8, 18), "%s · %s" % [node.get("sigla", ""), node.get("name", "")], HORIZONTAL_ALIGNMENT_LEFT, 284, 12, text)
-		draw_string(ThemeDB.fallback_font, tooltip_pos + Vector2(8, 40), "Semestre %s · clic para ver ficha" % node.get("semester", 0), HORIZONTAL_ALIGNMENT_LEFT, 284, 11, secondary)
+	for edge_index in range(edges.size()):
+		var edge := edges[edge_index]
+		var start: Vector2 = _animated_position(edge.x)
+		var finish: Vector2 = _animated_position(edge.y)
+		var direction := (finish - start).normalized()
+		var start_radius := SOURCE_RADIUS if visible_nodes[edge.x].get("source", false) else NODE_RADIUS
+		start += direction * (start_radius + 2.0)
+		finish -= direction * (NODE_RADIUS + 2.0)
+		var bend := 28.0 + float((edge_index % 4) * 12)
+		var curve := Curve2D.new()
+		curve.add_point(start, Vector2.ZERO, Vector2(bend, 0))
+		curve.add_point(finish, Vector2(bend, 0), Vector2.ZERO)
+		var points := curve.get_baked_points()
+		var line_color: Color = PALETTE[edge_index % PALETTE.size()]
+		for point_index in range(points.size() - 1):
+			draw_line(points[point_index], points[point_index + 1], Color(line_color, 0.18), 6.0, true)
+			draw_line(points[point_index], points[point_index + 1], Color(line_color, 0.88), 1.7, true)
+	for index in range(visible_nodes.size()):
+		var item: Dictionary = visible_nodes[index]
+		var position := _animated_position(index)
+		var source := bool(item.get("source", false))
+		var radius := SOURCE_RADIUS if source else NODE_RADIUS
+		var pulse := 1.0 + sin(motion_time * 1.6 + float(index)) * 0.025
+		radius *= pulse
+		var tint: Color = item.get("color", PALETTE[0])
+		var active := index == hovered or index == selected
+		draw_circle(position + Vector2(0, 5), radius + 1, Color("#050608", 0.72))
+		draw_arc(position, radius + 6.0, motion_time * 0.18, motion_time * 0.18 + TAU * 0.76, 48, Color(tint, 0.3), 1.2, true)
+		draw_circle(position, radius, tint.darkened(0.42))
+		draw_circle(position, radius - 3.0, tint.lightened(0.08) if active else tint)
+		draw_arc(position, radius - 4.0, PI * 1.12, PI * 1.82, 32, Color("#fff5d9", 0.65), 1.1, true)
+		var code := str(item.get("sigla", ""))
+		draw_string(ThemeDB.fallback_font, position + Vector2(-radius + 5, 3), code, HORIZONTAL_ALIGNMENT_CENTER, radius * 2.0 - 10, 11 if not source else 9, Color("#151a1e") if source else Color("#f5f3ed"))
+		var label := _short_name(str(item.get("name", "")), bool(item.get("admission", false)))
+		draw_string(ThemeDB.fallback_font, position + Vector2(-68, radius + 17), label, HORIZONTAL_ALIGNMENT_CENTER, 136, 9, Color("#e1e5e5"))
+	if hovered >= 0 and hovered < visible_nodes.size():
+		var item: Dictionary = visible_nodes[hovered]
+		var hint := "%s · %s" % [item.get("sigla", ""), item.get("name", "")]
+		draw_string(ThemeDB.fallback_font, Vector2(4, 16), hint, HORIZONTAL_ALIGNMENT_LEFT, graph_width - 8, 10, secondary)
+
+
+func _short_name(value: String, admission: bool) -> String:
+	if admission:
+		return "modalidades FNI"
+	if value.length() <= 24:
+		return value
+	return value.substr(0, 22).strip_edges() + "…"
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -119,15 +203,16 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var index := _node_at(event.position)
-		if index > 0:
+		if index >= 0:
 			selected = index
-			subject_selected.emit(str(nodes[index].get("sigla", "")), nodes[index].duplicate(true))
+			subject_selected.emit(str(visible_nodes[index].get("sigla", "")), visible_nodes[index].duplicate(true))
 			queue_redraw()
 
 
 func _node_at(point: Vector2) -> int:
-	for index in range(1, nodes.size()):
-		var rect := Rect2(Vector2(nodes[index]["pos"]) - NODE_SIZE * 0.5, NODE_SIZE)
-		if rect.has_point(point):
+	for index in range(visible_nodes.size()):
+		var item: Dictionary = visible_nodes[index]
+		var radius := SOURCE_RADIUS if item.get("source", false) else NODE_RADIUS
+		if point.distance_to(_animated_position(index)) <= radius + 5.0:
 			return index
 	return -1

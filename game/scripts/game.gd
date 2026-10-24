@@ -8,6 +8,51 @@ const PAPER := Color("#f5f0e5")
 const RULE := Color("#ddd5c5")
 const GREEN := Color("#526b57")
 const GOLD := Color("#b77a43")
+const NEUTRAL_THEME := {"bg": Color("#101216"), "panel": Color("#1b1f25"), "accent": Color("#56636d"), "text": Color("#ece9e2"), "sub": Color("#a2a8ad"), "grid": Color("#30353b")}
+const HOME_NAME := "CAMPUS EN JUEGO"
+const HOME_CURVE_DURATION := 5.5
+const HOME_VISIBLE_FORMULAS := 24
+const HOME_FORMULAS := [
+	{"text": "E = mc²", "subject": "physics"}, {"text": "a² + b² = c²", "subject": "math"},
+	{"text": "eⁱπ + 1 = 0", "subject": "math"}, {"text": "x = (−b ± √(b²−4ac))/2a", "subject": "math"},
+	{"text": "(a+b)² = a² + 2ab + b²", "subject": "math"}, {"text": "Σ 1/n² = π²/6", "subject": "math"},
+	{"text": "eˣ = Σ xⁿ/n!", "subject": "math"}, {"text": "sin²x + cos²x = 1", "subject": "math"},
+	{"text": "d/dx sin x = cos x", "subject": "math"}, {"subject": "math", "kind": "integral", "integrand": "1/x dx", "result": "= ln|x| + C"},
+	{"text": "∇²φ = 0", "subject": "physics"}, {"text": "F = ma", "subject": "physics"},
+	{"text": "F = Gm₁m₂/r²", "subject": "physics"}, {"text": "p = mv", "subject": "physics"},
+	{"text": "K = ½mv²", "subject": "physics"}, {"text": "W = F·d", "subject": "physics"},
+	{"text": "V = IR", "subject": "physics"}, {"text": "P = IV", "subject": "physics"},
+	{"text": "F = q(E + v×B)", "subject": "physics"}, {"text": "∇·E = ρ/ε₀", "subject": "physics"},
+	{"text": "∇·B = 0", "subject": "physics"}, {"text": "∇×E = −∂B/∂t", "subject": "physics"},
+	{"text": "∇×B = μ₀J + μ₀ε₀∂E/∂t", "subject": "physics"}, {"text": "v = fλ", "subject": "physics"},
+	{"text": "PV = nRT", "subject": "chemistry"}, {"text": "p + ½ρv² + ρgh = cte.", "subject": "physics"},
+	{"text": "x(t) = A cos(ωt + φ)", "subject": "physics"}, {"text": "θ = θ₀ + ω₀t + ½αt²", "subject": "physics"},
+	{"text": "τ = Iα", "subject": "physics"}, {"text": "Q = mcΔT", "subject": "physics"},
+	{"text": "∮ E·dA = Q/ε₀", "subject": "physics"}, {"text": "n₁ sin θ₁ = n₂ sin θ₂", "subject": "physics"},
+	{"text": "f = 1/T", "subject": "physics"}, {"text": "∂²u/∂t² = c²∇²u", "subject": "physics"},
+	{"text": "F = −kx", "subject": "physics"}, {"text": "Eₖ + Eₚ = cte.", "subject": "physics"},
+	{"text": "∑ F = dp/dt", "subject": "physics"}, {"text": "sₙ = n(a₁+aₙ)/2", "subject": "math"},
+	{"text": "φ = (1+√5)/2", "subject": "math"}, {"text": "limₓ→₀ sin x/x = 1", "subject": "math"},
+	{"subject": "math", "kind": "definite_integral", "integrand": "sin(x) dx", "upper": "π", "lower": "0", "result": "= 2"},
+	{"subject": "math", "kind": "definite_integral", "integrand": "e⁻ˣ dx", "upper": "∞", "lower": "0", "result": "= 1"},
+	{"text": "∇·(∇×A) = 0", "subject": "math"},
+	{"text": "x̄ = Σxᵢ/n", "subject": "math"}, {"text": "pH = −log₁₀[H₃O⁺]", "subject": "chemistry"},
+	{"text": "ΔG = ΔH − TΔS", "subject": "chemistry"}, {"text": "Kₐ = [H⁺][A⁻]/[HA]", "subject": "chemistry"},
+	{"text": "C₁V₁ = C₂V₂", "subject": "chemistry"}, {"text": "n = m/M", "subject": "chemistry"},
+	{"text": "rate = k[A]ᵐ[B]ⁿ", "subject": "chemistry"}, {"text": "Q = mcΔT", "subject": "physics"},
+	{"text": "T(n) = T(n/2) + 1", "subject": "computing"}, {"text": "f(n) = O(n log n)", "subject": "computing"},
+	{"text": "SELECT * FROM datos", "subject": "computing"}, {"text": "∑ᵢ₌₀ⁿ xᵢ", "subject": "math"}
+]
+const HOME_QUOTES := [
+	{"text": "La naturaleza está escrita en lenguaje matemático.", "by": "Galileo Galilei · Il Saggiatore (1623)"},
+	{"text": "La imaginación es más importante que el conocimiento.", "by": "Albert Einstein · Saturday Evening Post (1929)"},
+	{"text": "El motor analítico teje patrones algebraicos como el telar teje flores.", "by": "Ada Lovelace · Nota A (1843)"},
+	{"text": "El progreso no es rápido ni sencillo.", "by": "Marie Curie · Notas autobiográficas (1923)"},
+	{"text": "Si he visto más lejos, es por estar sobre hombros de gigantes.", "by": "Isaac Newton · carta a Robert Hooke (1676)"},
+	{"text": "No debes engañarte a ti mismo; eres quien más fácilmente puedes engañar.", "by": "Richard Feynman · Cargo Cult Science (1974)"}
+]
+const HOME_CURVES := ["sin", "cos", "tan", "parabola", "cubic", "sqrt", "log", "exp", "gaussian", "heart", "rose", "lissajous", "spiral", "butterfly"]
+const HOME_COSMIC_EVENTS := ["black_hole", "sun", "nebula", "eclipse", "pulsar"]
 
 var _current_theme: Dictionary = {}
 
@@ -46,48 +91,599 @@ var cv_draft: Array = []
 var team_name_drafts: Array = []
 var team_name_fields: Array = []
 var team_name_box: VBoxContainer
-var settings := {"fullscreen": false, "animations": true, "font_scale": 1.0, "antialiasing": false}
+var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false}
 var system_font: SystemFont
+var formula_font: SystemFont
 var random := RandomNumberGenerator.new()
+var _active_back := Callable()
+var _home_art := false
+var _home_curve_index := 0
+var _home_curve_time := 0.0
+var _home_curve_forward := PackedVector2Array()
+var _home_curve_backward := PackedVector2Array()
+var _home_formula_bodies: Array[Dictionary] = []
+var _home_formula_order: Array = []
+var _home_formula_cursor := 0
+var _home_formula_time := 0.0
+var _home_quote_label: Label
+var _home_quote_index := 0
+var _home_quote_time := 0.0
+var _home_stars: Array[Dictionary] = []
+var _home_nebulae: Array[Dictionary] = []
+var _home_cosmic_event := "nebula"
+var _home_cosmic_center := Vector2(0.75, 0.5)
+var _home_cosmic_time := 0.0
 
 
 func _ready() -> void:
 	random.randomize()
 	_load_settings()
+	settings["fullscreen"] = true
 	_setup_theme()
-	if _current_theme.is_empty():
-		_current_theme = Catalog.THEME.get("sistemas", {})
-	get_window().min_size = Vector2i(800, 520)
+	_use_neutral_theme()
+	get_window().min_size = Vector2i(900, 640)
 	_apply_image_settings()
-	if bool(settings["fullscreen"]):
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	else:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	_show_main()
 	queue_redraw()
 
 
 func _draw() -> void:
 	if _current_theme.is_empty():
-		_current_theme = Catalog.THEME.get("sistemas", {})
+		_current_theme = NEUTRAL_THEME
 	var bg: Color = _current_theme.get("bg", PAPER)
 	draw_rect(Rect2(Vector2.ZERO, size), bg)
-	var grid: Color = _current_theme.get("grid", Color("#e7e0d1"))
-	var step := 20.0
-	var w := size.x
-	var h := size.y
-	var x := 0.0
-	while x < w:
-		draw_line(Vector2(x, 0), Vector2(x, h), grid, 1.0)
+	var grid: Color = _current_theme.get("grid", Color("#292e34"))
+	if not _home_art:
+		for y in range(42, int(size.y), 44):
+			draw_line(Vector2(0, y), Vector2(size.x, y), Color(grid, 0.15), 1.0)
+	if _home_art:
+		_draw_home_science()
+
+
+func _draw_home_cosmos() -> void:
+	draw_rect(Rect2(Vector2.ZERO, size), Color("#050714"))
+	for cloud in _home_nebulae:
+		var cloud_center: Vector2 = cloud["position"] * size
+		var radius := minf(size.x, size.y) * float(cloud["radius"])
+		var tint: Color = cloud["color"]
+		for layer in range(8, 0, -1):
+			var layer_color := tint
+			layer_color.a = 0.018 + (8 - layer) * 0.004
+			draw_circle(cloud_center, radius * float(layer) / 5.0, layer_color)
+	for star in _home_stars:
+		var position: Vector2 = star["position"] * size
+		var radius := float(star["radius"])
+		var pulse := 0.62 + 0.38 * sin(_home_cosmic_time * float(star["speed"]) + float(star["phase"]))
+		var star_color: Color = star["color"]
+		star_color.a *= pulse
+		draw_circle(position, radius, star_color)
+		if radius > 1.65:
+			var sparkle := Color(star_color, star_color.a * 0.48)
+			draw_line(position - Vector2(3.0, 0.0), position + Vector2(3.0, 0.0), sparkle, 0.8)
+			draw_line(position - Vector2(0.0, 3.0), position + Vector2(0.0, 3.0), sparkle, 0.8)
+	var center := _home_cosmic_center * size
+	match _home_cosmic_event:
+		"black_hole": _draw_home_black_hole(center)
+		"sun": _draw_home_sun(center)
+		"eclipse": _draw_home_eclipse(center)
+		"pulsar": _draw_home_pulsar(center)
+		_: pass
+
+
+func _draw_home_black_hole(center: Vector2) -> void:
+	var rotation := _home_cosmic_time * 0.16
+	_draw_cosmic_ellipse(center, 118.0, 0.27, rotation, Color("#ff6d34", 0.24), 14.0)
+	_draw_cosmic_ellipse(center, 91.0, 0.32, -rotation * 1.35, Color("#ffba62", 0.68), 5.0)
+	_draw_cosmic_ellipse(center, 62.0, 0.39, rotation * 1.8, Color("#71dfff", 0.72), 3.0)
+	draw_circle(center, 44.0, Color("#8f45ff", 0.09))
+	draw_circle(center, 34.0, Color("#010107"))
+	draw_circle(center, 29.0, Color("#000004"))
+	draw_arc(center, 34.0, PI * 1.05, PI * 1.95, 52, Color("#fff0bf", 0.94), 2.0, true)
+
+
+func _draw_home_sun(center: Vector2) -> void:
+	var pulse := 1.0 + 0.045 * sin(_home_cosmic_time * 2.1)
+	for layer in range(12, 0, -1):
+		var radius := (26.0 + layer * 11.0) * pulse
+		var glow := Color("#ff4a20", 0.018 + float(12 - layer) * 0.002)
+		if layer < 5:
+			glow = Color("#ff9d26", 0.035 + float(5 - layer) * 0.012)
+		draw_circle(center, radius, glow)
+	draw_circle(center, 30.0 * pulse, Color("#ff7a19"))
+	draw_circle(center, 23.0 * pulse, Color("#ffe88a"))
+	for ray in range(12):
+		var angle := TAU * float(ray) / 12.0 + _home_cosmic_time * 0.11
+		var direction := Vector2(cos(angle), sin(angle))
+		draw_line(center + direction * 36.0, center + direction * (54.0 + 8.0 * sin(_home_cosmic_time + ray)), Color("#ffad39", 0.42), 2.0, true)
+
+
+func _draw_home_eclipse(center: Vector2) -> void:
+	for layer in range(10, 0, -1):
+		draw_circle(center, 32.0 + layer * 9.0, Color("#53d9ff", 0.018 + float(10 - layer) * 0.003))
+	draw_circle(center, 38.0, Color("#ffe996", 0.9))
+	var moon_orbit := Vector2(cos(_home_cosmic_time * 0.52), sin(_home_cosmic_time * 0.52) * 0.22)
+	draw_circle(center + moon_orbit * 28.0, 34.0, Color("#030612"))
+	draw_arc(center, 43.0, -0.38, PI + 0.38, 72, Color("#bdefff", 0.9), 2.0, true)
+
+
+func _draw_home_pulsar(center: Vector2) -> void:
+	var pulse := pow(maxf(0.0, sin(_home_cosmic_time * 2.3)), 7.0)
+	for layer in range(9, 0, -1):
+		draw_circle(center, 18.0 + layer * 9.0, Color("#5f75ff", 0.014 + pulse * 0.012))
+	var angle := _home_cosmic_time * 0.42
+	for beam in [-1.0, 1.0]:
+		var direction: Vector2 = Vector2(cos(angle), sin(angle)) * beam
+		draw_line(center - direction * 190.0, center + direction * 190.0, Color("#8fc9ff", 0.05 + pulse * 0.36), 3.0 + pulse * 8.0, true)
+	draw_circle(center, 11.0, Color("#e9f5ff"))
+	draw_circle(center, 5.0, Color("#ffffff"))
+
+
+func _draw_cosmic_ellipse(center: Vector2, radius: float, flattening: float, rotation: float, color: Color, width: float) -> void:
+	var points := PackedVector2Array()
+	for step in range(97):
+		var angle := TAU * float(step) / 96.0
+		var local := Vector2(cos(angle) * radius, sin(angle) * radius * flattening).rotated(rotation)
+		points.append(center + local)
+	draw_polyline(points, color, width, true)
+
+
+func _draw_home_science() -> void:
+	_draw_home_cosmos()
+	var center := size * 0.5
+	var scale_px := minf(size.x, size.y) / 24.0
+	var grid_color := Color("#d8e0e6", 0.14)
+	var major_grid_color := Color("#f0f4f6", 0.27)
+	var axis_color := Color("#ffffff", 0.78)
+	var step := scale_px
+	var x := fmod(center.x, step)
+	while x < size.x:
+		var vertical_step := int(round((x - center.x) / step))
+		draw_line(Vector2(x, 0), Vector2(x, size.y), major_grid_color if vertical_step % 5 == 0 else grid_color, 1.0)
 		x += step
-	var y := 0.0
-	while y < h:
-		draw_line(Vector2(0, y), Vector2(w, y), grid, 1.0)
+	var y := fmod(center.y, step)
+	while y < size.y:
+		var horizontal_step := int(round((y - center.y) / step))
+		draw_line(Vector2(0, y), Vector2(size.x, y), major_grid_color if horizontal_step % 5 == 0 else grid_color, 1.0)
 		y += step
-	var rule: Color = _current_theme.get("panel", Color("#ddd5c5"))
-	draw_rect(Rect2(Vector2(0, 0), Vector2(6, h)), rule)
-	draw_rect(Rect2(Vector2(12, 0), Vector2(2, h)), rule)
-	draw_rect(Rect2(Vector2(10, 10), size - Vector2(20, 20)), Color("#c3b8a3"), false, 1.0)
+	draw_line(Vector2(0, center.y), Vector2(size.x - 14, center.y), axis_color, 1.8)
+	draw_line(Vector2(center.x, size.y), Vector2(center.x, 14), axis_color, 1.8)
+	draw_colored_polygon(PackedVector2Array([Vector2(size.x - 3, center.y), Vector2(size.x - 15, center.y - 5), Vector2(size.x - 15, center.y + 5)]), axis_color)
+	draw_colored_polygon(PackedVector2Array([Vector2(center.x, 3), Vector2(center.x - 5, 15), Vector2(center.x + 5, 15)]), axis_color)
+	draw_string(ThemeDB.fallback_font, Vector2(size.x - 25, center.y - 10), "x", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
+	draw_string(ThemeDB.fallback_font, Vector2(center.x + 9, 18), "y", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
+	draw_string(ThemeDB.fallback_font, center + Vector2(8, 17), "0", HORIZONTAL_ALIGNMENT_LEFT, 12, 10, Color("#ffffff", 0.78))
+	var horizontal_range := int(ceil(center.x / scale_px))
+	var vertical_range := int(ceil(center.y / scale_px))
+	for tick in range(-maxi(horizontal_range, vertical_range), maxi(horizontal_range, vertical_range) + 1):
+		if tick == 0:
+			continue
+		var tx := center.x + float(tick) * scale_px
+		if tx >= 0 and tx <= size.x:
+			draw_line(Vector2(tx, center.y - 4), Vector2(tx, center.y + 4), axis_color, 1.0)
+			if tick % 5 == 0:
+				draw_string(ThemeDB.fallback_font, Vector2(tx + 3, center.y + 15), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#aab6bb", 0.48))
+		var ty := center.y - float(tick) * scale_px
+		if ty >= 0 and ty <= size.y:
+			draw_line(Vector2(center.x - 4, ty), Vector2(center.x + 4, ty), axis_color, 1.0)
+			if tick % 5 == 0:
+				draw_string(ThemeDB.fallback_font, Vector2(center.x + 7, ty - 3), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#ffffff", 0.72))
+	var curve_color := Color("#ffffff", 0.94) if str(HOME_CURVES[_home_curve_index]) not in ["heart", "rose", "lissajous", "spiral", "butterfly"] else _home_curve_color()
+	_draw_home_trace(_home_curve_forward, curve_color)
+	_draw_home_trace(_home_curve_backward, curve_color)
+	for body in _home_formula_bodies:
+		_draw_home_formula(body)
+
+
+func _draw_home_formula(body: Dictionary) -> void:
+	var position: Vector2 = body["pos"]
+	var font_size := int(body["font_size"])
+	var color: Color = body["color"]
+	var burn := clampf(float(body.get("burn", 0.0)), 0.0, 1.0)
+	if burn > 0.0:
+		color = color.lerp(Color("#ff3d16"), burn * 0.92)
+		color.a *= 1.0 - burn * 0.35
+	var glow := Color(color, color.a * 0.17)
+	var kind := str(body.get("kind", "text"))
+	if kind in ["integral", "definite_integral"]:
+		var symbol_size := int(round(font_size * 1.58))
+		var limit_size := maxi(9, int(round(font_size * 0.58)))
+		var symbol_width := formula_font.get_string_size("∫", HORIZONTAL_ALIGNMENT_LEFT, -1, symbol_size).x
+		var symbol_baseline := position + Vector2(0.0, font_size * 1.72)
+		var text_baseline := position + Vector2(symbol_width + 7.0, font_size * 1.35)
+		var integrand := str(body["integrand"])
+		var result := str(body["result"])
+		draw_string(formula_font, symbol_baseline, "∫", HORIZONTAL_ALIGNMENT_LEFT, -1, symbol_size + 2, glow)
+		draw_string(formula_font, symbol_baseline, "∫", HORIZONTAL_ALIGNMENT_LEFT, -1, symbol_size, color)
+		if kind == "definite_integral":
+			var limit_position := position + Vector2(symbol_width * 0.72, font_size * 0.67)
+			var lower_position := position + Vector2(symbol_width * 0.78, font_size * 2.05)
+			draw_string(formula_font, limit_position, str(body["upper"]), HORIZONTAL_ALIGNMENT_LEFT, -1, limit_size, color)
+			draw_string(formula_font, lower_position, str(body["lower"]), HORIZONTAL_ALIGNMENT_LEFT, -1, limit_size, color)
+		draw_string(formula_font, text_baseline + Vector2(0.0, 1.0), integrand + " " + result, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, glow)
+		draw_string(formula_font, text_baseline, integrand + " " + result, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+		return
+	var baseline := position + Vector2(0.0, font_size)
+	draw_string(formula_font, baseline + Vector2(0.0, 1.0), str(body["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size + 2, glow)
+	draw_string(formula_font, baseline, str(body["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+
+func _draw_home_trace(points: PackedVector2Array, color: Color) -> void:
+	if points.size() < 2:
+		return
+	var visible_points := PackedVector2Array()
+	for point in points:
+		visible_points.append(_home_curve_visual_point(point))
+	var aura := _home_curve_aura()
+	if str(HOME_CURVES[_home_curve_index]) != "tan":
+		draw_polyline(visible_points, Color(aura, 0.2), 8.0, true)
+		draw_polyline(visible_points, color, 2.4, true)
+		return
+	for i in range(1, visible_points.size()):
+		if absf(visible_points[i].y - visible_points[i - 1].y) < minf(size.y * 0.15, 120.0):
+			draw_line(visible_points[i - 1], visible_points[i], Color(aura, 0.2), 8.0, true)
+			draw_line(visible_points[i - 1], visible_points[i], color, 2.4, true)
+
+
+func _home_curve_aura() -> Color:
+	match _home_cosmic_event:
+		"black_hole": return Color("#9e73ff")
+		"sun": return Color("#ff9138")
+		"eclipse": return Color("#65dcff")
+		"pulsar": return Color("#8aa5ff")
+	return Color("#63d7ff")
+
+
+func _home_curve_visual_point(point: Vector2) -> Vector2:
+	var center := _home_cosmic_center * size
+	var delta := point - center
+	var distance := delta.length()
+	var influence := clampf(1.0 - distance / (minf(size.x, size.y) * 0.44), 0.0, 1.0)
+	if influence <= 0.0:
+		return point
+	var perpendicular := Vector2(-delta.y, delta.x).normalized()
+	match _home_cosmic_event:
+		"black_hole":
+			return point + perpendicular * influence * influence * (30.0 + 12.0 * sin(_home_cosmic_time + distance * 0.016))
+		"sun":
+			return point + delta.normalized() * influence * 18.0 * sin(_home_cosmic_time * 1.7 + distance * 0.02)
+		"eclipse":
+			return point + perpendicular * influence * 16.0 * sin(_home_cosmic_time * 0.55)
+		"pulsar":
+			return point + perpendicular * influence * 23.0 * sin(_home_cosmic_time * 2.3)
+	return point
+
+
+func _process(delta: float) -> void:
+	if not _home_art or not bool(settings.get("animations", true)):
+		return
+	_home_formula_time += delta
+	if _home_formula_time >= 2.4 and not _home_formula_order.is_empty():
+		_home_formula_time = 0.0
+		if _home_formula_cursor >= _home_formula_order.size():
+			_home_formula_order.shuffle()
+			_home_formula_cursor = 0
+		var body_slot := _home_formula_cursor % _home_formula_bodies.size()
+		_home_formula_bodies[body_slot] = _make_home_body(_home_formula_order[_home_formula_cursor])
+		_home_formula_cursor += 1
+	_home_quote_time += delta
+	_home_cosmic_time += delta
+	if _home_quote_time >= 12.0:
+		_home_quote_time = 0.0
+		_home_quote_index = (_home_quote_index + 1) % HOME_QUOTES.size()
+		_update_home_quote()
+	_home_curve_time += delta
+	if _home_curve_time >= HOME_CURVE_DURATION:
+		_home_curve_time = 0.0
+		_home_curve_index = (_home_curve_index + 1) % HOME_CURVES.size()
+		_home_curve_forward.clear()
+		_home_curve_backward.clear()
+	for body_index in range(_home_formula_bodies.size()):
+		var body: Dictionary = _home_formula_bodies[body_index]
+		body["collision_cooldown"] = maxf(0.0, float(body.get("collision_cooldown", 0.0)) - delta)
+		var pos: Vector2 = body["pos"]
+		var velocity: Vector2 = body["velocity"]
+		var extent: Vector2 = body["extent"]
+		pos += velocity * minf(delta, 0.05)
+		if pos.x < 6.0 or pos.x + extent.x > size.x - 6.0:
+			velocity.x *= -1.0
+			pos.x = clampf(pos.x, 6.0, maxf(6.0, size.x - extent.x - 6.0))
+		if pos.y < 6.0 or pos.y + extent.y > size.y - 6.0:
+			velocity.y *= -1.0
+			pos.y = clampf(pos.y, 6.0, maxf(6.0, size.y - extent.y - 6.0))
+		body["pos"] = pos
+		body["velocity"] = velocity
+		body = _apply_home_cosmic_effect(body, delta)
+		_home_formula_bodies[body_index] = body
+	_resolve_formula_collisions()
+	_advance_home_curve(delta)
+	queue_redraw()
+
+
+func _advance_home_curve(delta: float) -> void:
+	var name := str(HOME_CURVES[_home_curve_index])
+	var scale_px := minf(size.x, size.y) / 24.0
+	var x_extent := size.x * 0.5 / scale_px
+	var y_extent := size.y * 0.5 / scale_px
+	var old_fraction := clampf((_home_curve_time - delta) / HOME_CURVE_DURATION, 0.0, 1.0)
+	var new_fraction := clampf(_home_curve_time / HOME_CURVE_DURATION, 0.0, 1.0)
+	var old_progress := old_fraction * x_extent
+	var new_progress := new_fraction * x_extent
+	if name in ["heart", "rose", "lissajous", "spiral", "butterfly"]:
+		var angle_range := TAU * (3.0 if name == "spiral" else (12.0 if name == "butterfly" else 1.0))
+		var start_angle := old_fraction * angle_range
+		var end_angle := minf(angle_range, maxf(start_angle + 0.005, new_fraction * angle_range))
+		var curve_points := PackedVector2Array()
+		var samples := maxi(2, int((end_angle - start_angle) * 70.0))
+		for j in range(samples + 1):
+			var angle := lerpf(start_angle, end_angle, float(j) / samples)
+			curve_points.append(_home_parametric_point(name, angle, scale_px))
+		if curve_points.size() > 1:
+			_home_curve_forward.append_array(curve_points)
+		return
+	var first_x := maxf(0.0, old_progress)
+	var last_x := new_progress
+	var samples_count := maxi(1, int((last_x - first_x) / 0.012))
+	for j in range(samples_count + 1):
+		var x_value := lerpf(first_x, last_x, float(j) / samples_count)
+		var y_value := _home_function_value(name, x_value)
+		if is_finite(y_value) and absf(y_value) < y_extent:
+			_home_curve_forward.append(Vector2(size.x * 0.5 + x_value * scale_px, size.y * 0.5 - y_value * scale_px))
+		if name != "log":
+			var back_y := _home_function_value(name, -x_value)
+			if is_finite(back_y) and absf(back_y) < y_extent:
+				_home_curve_backward.append(Vector2(size.x * 0.5 - x_value * scale_px, size.y * 0.5 - back_y * scale_px))
+	while _home_curve_forward.size() > 1800:
+		_home_curve_forward.remove_at(0)
+	while _home_curve_backward.size() > 1800:
+		_home_curve_backward.remove_at(0)
+
+
+func _home_function_value(name: String, x: float) -> float:
+	match name:
+		"sin": return sin(x)
+		"cos": return cos(x)
+		"tan": return tan(x)
+		"parabola": return x * x * 0.16
+		"cubic": return x * x * x * 0.025
+		"sqrt": return sqrt(absf(x)) * 0.62
+		"log": return log(maxf(x, 0.035)) * 1.15
+		"exp": return exp(x * 0.28) - 1.0
+		"gaussian": return 3.2 * exp(-x * x * 0.16) - 0.75
+	return 0.0
+
+
+func _home_parametric_point(name: String, t: float, scale_px: float) -> Vector2:
+	var x := 0.0
+	var y := 0.0
+	match name:
+		"heart":
+			x = 16.0 * pow(sin(t), 3.0) * 0.48
+			y = (13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t)) * 0.48
+		"rose":
+			var r := 5.5 * cos(4.0 * t)
+			x = r * cos(t)
+			y = r * sin(t)
+		"lissajous":
+			x = 6.0 * sin(3.0 * t)
+			y = 6.0 * sin(2.0 * t + PI / 2.0)
+		"spiral":
+			var r := 0.29 * t
+			x = r * cos(t)
+			y = r * sin(t)
+		"butterfly":
+			var r := exp(cos(t)) - 2.0 * cos(4.0 * t) + pow(sin(t / 12.0), 5.0)
+			x = sin(t) * r * 1.45
+			y = cos(t) * r * 1.45
+	return Vector2(size.x * 0.5 + x * scale_px, size.y * 0.5 - y * scale_px)
+
+
+func _home_curve_color() -> Color:
+	match str(HOME_CURVES[_home_curve_index]):
+		"heart": return Color("#ff6b91")
+		"rose": return Color("#c7a6ff")
+		"lissajous": return Color("#56d8cc")
+		"spiral": return Color("#ffc66d")
+		"butterfly": return Color("#ff9b64")
+	return Color.WHITE
+
+
+func _initialize_home_formulas() -> void:
+	_home_formula_bodies.clear()
+	_home_formula_order = HOME_FORMULAS.duplicate()
+	_home_formula_order.shuffle()
+	_home_formula_cursor = 0
+	_home_formula_time = 0.0
+	var count := mini(HOME_VISIBLE_FORMULAS, _home_formula_order.size())
+	for i in range(count):
+		_home_formula_bodies.append(_make_home_body(_home_formula_order[i]))
+	_home_formula_cursor = count
+
+
+func _initialize_home_cosmos() -> void:
+	var previous_event := _home_cosmic_event
+	_home_cosmic_event = HOME_COSMIC_EVENTS[random.randi_range(0, HOME_COSMIC_EVENTS.size() - 1)]
+	if HOME_COSMIC_EVENTS.size() > 1 and _home_cosmic_event == previous_event:
+		_home_cosmic_event = HOME_COSMIC_EVENTS[(HOME_COSMIC_EVENTS.find(_home_cosmic_event) + 1) % HOME_COSMIC_EVENTS.size()]
+	var center_min_x := 0.86 if size.x < 1000.0 else 0.63
+	var center_max_x := 0.98 if size.x < 1000.0 else 0.86
+	_home_cosmic_center = Vector2(random.randf_range(center_min_x, center_max_x), random.randf_range(0.2, 0.78))
+	_home_cosmic_time = 0.0
+	_home_stars.clear()
+	_home_nebulae.clear()
+	var star_colors := [Color("#ffffff"), Color("#bde8ff"), Color("#ffe3bd"), Color("#d4c5ff")]
+	var star_count := 96 if size.x < 900.0 else 150
+	for i in range(star_count):
+		_home_stars.append({
+			"position": Vector2(random.randf(), random.randf()),
+			"radius": random.randf_range(0.55, 2.0),
+			"phase": random.randf_range(0.0, TAU),
+			"speed": random.randf_range(0.35, 1.6),
+			"color": star_colors[random.randi_range(0, star_colors.size() - 1)]
+		})
+	var cloud_colors := [Color("#633cff"), Color("#008ce0"), Color("#ff3d95"), Color("#15bfa7")]
+	for i in range(5):
+		_home_nebulae.append({
+			"position": Vector2(random.randf(), random.randf()),
+			"radius": random.randf_range(0.17, 0.34),
+			"color": cloud_colors[random.randi_range(0, cloud_colors.size() - 1)]
+		})
+
+
+func _make_home_body(formula: Dictionary) -> Dictionary:
+	var kind := str(formula.get("kind", "text"))
+	var text := str(formula.get("text", "∫ " + str(formula.get("integrand", "")) + " " + str(formula.get("result", ""))))
+	var subject := str(formula["subject"])
+	var font_size := random.randi_range(20, 25)
+	if text.length() > 25:
+		font_size = random.randi_range(16, 20)
+	var extent: Vector2
+	if kind in ["integral", "definite_integral"]:
+		var symbol_width := formula_font.get_string_size("∫", HORIZONTAL_ALIGNMENT_LEFT, -1, int(font_size * 1.58)).x
+		var main_text := str(formula["integrand"]) + " " + str(formula["result"])
+		extent = Vector2(symbol_width + formula_font.get_string_size(main_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 10.0, font_size * 2.45)
+	else:
+		extent = formula_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size) + Vector2(6, font_size + 8)
+	var viewport_size := get_viewport_rect().size
+	var pos := _home_random_formula_position(extent, viewport_size)
+	var velocity := Vector2(random.randf_range(19.0, 36.0) * (-1.0 if random.randf() < 0.5 else 1.0), random.randf_range(16.0, 31.0) * (-1.0 if random.randf() < 0.5 else 1.0))
+	var body := {"text": text, "kind": kind, "pos": pos, "velocity": velocity, "extent": extent, "font_size": font_size, "color": _home_subject_color(subject), "subject": subject, "collision_cooldown": 0.0, "burn": 0.0}
+	for key in ["integrand", "result", "upper", "lower"]:
+		if formula.has(key):
+			body[key] = formula[key]
+	return body
+
+
+func _home_random_formula_position(extent: Vector2, viewport_size: Vector2) -> Vector2:
+	return Vector2(
+		random.randf_range(8.0, maxf(8.0, viewport_size.x - extent.x - 8.0)),
+		random.randf_range(8.0, maxf(8.0, viewport_size.y - extent.y - 8.0))
+	)
+
+
+func _home_subject_color(subject: String) -> Color:
+	match subject:
+		"physics": return Color("#35c8ff", 0.98)
+		"chemistry": return Color("#75ff4c", 0.98)
+		"computing": return Color("#ff65d4", 0.98)
+	return Color("#fff0a0", 0.98)
+
+
+func _random_home_formula(excluding: String) -> Dictionary:
+	for attempt in range(8):
+		var formula: Dictionary = HOME_FORMULAS[random.randi_range(0, HOME_FORMULAS.size() - 1)]
+		var candidate_text := str(formula.get("text", "∫ " + str(formula.get("integrand", "")) + " " + str(formula.get("result", ""))))
+		if candidate_text != excluding:
+			return formula
+	return HOME_FORMULAS[random.randi_range(0, HOME_FORMULAS.size() - 1)]
+
+
+func _recompose_home_body(body: Dictionary, respawn: bool) -> Dictionary:
+	var replacement := _make_home_body(_random_home_formula(str(body["text"])))
+	var old_position: Vector2 = body["pos"]
+	var old_extent: Vector2 = body["extent"]
+	if respawn:
+		replacement["pos"] = _home_random_formula_position(replacement["extent"], size)
+		for attempt in range(10):
+			var center: Vector2 = replacement["pos"] + replacement["extent"] * 0.5
+			var cosmic_center: Vector2 = _home_cosmic_center * size
+			var minimum_distance := minf(size.x, size.y) * (0.26 if _home_cosmic_event == "black_hole" else 0.2)
+			if center.distance_to(cosmic_center) >= minimum_distance:
+				break
+			replacement["pos"] = _home_random_formula_position(replacement["extent"], size)
+		if replacement["pos"].distance_to(_home_cosmic_center * size) < minf(size.x, size.y) * 0.12:
+			var left_side := _home_cosmic_center.x > 0.5
+			replacement["pos"].x = 10.0 if left_side else maxf(10.0, size.x - replacement["extent"].x - 10.0)
+	else:
+		replacement["pos"] = old_position + (old_extent - replacement["extent"]) * 0.5
+		replacement["pos"].x = clampf(replacement["pos"].x, 6.0, maxf(6.0, size.x - replacement["extent"].x - 6.0))
+		replacement["pos"].y = clampf(replacement["pos"].y, 6.0, maxf(6.0, size.y - replacement["extent"].y - 6.0))
+	var velocity: Vector2 = body["velocity"]
+	if velocity.length_squared() > 0.0:
+		replacement["velocity"] = velocity.rotated(random.randf_range(-0.55, 0.55)).normalized() * random.randf_range(23.0, 42.0)
+	replacement["collision_cooldown"] = 0.8
+	return replacement
+
+
+func _apply_home_cosmic_effect(body: Dictionary, delta: float) -> Dictionary:
+	var position: Vector2 = body["pos"] + body["extent"] * 0.5
+	var center := _home_cosmic_center * size
+	var distance := position.distance_to(center)
+	var cosmic_scale := minf(size.x, size.y)
+	if _home_cosmic_event == "black_hole":
+		var radius := cosmic_scale * 0.48
+		if distance < 38.0:
+			return _recompose_home_body(body, true)
+		if distance < radius:
+			var influence := 1.0 - distance / radius
+			var velocity: Vector2 = body["velocity"]
+			velocity += (center - position).normalized() * 250.0 * influence * influence * delta
+			if velocity.length() > 94.0:
+				velocity = velocity.normalized() * 94.0
+			body["velocity"] = velocity
+	elif _home_cosmic_event in ["sun", "eclipse"]:
+		var radius := cosmic_scale * (0.29 if _home_cosmic_event == "sun" else 0.18)
+		var burn := float(body.get("burn", 0.0))
+		if distance < radius:
+			var heat := 1.0 - distance / radius
+			burn += delta * (0.8 + heat * 0.8)
+			if burn >= 1.0:
+				return _recompose_home_body(body, true)
+		else:
+			burn = maxf(0.0, burn - delta * 0.72)
+		body["burn"] = burn
+	elif _home_cosmic_event == "pulsar" and distance < cosmic_scale * 0.3:
+		var pulse := pow(maxf(0.0, sin(_home_cosmic_time * 2.3)), 10.0)
+		var velocity: Vector2 = body["velocity"]
+		velocity += Vector2(-(position - center).y, (position - center).x).normalized() * pulse * 180.0 * delta
+		body["velocity"] = velocity
+	return body
+
+
+func _resolve_formula_collisions() -> void:
+	for i in range(_home_formula_bodies.size()):
+		for j in range(i + 1, _home_formula_bodies.size()):
+			var a: Dictionary = _home_formula_bodies[i]
+			var b: Dictionary = _home_formula_bodies[j]
+			var rect_a := Rect2(a["pos"], a["extent"])
+			var rect_b := Rect2(b["pos"], b["extent"])
+			if not rect_a.intersects(rect_b):
+				continue
+			var velocity_a: Vector2 = a["velocity"]
+			var velocity_b: Vector2 = b["velocity"]
+			var overlap := rect_a.intersection(rect_b).size
+			if overlap.x < overlap.y:
+				velocity_a.x = -velocity_a.x
+				velocity_b.x = -velocity_b.x
+				var push_x := overlap.x * 0.5 + 1.0
+				a["pos"] = Vector2(a["pos"].x - push_x, a["pos"].y)
+				b["pos"] = Vector2(b["pos"].x + push_x, b["pos"].y)
+			else:
+				velocity_a.y = -velocity_a.y
+				velocity_b.y = -velocity_b.y
+				var push_y := overlap.y * 0.5 + 1.0
+				a["pos"] = Vector2(a["pos"].x, a["pos"].y - push_y)
+				b["pos"] = Vector2(b["pos"].x, b["pos"].y + push_y)
+			a["velocity"] = velocity_a
+			b["velocity"] = velocity_b
+			if float(a.get("collision_cooldown", 0.0)) <= 0.0 and float(b.get("collision_cooldown", 0.0)) <= 0.0:
+				a = _recompose_home_body(a, false)
+				b = _recompose_home_body(b, false)
+			_home_formula_bodies[i] = a
+			_home_formula_bodies[j] = b
+
+
+func _update_home_quote() -> void:
+	if not is_instance_valid(_home_quote_label):
+		return
+	var quote: Dictionary = HOME_QUOTES[_home_quote_index]
+	_home_quote_label.text = "“%s”\n— %s" % [quote["text"], quote["by"]]
+
+
+func _use_neutral_theme() -> void:
+	_current_theme = NEUTRAL_THEME.duplicate()
+	RenderingServer.set_default_clear_color(NEUTRAL_THEME["bg"])
+	queue_redraw()
 
 
 func _notification(what: int) -> void:
@@ -95,11 +691,21 @@ func _notification(what: int) -> void:
 		queue_redraw()
 
 
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and _active_back.is_valid():
+		_active_back.call()
+		get_viewport().set_input_as_handled()
+
+
 func _setup_theme() -> void:
 	system_font = SystemFont.new()
-	system_font.font_names = PackedStringArray(["Segoe Print", "Comic Sans MS", "Arial"])
+	system_font.font_names = PackedStringArray(["Trebuchet MS", "Segoe UI", "Arial"])
 	system_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	system_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
+	formula_font = SystemFont.new()
+	formula_font.font_names = PackedStringArray(["Segoe Print", "Cambria Math", "STIX Two Math", "Segoe UI Symbol", "Arial"])
+	formula_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	formula_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	var game_theme := Theme.new()
 	game_theme.default_font = system_font
 	game_theme.default_font_size = 18
@@ -110,7 +716,7 @@ func _apply_image_settings() -> void:
 	var viewport := get_viewport()
 	if viewport:
 		viewport.msaa_2d = Viewport.MSAA_4X if bool(settings["antialiasing"]) else Viewport.MSAA_DISABLED
-	RenderingServer.set_default_clear_color(PAPER)
+	RenderingServer.set_default_clear_color(_current_theme.get("bg", PAPER))
 
 
 func _load_settings() -> void:
@@ -120,10 +726,6 @@ func _load_settings() -> void:
 		settings["animations"] = config.get_value("game", "animations", true)
 		settings["font_scale"] = config.get_value("game", "font_scale", 1.0)
 		settings["antialiasing"] = config.get_value("game", "antialiasing", false)
-	if settings["fullscreen"]:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	else:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 
 func _save_settings() -> void:
@@ -134,16 +736,19 @@ func _save_settings() -> void:
 
 
 func _make_page(title: String, subtitle: String, back: Callable = Callable()) -> VBoxContainer:
+	_home_art = false
+	set_process(false)
+	_active_back = back
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 132)
-	margin.add_theme_constant_override("margin_right", 64)
-	margin.add_theme_constant_override("margin_top", 38)
-	margin.add_theme_constant_override("margin_bottom", 30)
+	margin.add_theme_constant_override("margin_left", 42)
+	margin.add_theme_constant_override("margin_right", 42)
+	margin.add_theme_constant_override("margin_top", 26)
+	margin.add_theme_constant_override("margin_bottom", 22)
 	add_child(margin)
 
 	var layout := VBoxContainer.new()
@@ -169,7 +774,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable()) ->
 		var footer := HBoxContainer.new()
 		footer.alignment = BoxContainer.ALIGNMENT_BEGIN
 		layout.add_child(footer)
-		_add_button(footer, "← VOLVER ATRÁS", back, false, 52)
+		_add_button(footer, "← Atrás", back, false, 44)
 	if bool(settings["animations"]):
 		margin.modulate.a = 0.0
 		var intro := margin.create_tween()
@@ -202,7 +807,8 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 	button.add_theme_constant_override("icon_max_width", 24)
 	button.add_theme_constant_override("h_separation", 12)
 	button.custom_minimum_size = Vector2(0, height)
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.custom_minimum_size.x = 168
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", int(round(18 * float(settings["font_scale"]))))
 	if accent:
@@ -255,10 +861,7 @@ func _button_style(accent: bool, state: String) -> StyleBoxFlat:
 			style.bg_color = style.bg_color.darkened(0.1)
 		style.border_color = _current_theme.get("grid", Color("#8c927e"))
 	style.set_border_width_all(2)
-	style.corner_radius_top_left = 0
-	style.corner_radius_top_right = 0
-	style.corner_radius_bottom_left = 0
-	style.corner_radius_bottom_right = 0
+	style.set_corner_radius_all(14)
 	style.content_margin_left = 16
 	style.content_margin_right = 16
 	style.content_margin_top = 6
@@ -274,10 +877,7 @@ func _focus_style() -> StyleBoxFlat:
 	style.draw_center = false
 	style.border_color = _current_theme.get("accent", GOLD)
 	style.set_border_width_all(2)
-	style.corner_radius_top_left = 0
-	style.corner_radius_top_right = 0
-	style.corner_radius_bottom_left = 0
-	style.corner_radius_bottom_right = 0
+	style.set_corner_radius_all(16)
 	style.shadow_color = Color(0, 0, 0, 0.3)
 	style.shadow_size = 1
 	style.shadow_offset = Vector2(1, 1)
@@ -302,10 +902,7 @@ func _card_style(tinted: bool) -> StyleBoxFlat:
 	style.bg_color = _current_theme.get("panel", Color("#fbf7ec"))
 	style.border_color = _current_theme.get("grid", Color("#d8cdb8"))
 	style.set_border_width_all(2)
-	style.corner_radius_top_left = 0
-	style.corner_radius_top_right = 0
-	style.corner_radius_bottom_left = 0
-	style.corner_radius_bottom_right = 0
+	style.set_corner_radius_all(14)
 	style.content_margin_left = 16
 	style.content_margin_right = 16
 	style.content_margin_top = 12
@@ -352,43 +949,97 @@ func _animate_button(button: Button, hovering: bool) -> void:
 	tween.parallel().tween_property(button, "rotation_degrees", 0.35 if hovering else 0.0, 0.12)
 
 
-func _add_scroll(parent: Control) -> VBoxContainer:
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	parent.add_child(scroll)
+func _add_compact_list(parent: Control) -> VBoxContainer:
 	var rows := VBoxContainer.new()
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows.add_theme_constant_override("separation", 11)
-	scroll.add_child(rows)
+	rows.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(rows)
 	return rows
 
 
 func _show_main() -> void:
-	var content := _make_page("", "")
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(spacer)
-	content.add_child(_label("·  CUADERNO DE CAMPO  ·", 13, GOLD, true))
-	content.add_child(_label("UNI SIMULATOR", 54, INK, true))
-	content.add_child(_label("Tu vida universitaria, con finales que dependen de lo que hagas.", 19, Color("#6c6859"), true))
-	var leafline := _label("❧  cuaderno abierto · aulas · gente · decisiones  ❧", 16, GREEN, true)
-	content.add_child(leafline)
+	_use_neutral_theme()
+	_home_art = true
+	set_process(false)
+	_active_back = Callable()
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
+	var stage := Control.new()
+	stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(stage)
+	_home_art = true
+	_home_curve_index = 0
+	_home_curve_time = 0.0
+	_home_curve_forward.clear()
+	_home_curve_backward.clear()
+	_home_quote_index = randi_range(0, HOME_QUOTES.size() - 1)
+	_home_quote_time = 0.0
+	_initialize_home_cosmos()
+	_initialize_home_formulas()
+	set_process(true)
+	queue_redraw()
+	var menu_panel := PanelContainer.new()
+	menu_panel.position = Vector2(24, 24)
+	menu_panel.custom_minimum_size = Vector2(340, 0)
+	menu_panel.add_theme_stylebox_override("panel", _home_panel_style())
+	stage.add_child(menu_panel)
 	var menu := VBoxContainer.new()
-	menu.add_theme_constant_override("separation", 12)
-	menu.custom_minimum_size.x = 430
-	menu.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	content.add_child(menu)
-	_add_button(menu, "Jugar", _show_modes, true, 62)
-	_add_button(menu, "Opciones", _show_options, false, 52)
-	_add_button(menu, "Salir", _exit_game, false, 52)
-	content.add_child(_label("Una partida a la vez. Lo que aprendes se queda guardado.", 14, Color("#797565"), true))
-	var end_spacer := Control.new()
-	end_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(end_spacer)
+	menu.add_theme_constant_override("separation", 10)
+	menu_panel.add_child(menu)
+	var eyebrow := _label("CIENCIA · CAMPUS · DECISIONES", 12, Color("#9ed8dc"))
+	menu.add_child(eyebrow)
+	var title := _label(HOME_NAME, 34, Color("#f6f5f0"))
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	menu.add_child(title)
+	menu.add_child(_label("Una vida universitaria para explorar, materia a materia.", 15, Color("#c6d0d4")))
+	var menu_gap := Control.new()
+	menu_gap.custom_minimum_size.y = 5
+	menu.add_child(menu_gap)
+	var play_button := _add_button(menu, "Jugar", _show_modes, true, 52)
+	play_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	play_button.custom_minimum_size.x = 0
+	var options_button := _add_button(menu, "Opciones", _show_options, false, 46)
+	options_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	options_button.custom_minimum_size.x = 0
+	var exit_button := _add_button(menu, "Salir", _exit_game, false, 46)
+	exit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	exit_button.custom_minimum_size.x = 0
+	_home_quote_label = _label("", 14, Color("#d1d4d2"), true)
+	_home_quote_label.custom_minimum_size = Vector2(310, 58)
+	_home_quote_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	var quote_panel := PanelContainer.new()
+	quote_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	quote_panel.offset_left = -370
+	quote_panel.offset_top = -112
+	quote_panel.offset_right = -24
+	quote_panel.offset_bottom = -22
+	quote_panel.custom_minimum_size = Vector2(346, 90)
+	quote_panel.add_theme_stylebox_override("panel", _home_panel_style())
+	quote_panel.add_child(_home_quote_label)
+	stage.add_child(quote_panel)
+	_update_home_quote()
+
+
+func _home_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#111820", 0.76)
+	style.border_color = Color("#dce5ed", 0.42)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(22)
+	style.content_margin_left = 20
+	style.content_margin_right = 20
+	style.content_margin_top = 17
+	style.content_margin_bottom = 17
+	style.shadow_color = Color(0, 0, 0, 0.45)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0, 4)
+	return style
 
 
 func _show_options() -> void:
+	_use_neutral_theme()
 	var content := _make_page("Opciones", "Ajustes simples para esta computadora.", _show_main)
 	_add_button(content, "Pantalla completa: " + ("Sí" if settings["fullscreen"] else "No"), _toggle_fullscreen, false)
 	_add_button(content, "Movimiento de hojas: " + ("Activado" if settings["animations"] else "Reducido"), _toggle_animations, false)
@@ -405,12 +1056,11 @@ func _show_options() -> void:
 	slider.drag_ended.connect(_rebuild_options)
 	content.add_child(slider)
 	content.add_child(_label("Las preferencias se guardan en este equipo.", 15, Color("#6c6859")))
-	_add_button(content, "Créditos", _show_credits, false, 48)
-
-
-func _show_credits() -> void:
-	var content := _make_page("Créditos", "", _show_options)
-	content.add_child(_label("UNI SIMULATOR usa Godot Engine.\nCopyright (c) 2014-present Godot Engine contributors.\nCopyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.\n\nAviso y condiciones del motor: https://godotengine.org/license/", 17, INK, true))
+	var engine_notice := LinkButton.new()
+	engine_notice.text = "Aviso legal del motor Godot"
+	engine_notice.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	engine_notice.pressed.connect(OS.shell_open.bind("https://godotengine.org/license/"))
+	content.add_child(engine_notice)
 
 
 func _toggle_fullscreen() -> void:
@@ -447,6 +1097,7 @@ func _rebuild_options(_changed: bool) -> void:
 
 
 func _show_modes() -> void:
+	_use_neutral_theme()
 	var content := _make_page("Elige cómo jugar", "La partida individual y la de equipo se guardan por separado.", _show_main)
 	content.add_child(_label("SOLO", 27, GREEN, true))
 	content.add_child(_label("Avanza por materias, rinde tres parciales y termina una carrera. Después puedes probar la competencia para auxiliar.", 17, INK, true))
@@ -465,9 +1116,10 @@ func _show_multi_slots() -> void:
 
 
 func _show_slots(mode: String) -> void:
+	_use_neutral_theme()
 	var mode_label := "Solo" if mode == "solo" else "Equipo local"
 	var content := _make_page("Partidas guardadas · " + mode_label, "Tres espacios para este modo, guardados en este equipo.", _show_modes)
-	var rows := _add_scroll(content)
+	var rows := _add_compact_list(content)
 	var free_slot := _find_free_slot(mode)
 	for slot in range(1, SAVE_COUNT + 1):
 		var save := _read_save(slot, mode)
@@ -558,6 +1210,7 @@ func _find_free_slot(mode: String) -> int:
 
 
 func _show_new_solo() -> void:
+	_use_neutral_theme()
 	var content := _make_page("Una partida nueva", "Primero ponle nombre a tu estudiante.", _show_solo_slots)
 	var name_field := LineEdit.new()
 	name_field.placeholder_text = "Tu nombre o apodo"
@@ -576,10 +1229,9 @@ func _choose_faculty_from_field(name_field: LineEdit) -> void:
 
 
 func _show_faculties() -> void:
-	if _current_theme.is_empty():
-		_current_theme = Catalog.THEME.get("sistemas", {})
+	_use_neutral_theme()
 	var content := _make_page("Elige una facultad", "Facultad de Ingeniería · Ingeniería de Sistemas e Ingeniería Informática.", _show_new_solo)
-	var rows := _add_scroll(content)
+	var rows := _add_compact_list(content)
 	for faculty in Catalog.FACULTIES:
 		var button := _add_button(rows, str(faculty["name"]) + "\n" + str(faculty["description"]), _select_faculty.bind(str(faculty["id"])), false, 82)
 		button.add_theme_font_size_override("font_size", int(round(16 * float(settings["font_scale"]))))
@@ -591,9 +1243,10 @@ func _select_faculty(faculty_id: String) -> void:
 
 
 func _show_programs() -> void:
+	_use_neutral_theme()
 	var faculty := Catalog.faculty_by_id(selected_faculty)
 	var content := _make_page(str(faculty.get("name", "Carreras")), "Plan de estudios por semestres con prerrequisitos.", _show_faculties)
-	var rows := _add_scroll(content)
+	var rows := _add_compact_list(content)
 	for program in Catalog.programs_for_faculty(selected_faculty):
 		var card := _card(rows)
 		var theme := Catalog.get_theme(str(program["id"]))
@@ -606,6 +1259,7 @@ func _show_programs() -> void:
 
 
 func _show_mentions(program_id: String) -> void:
+	_use_neutral_theme()
 	var program := Catalog.program_by_id(program_id)
 	if program.is_empty():
 		_show_programs()
@@ -613,17 +1267,37 @@ func _show_mentions(program_id: String) -> void:
 	var theme := Catalog.get_theme(program_id)
 	var accent: Color = theme.get("accent", GREEN)
 	var content := _make_page("Menciones y enfoques", str(program["name"]) + " · planes FNI publicados en 2011; los temarios detallados requieren revisión", _show_programs)
-	var rows := _add_scroll(content)
-	var info_card := _card(rows)
+	var info_card := _card(content)
 	info_card.add_child(_label(str(program["name"]), 21, accent))
 	info_card.add_child(_label(str(program.get("description", "")), 15, theme.get("sub", Color("#5f6257"))))
+	var rows := GridContainer.new()
+	rows.columns = 2
+	rows.add_theme_constant_override("h_separation", 10)
+	rows.add_theme_constant_override("v_separation", 10)
+	content.add_child(rows)
+	var art_colors := [Color("#5d8975"), Color("#57859a"), Color("#b87754"), Color("#8b70a0"), Color("#bd9b50")]
+	var mention_index := 0
 	for mention in Catalog.mentions_for_program(program_id):
 		var card := _card(rows)
-		card.add_child(_label(str(mention["name"]), 19, accent))
-		card.add_child(_label(str(mention["focus"]), 15, theme.get("sub", Color("#5f6257"))))
-		card.add_child(_label("Actividad de muestra: " + str(mention["activity"]), 14, theme.get("sub", Color("#767262"))))
-		_add_button(card, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 46)
-		_add_button(card, "Ver plan y demostración", Callable(self, "_show_curriculum").bind(program_id, str(mention["id"])), false, 46)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 14)
+		card.add_child(row)
+		var color: Color = art_colors[mention_index % art_colors.size()]
+		var illustration := MentionArt.new()
+		illustration.setup(str(mention["id"]), color)
+		row.add_child(illustration)
+		var copy := VBoxContainer.new()
+		copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(copy)
+		copy.add_child(_label(str(mention["name"]), 18, color))
+		copy.add_child(_label(str(mention["focus"]), 14, theme.get("sub", Color("#5f6257"))))
+		copy.add_child(_label("Proyecto de muestra: " + str(mention["activity"]), 13, theme.get("sub", Color("#767262"))))
+		var actions := HFlowContainer.new()
+		actions.add_theme_constant_override("h_separation", 8)
+		card.add_child(actions)
+		_add_button(actions, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 42)
+		_add_button(actions, "Plan y simulación", Callable(self, "_show_curriculum").bind(program_id, str(mention["id"])), false, 42)
+		mention_index += 1
 
 
 func _create_solo_save(program_id: String, mention_id: String) -> void:
@@ -663,10 +1337,8 @@ func _show_solo_hub() -> void:
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
 	queue_redraw()
-	var passed: Array = current_profile.get("passed_subjects", []) as Array
-	var failed: Array = current_profile.get("failed_subjects", []) as Array
-	if passed == null: passed = []
-	if failed == null: failed = []
+	var passed: Array = current_profile.get("passed_subjects", [])
+	var failed: Array = current_profile.get("failed_subjects", [])
 	current_profile["passed_subjects"] = passed
 	current_profile["failed_subjects"] = failed
 	if not current_profile.has("subject_progress"):
@@ -683,124 +1355,102 @@ func _show_solo_hub() -> void:
 	if not mention.is_empty():
 		subtitle += " · " + str(mention["name"])
 	var page := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), subtitle, _show_solo_slots)
-	var content := _add_scroll(page)
-	var header := _card(content)
-	header.add_child(_label(str(program.get("description", "")), 15, theme.get("sub", Color("#5f6257"))))
-	content.add_child(_label("Avance", 24, accent, true))
-	content.add_child(_label("Materias aprobadas: %d / %d    ·    Confianza: %d" % [passed.size(), subjects.size(), int(current_profile.get("confidence", 60))], 17, theme.get("text", INK), true))
-	var prog_card := _card(content)
-	prog_card.add_child(_label("Progreso por materia", 19, accent))
-	for sub in subjects:
-		var sig := str(sub.get("sigla", ""))
-		if passed.has(sig):
-			prog_card.add_child(_label("✓ %s - %s (APROBADA - 3/3)" % [sig, sub.get("name","")], 15, GREEN))
-			continue
-		if failed.has(sig):
-			var fp := 0
-			if sprog.has(sig):
-				fp = int((sprog[sig] as Dictionary).get("partial", 0)) + 1
-			prog_card.add_child(_label("✗ %s - %s (REPROBADA - Parcial %d/3)" % [sig, sub.get("name",""), fp], 15, Color("#b77a43")))
-			continue
-		if sprog.has(sig):
-			var spd: Dictionary = sprog[sig]
-			if bool(spd.get("complete", false)):
-				prog_card.add_child(_label("✓ %s - %s (APROBADA - 3/3)" % [sig, sub.get("name","")], 15, GREEN))
-				continue
-			var pp := int(spd.get("partial", 0))
-			if pp > 0:
-				prog_card.add_child(_label("◐ %s - %s (EN CURSO - Parcial %d/3)" % [sig, sub.get("name",""), pp], 15, accent))
-				continue
-		prog_card.add_child(_label("○ %s - %s (SIN INICIAR)" % [sig, sub.get("name","")], 15, theme.get("sub", Color("#686a5d"))))
-	if not bool(current_profile.get("career_complete", false)):
-		var current_sem := 1
-		var semesters: Array = Catalog.semesters_for(str(program["id"]), mention_id)
-		for sem in semesters:
-			var sem_dict: Dictionary = sem
-			if int(sem_dict.get("order", 0)) != current_sem:
-				continue
-			var all_passed := true
-			var sem_subs: Array = sem_dict.get("subjects", [])
-			for sub in sem_subs:
-				var sd: Dictionary = sub
-				if not passed.has(sd.get("sigla", "")):
-					all_passed = false
-					break
-			if all_passed:
-				current_sem += 1
-			else:
+	var semesters: Array = Catalog.semesters_for(str(program["id"]), mention_id)
+	var current_sem := 1
+	for semester in semesters:
+		var all_passed := true
+		for subject in semester.get("subjects", []):
+			if not passed.has(subject.get("sigla", "")):
+				all_passed = false
 				break
-		if current_sem > semesters.size():
-			current_profile["career_complete"] = true
-			_save_profile()
-			_show_solo_hub()
-			return
-		var sem_card := _card(content)
-		sem_card.add_child(_label("Semestre actual: %d" % current_sem, 19, accent))
-		sem_card.add_child(_label("Elige materias de este semestre para rendir parciales. Si repruebas, puedes repetirla más adelante cuando corresponda.", 14, theme.get("sub", Color("#686a5d"))))
-		for sem in semesters:
-			var sem_dict: Dictionary = sem
-			if int(sem_dict.get("order", 0)) == current_sem:
-				var sem_subs: Array = sem_dict.get("subjects", [])
-				for sub in sem_subs:
-					var sd: Dictionary = sub
-					var sig := str(sd.get("sigla", ""))
-					if passed.has(sig): continue
-					if failed.has(sig):
-						var fp := 0
-						if sprog.has(sig):
-							fp = int((sprog[sig] as Dictionary).get("partial", 0)) + 1
-						sem_card.add_child(_label("• %s - %s (Reprobada - Parcial %d/3)" % [sig, sd.get("name",""), fp], 15, Color("#b77a43")))
-						continue
-					var prereq_ok := true
-					var prereqs: Array = sd.get("prereq", [])
-					for p in prereqs:
-						var ps := str(p)
-						if ps == "INGRESO": continue
-						if not passed.has(ps):
-							prereq_ok = false
-							break
-					if prereq_ok:
-						var sp2 := 0
-						if sprog.has(sig):
-							sp2 = int((sprog[sig] as Dictionary).get("partial", 0))
-						var btn_txt := "%s - %s" % [sig, sd.get("name","")]
-						if sp2 > 0:
-							btn_txt = "%s - %s (Parcial %d/3)" % [sig, sd.get("name",""), sp2]
-						_add_button(sem_card, btn_txt, Callable(self, "_start_subject").bind(sig), false, 48)
-					else:
-						sem_card.add_child(_label("• %s - %s (Bloqueada por prerrequisitos)" % [sig, sd.get("name","")], 14, theme.get("sub", Color("#686a5d"))))
-				break
-		if failed.size() > 0:
-			var rep := _card(content)
-			rep.add_child(_label("Materias reprobadas para repetir", 17, Color("#b77a43")))
-			for sig in failed:
-				var sstr := str(sig)
-				var sub := Catalog.subject_by_sigla(str(program["id"]), sstr, mention_id)
-				if not sub.is_empty():
-					var prereq_ok := true
-					var prereqs2: Array = sub.get("prereq", [])
-					for p in prereqs2:
-						var ps := str(p)
-						if ps == "INGRESO": continue
-						if not passed.has(ps):
-							prereq_ok = false
-							break
-					if prereq_ok and not passed.has(sstr):
-						var fp2 := 0
-						if sprog.has(sstr):
-							fp2 = int((sprog[sstr] as Dictionary).get("partial", 0)) + 1
-						_add_button(rep, "%s - %s (Repetir - Parcial %d/3)" % [sstr, sub.get("name",""), fp2], Callable(self, "_start_subject").bind(sstr), false, 46)
-	else:
-		content.add_child(_label("Carrera completa: " + str(program["title"]), 21, GREEN, true))
-		content.add_child(_label("Tu título ya está registrado en la partida.", 16, theme.get("sub", Color("#686a5d")), true))
-		if not bool(current_profile.get("competency_passed", false)):
-			_add_button(content, "Rendir examen de competencia", _show_competency, true, 62)
+		if all_passed:
+			current_sem = int(semester.get("order", 0)) + 1
 		else:
-			content.add_child(_label("Competencia aprobada · Auxiliar disponible en el modo de equipo.", 17, GREEN, true))
-	_add_button(content, "Ver plan de estudios (GRAFO interactivo)", Callable(self, "_show_curriculum_graph").bind(str(program["id"]), true), false, 52)
-	_add_button(content, "Ver títulos y logros", _show_titles, false, 48)
-	_add_button(content, "Cambiar carrera o facultad", _show_solo_slots, false, 48)
-	_add_button(content, "Guardar y volver al inicio", _return_to_menu, false, 48)
+			current_sem = int(semester.get("order", 1))
+			break
+	if current_sem > semesters.size() and not bool(current_profile.get("career_complete", false)):
+		current_profile["career_complete"] = true
+		var titles: Array = current_profile.get("titles", [])
+		var career_title := "Título: " + str(program["title"])
+		if not titles.has(career_title):
+			titles.append(career_title)
+		current_profile["titles"] = titles
+		_save_profile()
+		_show_solo_hub()
+		return
+	var progress_card := _card(page, true)
+	var completed_semesters := clampi(current_sem - 1, 0, semesters.size())
+	progress_card.add_child(_label("RECORRIDO  ·  %d de %d semestres" % [completed_semesters, semesters.size()], 17, accent, true))
+	var progress := ProgressBar.new()
+	progress.max_value = maxf(semesters.size(), 1)
+	progress.value = completed_semesters
+	progress.show_percentage = false
+	progress.custom_minimum_size.y = 12
+	progress_card.add_child(progress)
+	progress_card.add_child(_label("%d / %d materias aprobadas   ·   Confianza %d" % [passed.size(), subjects.size(), int(current_profile.get("confidence", 60))], 14, theme.get("sub", INK), true))
+	if not bool(current_profile.get("career_complete", false)):
+		var current_data: Dictionary = semesters[current_sem - 1]
+		var active_card := _card(page)
+		active_card.add_child(_label("SEMESTRE %02d  ·  %s" % [current_sem, str(current_data.get("name", ""))], 21, accent, true))
+		active_card.add_child(_label("Toca una tarjeta para estudiar. El progreso queda guardado por materia.", 14, theme.get("sub", INK), true))
+		var grid := GridContainer.new()
+		grid.columns = 3 if size.x >= 1100 else 2
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 8)
+		active_card.add_child(grid)
+		for subject in current_data.get("subjects", []):
+			var sigla := str(subject.get("sigla", ""))
+			var is_passed := passed.has(sigla)
+			var detail: Dictionary = sprog.get(sigla, {})
+			var partial := 3 if is_passed else clampi(int(detail.get("partial", 0)), 0, 3)
+			var subject_color := Color("#678c6d")
+			if sigla.begins_with("MAT"):
+				subject_color = Color("#ad8b43")
+			elif sigla.begins_with("FIS") or sigla.begins_with("QMC"):
+				subject_color = Color("#b87552")
+			elif sigla.begins_with("INF") or sigla.begins_with("ELT"):
+				subject_color = Color("#51849a")
+			var card_button := Button.new()
+			card_button.custom_minimum_size = Vector2(220, 92)
+			card_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			card_button.text = "%s\n%s\n%s" % [sigla, str(subject.get("name", "")), "APROBADA" if is_passed else ("Parcial %d/3" % (partial + 1) if partial > 0 else "Lista para empezar")]
+			card_button.disabled = is_passed
+			card_button.add_theme_font_size_override("font_size", int(round(14 * float(settings["font_scale"]))))
+			var card_style := StyleBoxFlat.new()
+			card_style.bg_color = Color("#dbe8d8") if is_passed else Color(subject_color, 0.14)
+			card_style.border_color = Color("#6b8f71") if is_passed else subject_color
+			card_style.set_border_width_all(2)
+			card_style.set_corner_radius_all(12)
+			card_button.add_theme_stylebox_override("normal", card_style)
+			card_button.add_theme_stylebox_override("hover", card_style)
+			card_button.add_theme_stylebox_override("disabled", card_style)
+			card_button.pressed.connect(_start_subject.bind(sigla))
+			grid.add_child(card_button)
+		var retryable: Array[String] = []
+		for sigla in failed:
+			var subject := Catalog.subject_by_sigla(str(program["id"]), str(sigla), mention_id)
+			if not subject.is_empty():
+				retryable.append(str(sigla))
+		if not retryable.is_empty():
+			var retry_row := HFlowContainer.new()
+			retry_row.add_theme_constant_override("h_separation", 8)
+			page.add_child(retry_row)
+			for sigla in retryable:
+				var subject := Catalog.subject_by_sigla(str(program["id"]), sigla, mention_id)
+				_add_button(retry_row, "Reintentar " + sigla + " · " + str(subject.get("name", "")), Callable(self, "_start_subject").bind(sigla), false, 42)
+	else:
+		var finished := _card(page, true)
+		finished.add_child(_label("CARRERA COMPLETADA", 23, GREEN, true))
+		finished.add_child(_label(str(program["title"]) + " · auxiliar disponible al aprobar competencia", 16, theme.get("sub", INK), true))
+		if not bool(current_profile.get("competency_passed", false)):
+			_add_button(finished, "Rendir examen de competencia", _show_competency, true, 48)
+	var actions := HFlowContainer.new()
+	actions.add_theme_constant_override("h_separation", 8)
+	page.add_child(actions)
+	_add_button(actions, "Ver recorrido por semestres", Callable(self, "_show_curriculum_graph").bind(str(program["id"]), true), false, 42)
+	_add_button(actions, "Logros", _show_titles, false, 42)
+	_add_button(actions, "Cambiar carrera", _show_solo_slots, false, 42)
+	_add_button(actions, "Guardar y salir", _return_to_menu, false, 42)
 
 
 func _start_subject(sigla: String) -> void:
@@ -862,30 +1512,46 @@ func _show_exam() -> void:
 	_current_theme = theme
 	queue_redraw()
 	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, str(course["name"]), sigla], "Semestre %d · Progreso: Parcial %d de 3" % [int(course.get("semester",0)), partial_index + 1], Callable(self, "_show_solo_hub"))
-	var info := _card(content)
-	info.add_child(_label(str(course.get("desc","")), 15, theme.get("sub", Color("#5f6257"))))
 	var topics: Array = course.get("topics", [])
-	if not topics.is_empty():
-		info.add_child(_label("Temas: " + ", ".join(topics), 14, theme.get("sub", Color("#686a5d"))))
-	var prereq: Array = course.get("prereq", [])
-	if not prereq.is_empty():
-		info.add_child(_label("Prerrequisitos: " + ", ".join(prereq), 14, theme.get("sub", Color("#686a5d"))))
-	info.add_child(_label("Progreso: Parcial %d/3" % (partial_index + 1), 14, accent))
-	content.add_child(_label(str(current_question["q"]), 23, accent, true))
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 18)
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(columns)
+	var lesson := _card(columns, true)
+	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
+	lesson.add_child(_label("Idea clave: %s parte de «%s» y la aplica en situaciones concretas." % [str(course.get("name", "La materia")).to_lower(), str(topics[0]) if not topics.is_empty() else str(course.get("name", "la materia"))], 13, theme.get("sub", INK)))
+	lesson.add_child(_label("Temas de la materia: " + ", ".join(topics), 12, theme.get("sub", INK)))
+	var demo := StudyDemo.new()
+	demo.setup(course, partial_index)
+	lesson.add_child(demo)
+	var exam_column := VBoxContainer.new()
+	exam_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	exam_column.add_theme_constant_override("separation", 7)
+	columns.add_child(exam_column)
+	exam_column.add_child(_label("COMPRUEBA TU IDEA · PARCIAL %d/3" % (partial_index + 1), 13, accent, true))
+	exam_column.add_child(_label(str(current_question["q"]), 19, accent, true))
 	for option_index in range(current_question["options"].size()):
-		_add_button(content, str(current_question["options"][option_index]), _answer_subject.bind(option_index), false, 55)
+		_add_button(exam_column, str(current_question["options"][option_index]), _answer_subject.bind(option_index), false, 48)
 	var key := "%s:%d" % [sigla, partial_index]
 	var used: Array = current_profile.get("chanchullo_used", [])
-	var cheat_button := _add_button(content, "Chanchullo: mirar el apunte escondido", _try_chanchullo.bind(key), true, 50)
+	var cheat_button := _add_button(exam_column, "Chanchullo · usar apunte", _try_chanchullo.bind(key), true, 42)
 	if used.has(key):
 		cheat_button.disabled = true
-		content.add_child(_label("Ya usaste el chanchullo en este parcial.", 14, GOLD, true))
+		cheat_button.tooltip_text = "Ya usaste el chanchullo en este parcial."
 	else:
-		content.add_child(_label("La jugada puede salir bien o pillarse; solo hay una oportunidad por parcial.", 14, theme.get("sub", Color("#686a5d")), true))
+		cheat_button.tooltip_text = "Una oportunidad por parcial. Puede salir bien o pillarte."
 
 
 func _answer_subject(option_index: int) -> void:
 	_finish_subject_question(option_index == int(current_question["answer"]), false)
+
+
+func _award_title_once(title: String) -> void:
+	var titles: Array = current_profile.get("titles", [])
+	if not titles.has(title):
+		titles.append(title)
+		current_profile["titles"] = titles
 
 
 func _try_chanchullo(key: String) -> void:
@@ -924,6 +1590,8 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 	var failed: Array = current_profile["failed_subjects"]
 	var sprog: Dictionary = current_profile["subject_progress"]
 	if correct:
+		if partial_index == 0:
+			_award_title_once("Primer paso · aprobaste tu primer parcial")
 		if not cheated:
 			current_profile["confidence"] = mini(100, int(current_profile.get("confidence", 60)) + 4)
 		partial_index += 1
@@ -936,6 +1604,15 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 			current_profile["subject_progress"] = sprog
 			if not passed.has(sigla):
 				passed.append(sigla)
+			if passed.size() == 5:
+				_award_title_once("Ritmo constante · aprobaste cinco materias")
+			var used_partials: Array = current_profile.get("chanchullo_used", [])
+			var subject_used_cheat := false
+			for partial_number in range(3):
+				if used_partials.has("%s:%d" % [sigla, partial_number]):
+					subject_used_cheat = true
+			if not subject_used_cheat:
+				_award_title_once("A pulso · aprobaste una materia sin chanchullo")
 			if failed.has(sigla):
 				failed.erase(sigla)
 			current_profile["passed_subjects"] = passed
@@ -1027,7 +1704,7 @@ func _has_eligible_solo_save() -> bool:
 
 func _choose_team_source() -> void:
 	var content := _make_page("Elige a quién vas a representar", "Solo aparecen carreras completas con competencia aprobada.", _show_multi_slots)
-	var rows := _add_scroll(content)
+	var rows := _add_compact_list(content)
 	for slot in range(1, SAVE_COUNT + 1):
 		var save := _read_save(slot, "solo")
 		if bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
@@ -1456,6 +2133,8 @@ func _save_profile() -> void:
 
 
 const GraphScene := preload("res://scripts/curriculum_graph.gd")
+const StudyDemo := preload("res://scripts/study_demo.gd")
+const MentionArt := preload("res://scripts/mention_art.gd")
 
 func _show_curriculum_graph(program_id: String, return_to_hub: bool = false, selected_mention_id: String = "") -> void:
 	var program := Catalog.program_by_id(program_id)
@@ -1466,22 +2145,53 @@ func _show_curriculum_graph(program_id: String, return_to_hub: bool = false, sel
 	var mention_id := str(current_profile.get("mention_id", "")) if return_to_hub else selected_mention_id
 	var mention := Catalog.mention_by_id(program_id, mention_id)
 	var page_back := Callable(self, "_show_solo_hub") if return_to_hub else Callable(self, "_show_mentions").bind(program_id)
-	var content := _make_page("Plan de estudios y recorrido", str(program.get("name", "")) + " · Plan publicado por la FNI en 2011", page_back)
-	var intro := _card(content)
-	intro.add_child(_label(str(program.get("description", "")), 15, theme.get("sub", Color("#9fb3c8"))))
+	var page_subtitle := str(program.get("name", "")) + " · Plan FNI 2011"
 	if not mention.is_empty():
-		intro.add_child(_label("Enfoque: " + str(mention.get("name", "")) + "\nActividad de muestra: " + str(mention.get("activity", "")), 14, theme.get("sub", Color("#9fb3c8"))))
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.custom_minimum_size = Vector2(0, 310)
-	content.add_child(scroll)
+		page_subtitle += " · " + str(mention.get("name", ""))
+	var content := _make_page("Plan de estudios y recorrido", page_subtitle, page_back)
 	var graph := GraphScene.new()
-	graph.setup(program_id, mention_id)
-	scroll.add_child(graph)
-	var details := _card(content)
-	details.add_child(_label("Selecciona una materia del grafo para ver sus temas y requisitos.", 14, theme.get("sub", Color("#9fb3c8"))))
+	var graph_width := minf(660.0, size.x - 42.0 * 2.0 - 310.0)
+	graph.setup(program_id, mention_id, graph_width)
+	var semester := HBoxContainer.new()
+	semester.alignment = BoxContainer.ALIGNMENT_CENTER
+	semester.add_theme_constant_override("separation", 10)
+	content.add_child(semester)
+	var back_semester := _add_button(semester, "← Semestre anterior", Callable(graph, "move_semester").bind(-1), false, 42)
+	var counter := _label("SEMESTRE 1 / 10", 18, theme.get("accent", GREEN), true)
+	counter.custom_minimum_size.x = 230
+	semester.add_child(counter)
+	var next_semester := _add_button(semester, "Siguiente semestre →", Callable(graph, "move_semester").bind(1), true, 42)
+	var overview := HBoxContainer.new()
+	overview.add_theme_constant_override("separation", 14)
+	overview.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(overview)
+	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	overview.add_child(graph)
+	var details := _card(overview)
+	details.custom_minimum_size.x = 280
+	var pager := HBoxContainer.new()
+	pager.alignment = BoxContainer.ALIGNMENT_CENTER
+	pager.add_theme_constant_override("separation", 5)
+	content.add_child(pager)
+	var dots: Array[Label] = []
+	for index in range(Catalog.semesters_for(program_id, mention_id).size()):
+		var dot := _label("●" if index == 0 else "·", 17 if index == 0 else 14, theme.get("accent", GREEN), true)
+		dot.custom_minimum_size.x = 18
+		pager.add_child(dot)
+		dots.append(dot)
+	details.add_child(_label("Elige una materia para consultar su descripción, temas y prerrequisitos.", 13, theme.get("sub", Color("#9fb3c8"))))
+	back_semester.disabled = true
+	graph.semester_changed.connect(_update_graph_pager.bind(counter, dots, back_semester, next_semester))
 	graph.subject_selected.connect(_show_graph_subject.bind(details))
+
+
+func _update_graph_pager(index: int, count: int, counter: Label, dots: Array[Label], previous: Button, next: Button) -> void:
+	counter.text = "SEMESTRE %d / %d" % [index + 1, count]
+	previous.disabled = index <= 0
+	next.disabled = index >= count - 1
+	for dot_index in range(dots.size()):
+		dots[dot_index].text = "●" if dot_index == index else "·"
+		dots[dot_index].add_theme_font_size_override("font_size", 17 if dot_index == index else 14)
 
 func _show_curriculum(program_id: String, mention_id: String) -> void:
 	_show_curriculum_graph(program_id, false, mention_id)
@@ -1491,10 +2201,20 @@ func _show_graph_subject(sigla: String, data: Dictionary, details: VBoxContainer
 	for child in details.get_children():
 		details.remove_child(child)
 		child.queue_free()
+	if bool(data.get("admission", false)):
+		details.add_child(_label("INGRESO A LA FNI", 17, Color("#d0ae74")))
+		details.add_child(_label(str(data.get("desc", "")), 12, _current_theme.get("sub", INK)))
+		for admission_mode in data.get("admission_modes", []):
+			details.add_child(_label("• " + str(admission_mode), 11, _current_theme.get("text", INK)))
+		details.add_child(_label(str(data.get("notice", "")), 11, _current_theme.get("accent", GOLD)))
+		return
 	var prerequisites: Array = data.get("prereq", [])
 	var topics: Array = data.get("topics", [])
 	details.add_child(_label(str(data.get("name", "")) + " · " + sigla, 18, _current_theme.get("accent", GREEN)))
-	details.add_child(_label(str(data.get("desc", "")), 15, _current_theme.get("sub", INK)))
-	details.add_child(_label("Semestre %s · Prerrequisitos: %s" % [str(data.get("semester", "")), ", ".join(prerequisites) if not prerequisites.is_empty() else "Ingreso"], 14, _current_theme.get("sub", INK)))
+	var description := _label(str(data.get("desc", "")), 13, _current_theme.get("sub", INK))
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	details.add_child(description)
+	details.add_child(_label("Semestre %s  ·  Requiere: %s" % [str(data.get("semester", "")), ", ".join(prerequisites) if not prerequisites.is_empty() else "Ingreso"], 12, _current_theme.get("sub", INK)))
 	if not topics.is_empty():
-		details.add_child(_label("Temas: " + ", ".join(topics), 14, _current_theme.get("sub", INK)))
+		details.add_child(_label("Temas: " + ", ".join(topics), 12, _current_theme.get("sub", INK)))

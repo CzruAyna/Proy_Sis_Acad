@@ -1,4 +1,4 @@
-# UNI SIMULATOR
+# CAMPUS EN JUEGO
 
 Juego de escritorio para Windows hecho con Godot 4.7 (GDScript). Es una partida corta en modo cuaderno: carrera universitaria en solitario o partida local por turnos entre 1 y 4 jugadores.
 
@@ -10,14 +10,14 @@ El sistema académico Django/Next.js de este repositorio queda separado y no se 
 game\.tools\Godot_v4.7.2-stable_win64_console.exe --path game
 ```
 
-Versión exportada: `game/build/UNI SIMULATOR.exe`.
+Versión exportada: `game/build/CAMPUS EN JUEGO.exe`.
 
 ## Exportar
 
 ```powershell
 $env:APPDATA = "game\.tools\editor-profile\Roaming"
 $env:LOCALAPPDATA = "game\.tools\editor-profile\Local"
-game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --export-release "Windows Desktop" "build/UNI SIMULATOR.exe"
+game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --export-release "Windows Desktop" "build/CAMPUS EN JUEGO.exe"
 ```
 
 ## Estado
@@ -36,7 +36,7 @@ game/
   scenes/main.tscn
   scripts/game.gd
   scripts/catalog.gd
-  assets/leaf.svg
+  assets/campus_vector.svg
   build/           (ejecutable/exportado)
 ```
 

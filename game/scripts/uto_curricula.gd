@@ -139,6 +139,49 @@ const TOPIC_DATA := {
 	"INF 3920": ["Datos geográficos", "Capas y coordenadas", "Análisis espacial"]
 }
 
+const DESCRIPTION_DATA := {
+	"SIS 1110": "Descompone un problema en instrucciones finitas. Practica con pseudocódigo, diagramas de flujo, condiciones y ciclos antes de programarlos.",
+	"INF 1210": "Usa lógica, conjuntos, relaciones e inducción para expresar reglas y demostrar propiedades de algoritmos y estructuras discretas.",
+	"SIS 2210": "Construye programas modulares con funciones, arreglos y archivos. Separa la lógica del problema de la entrada y salida de datos.",
+	"SIS 2310": "Organiza datos con listas, pilas, colas, árboles y grafos. Compara su costo para escoger una estructura apropiada.",
+	"INF 2410": "Relaciona lógica digital con procesadores, memoria y buses. Sigue cómo se representan y ejecutan instrucciones en una computadora.",
+	"INF 2430": "Modela entidades y relaciones, convierte el diseño en tablas y consulta con SQL. La normalización ayuda a evitar inconsistencias.",
+	"INF 3510": "Divide redes en capas, calcula subredes IPv4 y configura rutas. Comprueba conectividad con tablas de encaminamiento y diagnóstico.",
+	"INF 3520": "Practica transacciones, concurrencia, índices y planes de consulta para mantener consistentes bases de datos con más carga.",
+	"INF 3530": "Analiza procesadores, jerarquías de memoria y paralelismo. Compara cómo el pipeline y las cachés cambian la ejecución.",
+	"INF 3620": "Estudia protocolos y servicios que conectan equipos y aplicaciones. Examina paquetes y diagnostica problemas de comunicación.",
+	"INF 3631": "Construye etapas de un compilador: análisis léxico, gramática, árbol sintáctico y generación de código.",
+	"INF 3641": "Diseña algoritmos y compara su complejidad. Contrasta estrategias como dividir y conquistar, programación dinámica y algoritmos voraces.",
+	"INF 3632": "Estudia transmisión por fibra óptica, pérdidas y dispersión. Resuelve presupuestos de enlace para estimar su viabilidad.",
+	"INF 3642": "Diseña redes desde sus requisitos: elige topología y equipos, estima capacidad y propone pruebas de cobertura y conectividad.",
+	"INF 3731": "Representa problemas para resolverlos mediante búsqueda, reglas o conocimiento. Compara soluciones por costo, límites y evidencia.",
+	"INF 3741": "Convierte requisitos en software mediante diseño, implementación y pruebas. Usa prototipos y revisiones antes de integrar componentes.",
+	"INF 3732": "Integra servicios y redes en una solución telemática. Define cómo se comunican sus partes y prueba el servicio de extremo a extremo.",
+	"INF 3742": "Compara tecnologías de banda ancha por capacidad, alcance y calidad de servicio. Estima demanda y localiza cuellos de botella.",
+	"INF 3811": "Planifica pruebas y mantenimiento de software. Relaciona criterios de calidad con casos de prueba, incidencias y cambios controlados.",
+	"INF 3812": "Administra redes con rutas, servicios y monitoreo. Diagnostica fallos desde la configuración, el tráfico y los registros.",
+	"INF 3822": "Analiza propagación, modulación e interferencia en enlaces inalámbricos. Estima cobertura y compara parámetros de transmisión.",
+	"INF 3911": "Desarrolla aplicaciones web conectando interfaz, lógica del servidor y almacenamiento. Integra servicios y prueba el despliegue.",
+	"INF 3912": "Integra redes telemáticas y verifica protocolos y servicios. Usa mediciones y registros para localizar errores de comunicación.",
+	"SIS 2510": "Formula decisiones como modelos lineales con variables, objetivos y restricciones. Resuelve casos con simplex, transporte y asignación.",
+	"SIS 2520": "Representa procesos con entidades, eventos y reglas. Ejecuta escenarios y valida los supuestos antes de recomendar cambios.",
+	"SIS 2530": "Levanta requisitos y modela procesos para entender un problema organizacional. Produce especificaciones revisables por usuarios y equipo técnico.",
+	"SIS 3630": "Modela cambios de sistemas con variables y bucles causales. Simula escenarios para observar efectos, realimentación y retrasos.",
+	"SIS 3640": "Planifica producción y controla operaciones con capacidad, inventarios e indicadores. Compara el plan con resultados para detectar desvíos.",
+	"SIS 3651": "Define requisitos, arquitectura y prototipos de un sistema. Verifica con usuarios que la solución responda a tareas reales.",
+	"SIS 3753": "Plantea modelos de optimización con variables y restricciones. Compara asignaciones y analiza cambios en los supuestos.",
+	"SIS 3763": "Programa operaciones según tiempos, capacidad y restricciones. Compara secuencias de producción y ajusta el plan a la demanda.",
+	"SIS 3843": "Resuelve decisiones mediante modelos y escenarios. Interpreta resultados y límites antes de recomendar una alternativa.",
+	"MAT 1101": "Usa límites y derivadas para describir cambios, calcular tasas y optimizar funciones con interpretación del resultado.",
+	"MAT 1102": "Aplica integrales a áreas, volúmenes y movimiento. Comprueba unidades y condiciones al acumular cantidades.",
+	"MAT 1207": "Resuelve ecuaciones diferenciales que modelan cambios como crecimiento y movimiento. Formula condiciones iniciales e interpreta soluciones.",
+	"MAT 2208": "Modela procesos acoplados con sistemas de ecuaciones diferenciales. Estudia soluciones y estabilidad a lo largo del tiempo.",
+	"FIS 1100": "Describe movimiento y fuerzas con vectores, leyes de Newton y energía. Resuelve casos con diagramas y unidades coherentes.",
+	"FIS 1102": "Analiza campos eléctricos y magnéticos, potencial y circuitos. Relaciona magnitudes con leyes físicas y verifica unidades.",
+	"FIS 1200": "Estudia ondas, óptica y termodinámica con modelos y mediciones. Interpreta gráficas y contrasta predicciones.",
+	"QMC 1100": "Relaciona estructura atómica, enlaces y reacciones. Usa proporciones estequiométricas y comprueba la conservación de materia."
+}
+
 
 static func semesters(program_id: String, mention_id: String) -> Array:
 	var common: Array = SYSTEMS_COMMON if program_id == "sistemas" else INFORMATICS_COMMON
@@ -165,7 +208,8 @@ static func _subject_from_row(row: String) -> Dictionary:
 	if not prerequisite_text.is_empty():
 		prerequisites = prerequisite_text.split(",", false)
 	var topics: Array = TOPIC_DATA.get(sigla, [name + " · fundamentos", name + " · aplicación", name + " · integración"])
-	return {"sigla": sigla, "name": name, "prereq": prerequisites, "desc": "Materia del plan de estudios FNI publicado en 2011. Temario detallado sujeto a revisión del programa analítico.", "topics": topics.duplicate(true)}
+	var description := str(DESCRIPTION_DATA.get(sigla, "Estudia %s mediante %s. En ejercicios, plantea el problema, elige un procedimiento y revisa el resultado con datos, condiciones o unidades." % [name.to_lower(), ", ".join(topics).to_lower()]))
+	return {"sigla": sigla, "name": name, "prereq": prerequisites, "desc": description, "topics": topics.duplicate(true)}
 
 
 static func _semester_name(order: int) -> String:
