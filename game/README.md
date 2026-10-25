@@ -1,6 +1,6 @@
 # CAMPUS EN JUEGO
 
-Juego de escritorio para Windows hecho con Godot 4.7 (GDScript). Es una partida corta en modo cuaderno: carrera universitaria en solitario o partida local por turnos entre 1 y 4 jugadores.
+Juego de escritorio para Windows hecho con Godot 4.7 (GDScript). Simula el recorrido individual de un estudiante por la carrera: materias, trámites, auxiliatura y graduación.
 
 El sistema académico Django/Next.js de este repositorio queda separado y no se modifica por este juego.
 
@@ -22,9 +22,12 @@ game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --expor
 
 ## Estado
 
-- **Solo:** nombre, facultad/carrera/enfoque, 3 materias con 3 parciales, examen de competencia y títulos.
-- **Equipo local:** 1-4 jugadores con nombres, turno rotativo, marcador individual (puntos/confianza), CV, entrevista, votación a decano y casos por rol.
-- **Guardado:** `solo_partida_N.json` y `multi_partida_N.json` en 3 espacios cada uno. Se lee formato antiguo `partida_N.json`.
+- **Estudiante:** semestres con resultados mixtos, reprobadas obligatorias, correlativas con sus regulares y conservación del historial de intentos.
+- **Trámites:** matrícula, carta, materia externa, cambio de carrera K-03 y cambio de mención K-02.
+- **Auxiliatura:** postulación durante la carrera, competencia con rivales simulados, asignación de paralelo y trabajo con el docente.
+- **Graduación:** excelencia sin reprobaciones y promedio mayor que 65, o tesis/proyecto con defensa. Concluir materias no entrega automáticamente el título.
+- **Gestiones temporales:** F10 abre la consola del motor; `/ayuda` enumera las acciones y `/desbloquear todo` habilita explorar las materias sin aprobarlas automáticamente.
+- **Guardado:** tres espacios individuales, archivo temporal y respaldo `.bak`; se migran las materias conocidas de partidas antiguas sin inventar sus notas. Los archivos multijugador anteriores se conservan sin cargarlos como modo jugable.
 - **Interfaz:** estilo cuaderno, iconos, animaciones, ajuste de texto, antialiasing opcional, mejor legibilidad.
 - **Sin audio.** Solo local.
 
@@ -36,6 +39,11 @@ game/
   scenes/main.tscn
   scripts/game.gd
   scripts/catalog.gd
+  scripts/student_simulation.gd
+  scripts/simulation_procedures.gd
+  scripts/simulation_commands.gd
+  scripts/simulation_save_store.gd
+  tests/
   assets/campus_vector.svg
   build/           (ejecutable/exportado)
 ```
@@ -43,3 +51,5 @@ game/
 ## Base de datos
 
 **No es necesaria para este juego.** Usa archivos JSON en `user://partidas/`. El PostgreSQL/Django solo aplica al sistema académico (`backend/`), que se mantiene intacto.
+
+Las reglas están en `docs/SIMULACION_ESTUDIANTE.md`. El contrato para sustituir la consola temporal por oficinas y formularios gráficos está en `docs/PENDIENTES_FRONTEND_SIMULACION.md`.

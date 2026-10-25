@@ -1,6 +1,10 @@
 extends Control
 
 const Catalog = preload("res://scripts/catalog.gd")
+const Simulation = preload("res://scripts/student_simulation.gd")
+const SimulationCommands = preload("res://scripts/simulation_commands.gd")
+const SimulationProcedures = preload("res://scripts/simulation_procedures.gd")
+const SimulationSaveStore = preload("res://scripts/simulation_save_store.gd")
 const SAVE_DIR := "user://partidas"
 const SAVE_COUNT := 3
 const GLOBAL_PROFILE_PATH := "user://perfil_global.json"
@@ -79,42 +83,21 @@ class MenuTransitionEffect extends Control:
 
 var _current_theme: Dictionary = {}
 
-const CV_SKILLS := [
-	"Tutorías y apoyo académico",
-	"Organización de actividades universitarias",
-	"Manejo de registros y planillas",
-	"Atención y orientación a estudiantes",
-]
-
 const ASSISTANT_CASES := [
 	{"question": "En la tutoría, alguien memoriza una fórmula pero no entiende cuándo usarla. ¿Qué haces?", "options": ["Resolver todo por esa persona", "Proponer un ejemplo sencillo y pedirle que explique el paso", "Decir que vuelva cuando ya sepa"], "best": 1, "good": "La persona practica el razonamiento y puede detectar qué parte le cuesta.", "bad": "La tutoría sirve más cuando ayuda a entender el proceso, no solo a copiar el resultado."},
 	{"question": "Dos estudiantes piden ayuda al mismo tiempo y queda poco de la hora. ¿Cómo organizas el apoyo?", "options": ["Acordar una prioridad y dejar un siguiente paso claro para ambas personas", "Atender solo a quien habla más fuerte", "Cerrar la tutoría sin avisar"], "best": 0, "good": "La prioridad queda clara y nadie se va sin saber qué hacer después.", "bad": "Coordinar tiempos y expectativas evita que el apoyo dependa de quién insiste más."},
 	{"question": "Una respuesta de la guía parece tener un error. ¿Qué haces antes de difundirla?", "options": ["Verificar el procedimiento y consultar al docente si sigue la duda", "Cambiarla en silencio y repartir otra versión", "Decir al grupo que la guía no sirve"], "best": 0, "good": "Revisar la evidencia y avisar del cambio evita que el error se replique.", "bad": "Una duda se resuelve mejor comprobando el procedimiento y comunicando el resultado."},
 ]
 
-const ADMIN_CASES := [
-	{"question": "Dos solicitudes de inscripción aparecen duplicadas y una vence hoy. ¿Cuál es el primer paso?", "options": ["Revisar el historial, confirmar la solicitud válida y dejar registro", "Borrar las dos para empezar de cero", "Aprobar ambas para que nadie reclame"], "best": 0, "good": "La revisión conserva la trazabilidad y atiende primero el plazo cercano.", "bad": "Un trámite necesita verificación y registro antes de cambiar datos académicos."},
-	{"question": "Hay pocos recursos para atender tres necesidades urgentes. ¿Cómo recomiendas priorizar?", "options": ["Usar criterios publicados, impacto y urgencia; luego explicar la decisión", "Elegir a quien conoces personalmente", "Dividir el dinero en partes iguales sin revisar cada caso"], "best": 0, "good": "Los criterios claros ayudan a usar recursos limitados con responsabilidad.", "bad": "La decisión debe poder explicarse y considerar el impacto de cada necesidad."},
-	{"question": "Un formulario contiene datos personales que no hacen falta para resolver el caso. ¿Qué haces?", "options": ["Compartirlo en el grupo para acelerar el trámite", "Limitar el acceso y pedir solo los datos necesarios", "Imprimir copias para todas las oficinas"], "best": 1, "good": "Reducir datos y accesos protege a las personas y mantiene el trámite enfocado.", "bad": "Los datos deben limitarse a lo necesario y compartirse solo con quienes atienden el caso."},
-]
-
-const DEAN_CASES := [
-	{"question": "El consejo debe repartir 100 puntos de presupuesto entre apoyo estudiantil, laboratorios y mantenimiento. ¿Qué propuesta presentas?", "options": ["35 apoyo, 35 laboratorios, 30 mantenimiento, con revisión trimestral", "90 para un evento y 10 para todo lo demás", "100 para compras sin evaluación de uso"], "best": 0, "good": "La propuesta equilibra necesidades y deja una fecha para revisar el uso del presupuesto.", "bad": "El presupuesto debe responder a necesidades comprobables y tener seguimiento."},
-	{"question": "Un laboratorio pide renovar equipos. ¿Qué condición acompañaría la aprobación?", "options": ["Inventario, justificación académica y plan de mantenimiento", "Aprobar por presión y decidir después qué comprar", "Rechazar todo gasto para guardar el saldo"], "best": 0, "good": "La evidencia y el mantenimiento conectan la compra con el trabajo académico.", "bad": "Aprobar una compra requiere necesidad, uso previsto y cuidado posterior."},
-	{"question": "Al cierre del periodo, parte del presupuesto no se ejecutó. ¿Qué haces?", "options": ["Publicar el resultado y proponer ajustes con las áreas involucradas", "Ocultar el saldo para evitar preguntas", "Gastar lo restante sin revisar necesidades"], "best": 0, "good": "Rendir cuentas permite corregir el plan y sostener la confianza.", "bad": "El cierre también requiere explicar resultados y decidir con evidencia."},
-]
-
 var current_profile: Dictionary = {}
+var simulation: RefCounted
+var simulation_console: AcceptDialog
+var save_store := SimulationSaveStore.new()
 var global_profile: Dictionary = {"achievements": [], "completed_programs": [], "completed_subjects": []}
 var active_slot := 0
 var selected_faculty := ""
 var draft_player_name := ""
-var draft_source_slot := 0
 var current_question: Dictionary = {}
-var cv_draft: Array = []
-var team_name_drafts: Array = []
-var team_name_fields: Array = []
-var team_name_box: VBoxContainer
 var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false, "low_performance": false}
 var system_font: SystemFont
 var formula_font: SystemFont
@@ -843,6 +826,12 @@ func _notification(what: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and not current_profile.is_empty():
+		_show_simulation_console()
+		get_viewport().set_input_as_handled()
+		return
+	if is_instance_valid(simulation_console) and simulation_console.visible:
+		return
 	if _transitioning:
 		return
 	if event.is_action_pressed("ui_cancel") and _active_back.is_valid():
@@ -900,32 +889,19 @@ func _load_global_profile() -> void:
 		if parsed is Dictionary:
 			global_profile = parsed
 	for key in ["achievements", "completed_programs", "completed_subjects"]:
-		if not (global_profile.get(key, []) is Array):
+		if not (global_profile.get(key) is Array):
 			global_profile[key] = []
 	var changed := false
-	for mode in ["solo", "multi"]:
-		for slot in range(1, SAVE_COUNT + 1):
-			var save := _read_save(slot, mode)
-			if save.is_empty():
-				continue
-			for title in save.get("titles", []):
-				changed = _append_global_achievement(str(title)) or changed
-			if mode == "solo":
-				var program_id := str(save.get("program_id", ""))
-				var program := Catalog.program_by_id(program_id)
-				if bool(save.get("career_complete", false)) and not program.is_empty():
-					changed = _record_completed_career(program_id, str(program.get("title", program.get("name", "Carrera"))), false) or changed
-				var passed: Array = save.get("passed_subjects", [])
-				for sigla in passed:
-					changed = _record_completed_subject(program_id, str(save.get("mention_id", "")), str(sigla), false) or changed
-				if bool(save.get("competency_passed", false)):
-					changed = _append_global_achievement("Auxiliar docente · examen de competencia aprobado") or changed
-	if global_profile["completed_subjects"].size() >= 5:
-		changed = _append_global_achievement("Ritmo constante · aprobaste cinco materias en total") or changed
-	if global_profile["completed_subjects"].size() >= 20:
-		changed = _append_global_achievement("Estudiante incansable · aprobaste veinte materias distintas") or changed
-	if global_profile["completed_programs"].size() >= 3:
-		changed = _append_global_achievement("Explorador académico · completaste tres carreras diferentes") or changed
+	for slot in range(1, SAVE_COUNT + 1):
+		var save := _read_save(slot, "solo")
+		if save.is_empty():
+			continue
+		for sigla in save.get("passed_subjects", []):
+			changed = _record_completed_subject(str(save.get("program_id", "")), str(save.get("mention_id", "")), str(sigla), false) or changed
+		var saved_state: Dictionary = save.get("simulation", {})
+		if saved_state.get("graduated", false):
+			var program := Catalog.program_by_id(str(save.get("program_id", "")))
+			changed = _record_completed_career(str(save.get("program_id", "")), str(program.get("title", "Carrera")), false) or changed
 	if changed:
 		_save_global_profile()
 
@@ -1489,92 +1465,65 @@ func _rebuild_options(_changed: bool) -> void:
 
 
 func _show_modes() -> void:
-	_use_neutral_theme()
-	var content := _make_page("Elige cómo jugar", "Elige una forma de recorrer el campus.", Callable(self, "_show_main"), true)
-	var modes := HBoxContainer.new()
-	modes.add_theme_constant_override("separation", 14)
-	content.add_child(modes)
-	var solo_card := _card(modes, true)
-	solo_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	solo_card.add_child(_label("SOLO", 24, _current_theme["accent"], true))
-	solo_card.add_child(_label("Avanza por materias, rinde tres parciales y completa una carrera. Después puedes postular a auxiliar.", 15, Color("#b9cad5"), true))
-	_add_menu_button(solo_card, "Partida solo", _show_solo_slots, true, 46)
-	var team_card := _card(modes, true)
-	team_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	team_card.add_child(_label("EQUIPO", 24, _current_theme["accent"], true))
-	team_card.add_child(_label("Comparte los turnos para resolver tutorías, trámites y decisiones de facultad.", 15, Color("#b9cad5"), true))
-	_add_menu_button(team_card, "Partida de equipo", _show_multi_slots, true, 46)
+	_show_solo_slots()
 
 
 func _show_solo_slots() -> void:
 	_show_slots("solo")
 
 
-func _show_multi_slots() -> void:
-	_show_slots("multi")
-
-
 func _show_slots(mode: String) -> void:
+	if mode != "solo":
+		return
 	_use_neutral_theme()
-	var mode_label := "Solo" if mode == "solo" else "Equipo local"
-	var content := _make_page("Partidas guardadas · " + mode_label, "Tres espacios para este modo, guardados en este equipo.", Callable(self, "_show_modes"), true)
+	var content := _make_page("Partidas de estudiante", "Tres espacios guardados en este equipo.", Callable(self, "_show_main"), true)
 	var rows := _add_compact_list(content)
-	var free_slot := _find_free_slot(mode)
 	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot, mode)
-		var slot_card := _card(rows)
+		var save := _read_save(slot, "solo")
+		var card := _card(rows)
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		slot_card.add_child(row)
+		card.add_child(row)
 		var description := "Espacio %d · vacío" % slot
 		if not save.is_empty():
-			description = "Espacio %d · %s · %s" % [slot, str(save.get("player_name", "Estudiante")), "Solo" if mode == "solo" else "Equipo"]
-			if mode == "solo":
-				var program := Catalog.program_by_id(str(save.get("program_id", "")))
-				description += " · " + str(program.get("name", "Carrera"))
-			else:
-				description += " · %s" % str(save.get("role_label", "Auxiliar"))
-				var names: Array = save.get("player_names", [])
-				var turn_index := int(save.get("current_player", 0))
-				if turn_index >= 0 and turn_index < names.size():
-					description += " · turno de " + str(names[turn_index])
-			var name_label := _label(description, 16)
-			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			row.add_child(name_label)
-			_add_menu_button(row, "Continuar", _open_slot.bind(slot, mode), true, 42)
-			_add_button(row, "Borrar", _delete_slot.bind(slot, mode), false, 44)
+			var program := Catalog.program_by_id(str(save.get("program_id", "")))
+			description = "Espacio %d · %s · %s" % [slot, save.get("player_name", "Estudiante"), program.get("name", "Carrera")]
+		var label := _label(description, 16)
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+		if save.is_empty():
+			_add_menu_button(row, "Nueva", _begin_new_game.bind(slot), true, 42)
 		else:
-			var empty_label := _label(description, 16)
-			empty_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			row.add_child(empty_label)
-			if mode == "solo":
-				_add_menu_button(row, "Nueva", _begin_new_game.bind(slot), true, 42)
-	if mode == "multi":
-		content.add_child(_label("Para abrir una partida de equipo, termina una carrera y aprueba su examen de competencia en Solo.", 15, Color("#686a5d")))
-		if free_slot > 0 and _has_eligible_solo_save():
-			_add_menu_button(content, "Crear partida de equipo", _choose_team_source, true, 46)
-		elif free_slot == 0:
-			content.add_child(_label("No hay espacios libres. Borra una partida para crear otra.", 15, GOLD))
-	elif free_slot == 0:
-		content.add_child(_label("No hay espacios libres. Borra una partida para crear otra.", 15, GOLD))
+			_add_menu_button(row, "Continuar", _open_slot.bind(slot, "solo"), true, 42)
+			_add_button(row, "Borrar", _delete_slot.bind(slot, "solo"), false, 42)
 
 
 func _begin_new_game(slot: int) -> void:
+	_save_profile()
+	current_profile = {}
+	simulation = null
 	active_slot = slot
 	_show_new_solo()
 
 
 func _open_slot(slot: int, mode: String) -> void:
-	current_profile = _read_save(slot, mode)
-	active_slot = slot
-	if current_profile.is_empty():
+	if mode != "solo":
+		return
+	_save_profile()
+	var loaded := _read_save(slot, mode)
+	if loaded.is_empty():
 		_show_slots(mode)
 		return
-	if mode == "solo":
-		_show_solo_hub()
-	else:
-		_normalize_team_profile()
-		_show_team_hub()
+	var validation := Simulation.validate_profile(loaded)
+	if not validation["ok"]:
+		var page := _make_page("No se pudo cargar la partida", str(validation["message"]), _show_solo_slots)
+		_add_button(page, "Volver a partidas", _show_solo_slots, true, 46)
+		return
+	current_profile = loaded
+	current_profile["slot"] = slot
+	active_slot = slot
+	simulation = Simulation.new(current_profile)
+	_save_profile()
+	_show_solo_hub()
 
 
 func _delete_slot(slot: int, mode: String) -> void:
@@ -1590,15 +1539,17 @@ func _delete_slot(slot: int, mode: String) -> void:
 
 func _remove_slot(slot: int, mode: String, dialog: ConfirmationDialog) -> void:
 	dialog.queue_free()
-	var path := _save_path(slot, mode)
-	if FileAccess.file_exists(path):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	var legacy := _legacy_save_path(slot)
-	if FileAccess.file_exists(legacy):
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(legacy))
-		if parsed is Dictionary and str(parsed.get("mode", "solo")) == mode:
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(legacy))
-	_show_slots(mode)
+	if mode != "solo":
+		return
+	var result := save_store.remove_slot(slot)
+	if result != OK:
+		push_error("No se pudo borrar la partida: %s." % error_string(result))
+		return
+	if active_slot == slot:
+		current_profile = {}
+		simulation = null
+		active_slot = 0
+	_show_slots("solo")
 
 
 func _find_free_slot(mode: String) -> int:
@@ -1700,244 +1651,130 @@ func _show_mentions(program_id: String) -> void:
 
 
 func _create_solo_save(program_id: String, mention_id: String) -> void:
-	var program := Catalog.program_by_id(program_id)
 	var mention := Catalog.mention_by_id(program_id, mention_id)
-	current_profile = {
-		"slot": active_slot,
-		"mode": "solo",
-		"player_name": draft_player_name,
-		"program_id": program_id,
-		"mention_id": mention_id,
-		"mention_name": mention.get("name", ""),
-		"role_id": "estudiante",
-		"completed_subjects": 0,
-		"partial_index": 0,
-		"career_complete": false,
-		"competency_passed": false,
-		"confidence": 60,
-		"credits": 100,
-		"chanchullo_used": [],
-		"created_at": Time.get_datetime_string_from_system(),
-	}
-	if program.is_empty():
+	if Catalog.program_by_id(program_id).is_empty() or mention.is_empty():
 		_show_solo_slots()
 		return
+	current_profile = {"slot": active_slot, "mode": "solo", "player_name": draft_player_name,
+		"program_id": program_id, "mention_id": mention_id, "mention_name": mention.get("name", ""),
+		"role_id": "estudiante", "confidence": 60, "chanchullo_used": [],
+		"created_at": Time.get_datetime_string_from_system()}
+	simulation = Simulation.new(current_profile)
 	_save_profile()
 	_show_solo_hub()
 
 
 func _show_solo_hub() -> void:
-	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	if program.is_empty():
+	if current_profile.is_empty():
 		_show_solo_slots()
 		return
-	var theme := Catalog.get_theme(str(program["id"]))
+	if simulation == null:
+		simulation = Simulation.new(current_profile)
+	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
+	var theme := Catalog.get_theme(str(program.get("id", "sistemas")))
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
 	queue_redraw()
-	var passed: Array = current_profile.get("passed_subjects", [])
-	var failed: Array = current_profile.get("failed_subjects", [])
-	current_profile["passed_subjects"] = passed
-	current_profile["failed_subjects"] = failed
-	if not current_profile.has("subject_progress"):
-		current_profile["subject_progress"] = {}
-	var sprog: Dictionary = current_profile["subject_progress"]
-	var mention := Catalog.mention_by_id(str(program["id"]), str(current_profile.get("mention_id", "")))
-	var mention_id := str(current_profile.get("mention_id", ""))
-	var subjects := Catalog.all_subjects(str(program["id"]), mention_id)
-	if subjects.is_empty():
-		var unavailable := _make_page("Plan no disponible", "Esta partida no tiene una mención válida para la malla seleccionada.", _show_solo_slots)
-		_add_button(unavailable, "Volver a partidas guardadas", _show_solo_slots, true, 54)
-		return
-	var subtitle := str(program["name"])
-	if not mention.is_empty():
-		subtitle += " · " + str(mention["name"])
-	var page := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), subtitle, _show_solo_slots)
-	var semesters: Array = Catalog.semesters_for(str(program["id"]), mention_id)
-	var current_sem := 1
-	for semester in semesters:
-		var all_passed := true
-		for subject in semester.get("subjects", []):
-			if not passed.has(subject.get("sigla", "")):
-				all_passed = false
-				break
-		if all_passed:
-			current_sem = int(semester.get("order", 0)) + 1
-		else:
-			current_sem = int(semester.get("order", 1))
-			break
-	if current_sem > semesters.size() and not bool(current_profile.get("career_complete", false)):
-		current_profile["career_complete"] = true
-		_record_completed_career(str(program["id"]), str(program["title"]))
-		_save_profile()
-		_show_solo_hub()
-		return
-	var progress_card := _card(page, true)
-	var completed_semesters := clampi(current_sem - 1, 0, semesters.size())
-	progress_card.add_child(_label("RECORRIDO  ·  %d de %d semestres" % [completed_semesters, semesters.size()], 17, accent, true))
-	var progress := ProgressBar.new()
-	progress.max_value = maxf(semesters.size(), 1)
-	progress.value = completed_semesters
-	progress.show_percentage = false
-	progress.custom_minimum_size.y = 12
-	progress_card.add_child(progress)
-	progress_card.add_child(_label("%d / %d materias aprobadas   ·   Confianza %d" % [passed.size(), subjects.size(), int(current_profile.get("confidence", 60))], 14, theme.get("sub", INK), true))
-	if not bool(current_profile.get("career_complete", false)):
-		var current_data: Dictionary = semesters[current_sem - 1]
-		var active_card := _card(page)
-		active_card.add_child(_label("SEMESTRE %02d  ·  %s" % [current_sem, str(current_data.get("name", ""))], 21, accent, true))
-		active_card.add_child(_label("Toca una tarjeta para estudiar. El progreso queda guardado por materia.", 14, theme.get("sub", INK), true))
+	var snapshot: Dictionary = simulation.snapshot()
+	var page := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), "%s · %s" % [program.get("name", "Carrera"), current_profile.get("mention_name", "")], _show_solo_slots)
+	var info := _card(page, true)
+	info.add_child(_label("SEMESTRE %02d · %s" % [int(snapshot["term"]), snapshot["phase"]], 21, accent, true))
+	info.add_child(_label("%d / %d materias aprobadas · Promedio %s" % [current_profile["passed_subjects"].size(), simulation.curriculum().size(), "%.2f" % float(snapshot["average"]) if snapshot["average"] != null else "pendiente"], 15, theme.get("sub", INK), true))
+	if snapshot["graduated"]:
+		info.add_child(_label("TÍTULO OBTENIDO · " + str(program.get("title", "Carrera")), 20, GREEN, true))
+	elif snapshot["studies_complete"]:
+		info.add_child(_label("ESTUDIOS CONCLUIDOS · Falta completar la graduación", 18, accent, true))
+		info.add_child(_label(str(snapshot["excellence"]["message"]), 14, theme.get("sub", INK), true))
+	else:
+		info.add_child(_label("Las notas se consolidan al cerrar el semestre. Las reprobadas se recursan en el siguiente.", 14, theme.get("sub", INK), true))
 		var grid := GridContainer.new()
 		grid.columns = 3 if size.x >= 1100 else 2
 		grid.add_theme_constant_override("h_separation", 10)
 		grid.add_theme_constant_override("v_separation", 8)
-		active_card.add_child(grid)
-		for subject in current_data.get("subjects", []):
-			var sigla := str(subject.get("sigla", ""))
-			var is_passed := passed.has(sigla)
-			var detail: Dictionary = sprog.get(sigla, {})
-			var partial := 3 if is_passed else clampi(int(detail.get("partial", 0)), 0, 3)
-			var subject_color := Color("#678c6d")
-			if sigla.begins_with("MAT"):
-				subject_color = Color("#ad8b43")
-			elif sigla.begins_with("FIS") or sigla.begins_with("QMC"):
-				subject_color = Color("#b87552")
-			elif sigla.begins_with("INF") or sigla.begins_with("ELT"):
-				subject_color = Color("#51849a")
-			var card_button := Button.new()
-			card_button.custom_minimum_size = Vector2(220, 92)
-			card_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			card_button.text = "%s\n%s\n%s" % [sigla, str(subject.get("name", "")), "APROBADA" if is_passed else ("Parcial %d/3" % (partial + 1) if partial > 0 else "Lista para empezar")]
-			card_button.disabled = is_passed
-			card_button.add_theme_font_size_override("font_size", int(round(14 * float(settings["font_scale"]))))
-			var card_style := StyleBoxFlat.new()
-			card_style.bg_color = Color("#dbe8d8") if is_passed else Color(subject_color, 0.14)
-			card_style.border_color = Color("#6b8f71") if is_passed else subject_color
-			card_style.set_border_width_all(2)
-			card_style.set_corner_radius_all(12)
-			card_button.add_theme_stylebox_override("normal", card_style)
-			card_button.add_theme_stylebox_override("hover", card_style)
-			card_button.add_theme_stylebox_override("disabled", card_style)
-			card_button.pressed.connect(_start_subject.bind(sigla))
-			grid.add_child(card_button)
-		var retryable: Array[String] = []
-		for sigla in failed:
-			var subject := Catalog.subject_by_sigla(str(program["id"]), str(sigla), mention_id)
-			if not subject.is_empty():
-				retryable.append(str(sigla))
-		if not retryable.is_empty():
-			var retry_row := HFlowContainer.new()
-			retry_row.add_theme_constant_override("h_separation", 8)
-			page.add_child(retry_row)
-			for sigla in retryable:
-				var subject := Catalog.subject_by_sigla(str(program["id"]), sigla, mention_id)
-				_add_button(retry_row, "Reintentar " + sigla + " · " + str(subject.get("name", "")), Callable(self, "_start_subject").bind(sigla), false, 42)
-	else:
-		var finished := _card(page, true)
-		finished.add_child(_label("CARRERA COMPLETADA", 23, GREEN, true))
-		finished.add_child(_label(str(program["title"]) + " · auxiliar disponible al aprobar competencia", 16, theme.get("sub", INK), true))
-		if not bool(current_profile.get("competency_passed", false)):
-			_add_button(finished, "Rendir examen de competencia", _show_competency, true, 48)
+		page.add_child(grid)
+		for key in simulation.state["enrollments"]:
+			var subject: Dictionary = simulation.course_data(key)
+			var entry: Dictionary = simulation.state["enrollments"][key]
+			var status := "Inscrita · " + str(entry["origin"])
+			if entry["score"] != null:
+				status = "%s · %.2f" % ["APROBADA" if float(entry["score"]) >= Simulation.PASS_MARK else "REPROBADA", float(entry["score"])]
+			elif snapshot["phase"] == "CURSANDO":
+				status = "Parcial %d/3" % (entry["answers"].size() + 1)
+			var button := _add_button(grid, "%s\n%s\n%s" % [subject["sigla"], subject["name"], status], _start_subject.bind(str(key)), false, 94)
+			button.custom_minimum_size.x = 220
+			button.add_theme_font_size_override("font_size", int(14 * float(settings["font_scale"])))
+			button.disabled = snapshot["phase"] != "CURSANDO" or entry["score"] != null
+		if snapshot["phase"] == "INSCRIPCION":
+			_add_button(page, "Iniciar semestre", _run_simulation_action.bind("/iniciar"), true, 46)
+		else:
+			_add_button(page, "Cerrar semestre y consolidar resultados", _run_simulation_action.bind("/cerrar"), true, 46)
+	# FRONTEND_TEMP: consumir snapshot() para planificación, trámites, malla e historial gráficos; eliminar al integrar.
+	page.add_child(_label("F10 · Gestiones: matrícula, inscripción, cartas, auxiliaturas y graduación. /ayuda muestra las acciones disponibles.", 13, theme.get("sub", INK)))
 	var actions := HFlowContainer.new()
 	actions.add_theme_constant_override("h_separation", 8)
 	page.add_child(actions)
-	_add_button(actions, "Ver recorrido por semestres", Callable(self, "_show_curriculum_graph").bind(str(program["id"]), true), false, 42)
+	_add_button(actions, "Gestiones · F10", _show_simulation_console, false, 42)
+	_add_button(actions, "Ver malla", Callable(self, "_show_curriculum_graph").bind(str(program.get("id", "")), true), false, 42)
 	_add_button(actions, "Logros", _show_titles, false, 42)
-	_add_button(actions, "Cambiar carrera", _show_solo_slots, false, 42)
 	_add_button(actions, "Guardar y salir", _return_to_menu, false, 42)
 
 
-func _start_subject(sigla: String) -> void:
-	current_profile["current_subject"] = sigla
-	if not current_profile.has("subject_progress"):
-		current_profile["subject_progress"] = {}
-	if not current_profile.has("partial_index"):
-		current_profile["partial_index"] = 0
-	var sprog: Dictionary = current_profile["subject_progress"]
-	var p := 0
-	if sprog.has(sigla):
-		var sp: Dictionary = sprog[sigla]
-		if bool(sp.get("complete", false)):
-			_show_solo_hub()
-			return
-		p = int(sp.get("partial", 0))
-	current_profile["partial_index"] = p
+func _start_subject(key: String) -> void:
+	if simulation == null or simulation.state["phase"] != "CURSANDO" or not simulation.state["enrollments"].has(key):
+		_show_solo_hub()
+		return
+	var entry: Dictionary = simulation.state["enrollments"][key]
+	if entry["score"] != null:
+		_show_solo_hub()
+		return
+	current_profile["current_subject"] = key
+	current_profile["partial_index"] = entry["answers"].size()
 	_save_profile()
 	_show_exam()
 
+
 func _show_exam() -> void:
-	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	if program.is_empty():
-		_show_solo_slots()
-		return
-	var sigla := str(current_profile.get("current_subject", ""))
-	if sigla == "":
+	if simulation == null:
 		_show_solo_hub()
 		return
-	if not current_profile.has("subject_progress"):
-		current_profile["subject_progress"] = {}
-	var sprog: Dictionary = current_profile["subject_progress"]
-	if not current_profile.has("partial_index"):
-		current_profile["partial_index"] = 0
-	var mention_id := str(current_profile.get("mention_id", ""))
-	var course := Catalog.course_for_sigla(str(program["id"]), sigla, mention_id)
-	if course.is_empty():
+	var key := str(current_profile.get("current_subject", ""))
+	var subject: Dictionary = simulation.course_data(key)
+	var entry: Dictionary = simulation.state["enrollments"].get(key, {})
+	if subject.is_empty() or entry.is_empty() or entry["score"] != null or simulation.state["phase"] != "CURSANDO":
 		_show_solo_hub()
 		return
-	var partials: Array = course.get("partials", [])
-	if partials.is_empty():
-		_show_solo_hub()
-		return
-	var partial_index := int(current_profile.get("partial_index", 0))
-	if sprog.has(sigla):
-		var sp: Dictionary = sprog[sigla]
-		if bool(sp.get("complete", false)):
-			_show_solo_hub()
-			return
-		if int(sp.get("partial", 0)) > partial_index:
-			partial_index = int(sp.get("partial", 0))
-			current_profile["partial_index"] = partial_index
-	if partial_index < 0 or partial_index >= partials.size():
-		partial_index = 0
-		current_profile["partial_index"] = partial_index
-	current_question = partials[partial_index]
-	var theme := Catalog.get_theme(str(program["id"]))
+	var course := Catalog.course_for_sigla(str(subject["program_id"]), str(subject["sigla"]), str(subject["mention_id"]))
+	var partial_index: int = entry["answers"].size()
+	current_profile["partial_index"] = partial_index
+	current_question = course["partials"][partial_index].duplicate(true)
+	var theme := Catalog.get_theme(str(current_profile["program_id"]))
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
-	queue_redraw()
-	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, str(course["name"]), sigla], "Semestre %d · Progreso: Parcial %d de 3" % [int(course.get("semester",0)), partial_index + 1], Callable(self, "_show_solo_hub"))
-	var topics: Array = course.get("topics", [])
+	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, course["name"], subject["sigla"]], "Semestre cursado %d · Tres parciales determinan la nota final" % int(simulation.state["term"]), Callable(self, "_show_solo_hub"))
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 18)
-	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(columns)
 	var lesson := _card(columns, true)
 	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
-	lesson.add_child(_label("Idea clave: %s parte de «%s» y la aplica en situaciones concretas." % [str(course.get("name", "La materia")).to_lower(), str(topics[0]) if not topics.is_empty() else str(course.get("name", "la materia"))], 13, theme.get("sub", INK)))
-	lesson.add_child(_label("Temas de la materia: " + ", ".join(topics), 12, theme.get("sub", INK)))
+	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
 	var demo := StudyDemo.new()
 	demo.setup(course, partial_index)
 	lesson.add_child(demo)
-	var exam_column := VBoxContainer.new()
-	exam_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	exam_column.add_theme_constant_override("separation", 7)
-	columns.add_child(exam_column)
-	exam_column.add_child(_label("COMPRUEBA TU IDEA · PARCIAL %d/3" % (partial_index + 1), 13, accent, true))
-	exam_column.add_child(_label(str(current_question["q"]), 19, accent, true))
-	for option_index in range(current_question["options"].size()):
-		_add_button(exam_column, str(current_question["options"][option_index]), _answer_subject.bind(option_index), false, 48)
-	var key := "%s:%d" % [sigla, partial_index]
-	var used: Array = current_profile.get("chanchullo_used", [])
-	var cheat_button := _add_button(exam_column, "Chanchullo · usar apunte", _try_chanchullo.bind(key), true, 42)
-	if used.has(key):
-		cheat_button.disabled = true
-		cheat_button.tooltip_text = "Ya usaste el chanchullo en este parcial."
-	else:
-		cheat_button.tooltip_text = "Una oportunidad por parcial. Puede salir bien o pillarte."
+	var exam := VBoxContainer.new()
+	exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_child(exam)
+	exam.add_child(_label(str(current_question["q"]), 19, accent, true))
+	for option in range(current_question["options"].size()):
+		_add_button(exam, str(current_question["options"][option]), _answer_subject.bind(option), false, 48)
+	var cheat_key := "%d:%s:%d" % [int(simulation.state["term"]), key, partial_index]
+	var cheat := _add_button(exam, "Chanchullo · usar apunte", _try_chanchullo.bind(cheat_key), true, 42)
+	cheat.disabled = current_profile.get("chanchullo_used", []).has(cheat_key)
 
 
 func _answer_subject(option_index: int) -> void:
+	if not current_question.has("answer"):
+		return
 	_finish_subject_question(option_index == int(current_question["answer"]), false)
 
 
@@ -1956,491 +1793,37 @@ func _try_chanchullo(key: String) -> void:
 
 
 func _finish_subject_question(correct: bool, cheated: bool) -> void:
-	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	if program.is_empty():
-		_show_solo_slots()
+	if simulation == null or not current_question.has("answer"):
 		return
-	var mention_id := str(current_profile.get("mention_id", ""))
-	var subjects := Catalog.all_subjects(str(program["id"]), mention_id)
-	var sigla := str(current_profile.get("current_subject", ""))
-	if sigla.is_empty() or Catalog.subject_by_sigla(str(program["id"]), sigla, mention_id).is_empty():
-		_show_solo_hub()
+	var key := str(current_profile.get("current_subject", ""))
+	var partial := int(current_profile.get("partial_index", 0))
+	var explanation := str(current_question.get("why", ""))
+	var result: Dictionary = simulation.answer(key, partial, correct)
+	if not result["ok"]:
+		_show_result("Resultado pendiente", str(result["message"]), false, _show_solo_hub)
 		return
-	var partial_index := int(current_profile.get("partial_index", 0))
-	if not current_profile.has("passed_subjects"):
-		current_profile["passed_subjects"] = []
-	if not current_profile.has("failed_subjects"):
-		current_profile["failed_subjects"] = []
-	if not current_profile.has("subject_progress"):
-		current_profile["subject_progress"] = {}
-	var passed: Array = current_profile["passed_subjects"]
-	var failed: Array = current_profile["failed_subjects"]
-	var sprog: Dictionary = current_profile["subject_progress"]
-	if correct:
-		if partial_index == 0:
-			_award_title_once("Primer paso · aprobaste tu primer parcial")
-		if not cheated:
-			current_profile["confidence"] = mini(100, int(current_profile.get("confidence", 60)) + 4)
-		partial_index += 1
-		var message := str(current_question["why"])
-		if cheated:
-			message += " El apunte pasó esta vez, pero una respuesta copiada no suma confianza."
-		if partial_index >= 3:
-			current_profile["partial_index"] = 0
-			sprog[sigla] = {"partial": 3, "complete": true}
-			current_profile["subject_progress"] = sprog
-			if not passed.has(sigla):
-				passed.append(sigla)
-				_record_completed_subject(str(program["id"]), mention_id, sigla)
-			var used_partials: Array = current_profile.get("chanchullo_used", [])
-			var subject_used_cheat := false
-			for partial_number in range(3):
-				if used_partials.has("%s:%d" % [sigla, partial_number]):
-					subject_used_cheat = true
-			if not subject_used_cheat:
-				_award_title_once("A pulso · aprobaste una materia sin chanchullo")
-			if failed.has(sigla):
-				failed.erase(sigla)
-			current_profile["passed_subjects"] = passed
-			current_profile["failed_subjects"] = failed
-			var course := Catalog.course_for_sigla(str(program["id"]), sigla, mention_id)
-			if course.is_empty():
-				course = Catalog.course(str(program["id"]), int(current_profile.get("completed_subjects", 0)), mention_id)
-			message += " Aprobaste los tres parciales de %s (%s)." % [str(course.get("name","")), sigla]
-			if passed.size() >= subjects.size():
-				current_profile["career_complete"] = true
-				_record_completed_career(str(program["id"]), str(program["title"]))
-				message += " Completaste el plan de estudios y ganaste el título «%s»." % str(program["title"])
-			_save_profile()
-			_show_result("Materia aprobada", message, true, _show_solo_hub)
-		else:
-			current_profile["partial_index"] = partial_index
-			sprog[sigla] = {"partial": partial_index, "complete": false}
-			current_profile["subject_progress"] = sprog
-			message += " Parcial %d aprobado. Siguiente: Parcial %d." % [partial_index, partial_index + 1]
-			_save_profile()
-			_show_result("Parcial aprobado", message, true, _show_exam)
-	else:
-		current_profile["confidence"] = maxi(0, int(current_profile.get("confidence", 60)) - 3)
-		if partial_index >= 2 and not failed.has(sigla):
-			failed.append(sigla)
-			current_profile["failed_subjects"] = failed
-			sprog[sigla] = {"partial": partial_index, "complete": false, "failed": true}
-			current_profile["subject_progress"] = sprog
+	current_question = {}
+	current_profile["confidence"] = clampi(int(current_profile.get("confidence", 60)) + (4 if correct and not cheated else -3), 0, 100)
+	current_profile["partial_index"] = partial + 1
+	if result["finished"]:
+		var subject: Dictionary = simulation.course_data(key)
+		explanation += " Nota final %.2f. El resultado se consolida al cerrar el semestre." % float(result["score"])
 		_save_profile()
-		_show_result("Parcial pendiente", str(current_question["why"]) + " Puedes repasar y volver a intentarlo cuando quieras.", false, _show_exam)
-
-
-func _show_competency() -> void:
-	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	if program.is_empty() or not bool(current_profile.get("career_complete", false)):
-		_show_solo_hub()
-		return
-	var subjects := Catalog.all_subjects(str(program["id"]), str(current_profile.get("mention_id", "")))
-	var theme := Catalog.get_theme(str(program["id"]))
-	var accent: Color = theme.get("accent", GREEN)
-	var last: Dictionary = subjects.back()
-	var questions: Array = [
-		{"q": "Tienes una tarea para apoyar: ¿cómo priorizas para entender mejor un problema técnico?", "options": ["Identificar el problema, datos y restricciones antes de proponer solución", "Empezar a escribir sin entender el enunciado", "Copiar lo primero que encuentres sin analizar"], "answer": 0, "why": "Definir bien el problema es la base para cualquier solución."},
-		{"q": "Ante un tema nuevo de %s, ¿qué estrategia te parece más efectiva?" % str(program["name"]), "options": ["Relacionarlo con lo visto antes y practicar con ejemplos", "Memorizar sin contexto", "Estudiar solo la noche antes"], "answer": 0, "why": "Conectar con conocimientos previos y practicar acelera el aprendizaje."},
-		{"q": "Si trabajas con %s y hay un error, ¿cómo lo abordas?" % str(last.get("name", "la materia")), "options": ["Revisar paso a paso, aislar el fallo y validar", "Cambiar todo sin entender", "Ignorar el error"], "answer": 0, "why": "El enfoque sistemático permite encontrar la causa raíz."}
-	]
-	var choice := random.randi_range(0, questions.size() - 1)
-	current_question = questions[choice]
-	var content := _make_page("Examen de competencia", "Demuestra que puedes apoyar a otra persona con base en tu plan de estudios.", Callable(self, "_show_solo_hub"))
-	content.add_child(_label(str(current_question["q"]), 24, accent, true))
-	for option_index in range(current_question["options"].size()):
-		_add_button(content, str(current_question["options"][option_index]), _answer_competency.bind(option_index), false, 56)
-	content.add_child(_label("Si no sale, puedes volver a intentarlo.", 14, Color("#686a5d"), true))
-
-
-func _answer_competency(option_index: int) -> void:
-	if option_index == int(current_question["answer"]):
-		current_profile["competency_passed"] = true
-		current_profile["role_id"] = "auxiliar"
-		_award_title_once("Auxiliar docente · examen de competencia aprobado")
-		_save_profile()
-		_show_result("Competencia aprobada", "Ya puedes iniciar una partida de equipo como auxiliar docente.", true, _show_solo_hub)
+		_show_result("Materia aprobada" if result["passed"] else "Materia reprobada", explanation, bool(result["passed"]), _show_solo_hub)
 	else:
-		_show_result("Todavía no", str(current_question["why"]) + " Revisa la idea y vuelve a intentarlo.", false, _show_competency)
+		_save_profile()
+		_show_result("Parcial registrado", explanation + " La nota final se calcula con los tres parciales.", correct, _show_exam)
 
 
 func _show_titles() -> void:
 	_show_global_achievements(Callable(self, "_show_solo_hub"), false)
 
 
-func _has_eligible_solo_save() -> bool:
-	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot, "solo")
-		if bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
-			return true
-	return false
-
-
-func _choose_team_source() -> void:
-	var content := _make_page("Elige a quién vas a representar", "Solo aparecen carreras completas con competencia aprobada.", _show_multi_slots)
-	var rows := _add_compact_list(content)
-	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot, "solo")
-		if bool(save.get("career_complete", false)) and bool(save.get("competency_passed", false)):
-			var program := Catalog.program_by_id(str(save.get("program_id", "")))
-			_add_button(rows, "%s · %s" % [str(save.get("player_name", "Estudiante")), str(program.get("name", "Carrera"))], _show_team_setup.bind(slot), false, 54)
-
-
-func _show_team_setup(source_slot: int) -> void:
-	if source_slot == 0:
-		_show_multi_slots()
-		return
-	draft_source_slot = source_slot
-	var source := _read_save(source_slot, "solo")
-	var content := _make_page("Armen el equipo", "%s abre la partida como auxiliar. El turno irá rotando entre las personas del equipo." % str(source.get("player_name", "Estudiante")), _show_multi_slots)
-	var form := _card(content)
-	form.add_child(_label("¿Cuántas personas van a turnarse en esta computadora?", 18, INK, true))
-	var players := SpinBox.new()
-	players.min_value = 1
-	players.max_value = 4
-	players.value = 2
-	players.custom_minimum_size = Vector2(160, 48)
-	players.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	form.add_child(players)
-	players.get_line_edit().alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style_input(players.get_line_edit())
-	team_name_drafts = [
-		str(source.get("player_name", "Estudiante")),
-		"Jugador 2",
-		"Jugador 3",
-		"Jugador 4",
-	]
-	team_name_box = VBoxContainer.new()
-	team_name_box.add_theme_constant_override("separation", 8)
-	form.add_child(team_name_box)
-	_fill_team_name_fields(int(players.value))
-	players.value_changed.connect(_on_team_players_changed)
-	content.add_child(_label("Cada caso lo resuelve quien tenga el turno. Al terminar, pasa al siguiente jugador.", 14, Color("#686a5d"), true))
-	_add_button(content, "Empezar partida de equipo", _create_team_save.bind(players), true, 60)
-
-
-func _fill_team_name_fields(count: int) -> void:
-	if not is_instance_valid(team_name_box):
-		return
-	for child in team_name_box.get_children():
-		team_name_box.remove_child(child)
-		child.queue_free()
-	team_name_fields.clear()
-	for index in range(count):
-		var field := LineEdit.new()
-		field.placeholder_text = "Nombre del jugador %d" % (index + 1)
-		field.text = str(team_name_drafts[index]) if index < team_name_drafts.size() else "Jugador %d" % (index + 1)
-		field.custom_minimum_size.y = 46
-		_style_input(field)
-		team_name_box.add_child(field)
-		team_name_fields.append(field)
-
-
-func _store_team_names() -> void:
-	for index in range(team_name_fields.size()):
-		if index < team_name_drafts.size():
-			var field: LineEdit = team_name_fields[index]
-			team_name_drafts[index] = field.text
-
-
-func _on_team_players_changed(value: float) -> void:
-	_store_team_names()
-	_fill_team_name_fields(int(value))
-
-
-func _create_team_save(players: SpinBox) -> void:
-	var slot := _find_free_slot("multi")
-	if slot == 0:
-		_show_result("No hay espacio", "Borra una partida guardada antes de crear una partida de equipo.", false, _show_multi_slots)
-		return
-	active_slot = slot
-	_store_team_names()
-	var count := int(players.value)
-	var names: Array = []
-	var scores: Array = []
-	var confidence: Array = []
-	for index in range(count):
-		var candidate: String = str(team_name_drafts[index]).strip_edges() if index < team_name_drafts.size() else ""
-		if candidate.is_empty():
-			candidate = "Jugador %d" % (index + 1)
-		names.append(candidate)
-		scores.append(0)
-		confidence.append(60)
-	var source := _read_save(draft_source_slot, "solo")
-	var program := Catalog.program_by_id(str(source.get("program_id", "")))
-	current_profile = {
-		"slot": slot,
-		"mode": "multi",
-		"player_name": names[0],
-		"player_names": names,
-		"player_scores": scores,
-		"player_confidence": confidence,
-		"current_player": 0,
-		"program_id": source.get("program_id", ""),
-		"source_slot": draft_source_slot,
-		"players": count,
-		"role_id": "auxiliar",
-		"role_label": "Auxiliar docente",
-		"assistant_cases": 0,
-		"admin_cases": 0,
-		"dean_cases": 0,
-		"team_score": 0,
-		"cv_items": [],
-		"cv_submitted": false,
-		"created_at": Time.get_datetime_string_from_system(),
-	}
-	if program.is_empty():
-		_show_multi_slots()
-		return
-	_save_profile()
-	_show_team_hub()
-
-
-func _normalize_team_profile() -> void:
-	var count := maxi(1, int(current_profile.get("players", 1)))
-	current_profile["players"] = count
-	var names: Array = current_profile.get("player_names", [])
-	while names.size() < count:
-		if names.is_empty():
-			names.append(str(current_profile.get("player_name", "Jugador 1")))
-		else:
-			names.append("Jugador %d" % (names.size() + 1))
-	while names.size() > count:
-		names.pop_back()
-	current_profile["player_names"] = names
-	var scores: Array = current_profile.get("player_scores", [])
-	while scores.size() < count:
-		scores.append(0)
-	current_profile["player_scores"] = scores
-	var confidence: Array = current_profile.get("player_confidence", [])
-	var base_confidence := int(current_profile.get("team_confidence", 60))
-	while confidence.size() < count:
-		confidence.append(base_confidence)
-	current_profile["player_confidence"] = confidence
-	var current := int(current_profile.get("current_player", 0))
-	current_profile["current_player"] = ((current % count) + count) % count
-
-
-func _current_player_name() -> String:
-	var names: Array = current_profile.get("player_names", [])
-	var index := int(current_profile.get("current_player", 0))
-	if index >= 0 and index < names.size():
-		return str(names[index])
-	return str(current_profile.get("player_name", "Estudiante"))
-
-
-func _advance_team_turn() -> void:
-	var count := maxi(1, int(current_profile.get("players", 1)))
-	current_profile["current_player"] = (int(current_profile.get("current_player", 0)) + 1) % count
-
-
-func _award_team_case(best: bool) -> void:
-	var index := int(current_profile.get("current_player", 0))
-	var scores: Array = current_profile.get("player_scores", [])
-	var confidence: Array = current_profile.get("player_confidence", [])
-	while scores.size() <= index:
-		scores.append(0)
-	while confidence.size() <= index:
-		confidence.append(60)
-	if best:
-		scores[index] = int(scores[index]) + 10
-		confidence[index] = mini(100, int(confidence[index]) + 6)
-	else:
-		confidence[index] = maxi(0, int(confidence[index]) - 5)
-	current_profile["player_scores"] = scores
-	current_profile["player_confidence"] = confidence
-
-
-func _add_team_scoreboard(content: VBoxContainer) -> void:
-	var names: Array = current_profile.get("player_names", [])
-	var scores: Array = current_profile.get("player_scores", [])
-	var confidence: Array = current_profile.get("player_confidence", [])
-	var current := int(current_profile.get("current_player", 0))
-	var board := VBoxContainer.new()
-	board.add_theme_constant_override("separation", 4)
-	var board_card := _card(content, true)
-	board_card.add_child(board)
-	for index in range(names.size()):
-		var active := index == current
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		var name_label := _label(("▶  " if active else "    ") + str(names[index]), 16, GREEN if active else INK)
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(name_label)
-		var score := int(scores[index]) if index < scores.size() else 0
-		var trust := int(confidence[index]) if index < confidence.size() else 60
-		row.add_child(_label("%d pts · confianza %d" % [score, trust], 14, Color("#686a5d")))
-		board.add_child(row)
-	board.add_child(_label("Experiencia del equipo: %d" % int(current_profile.get("team_score", 0)), 15, INK, true))
-
-
-func _team_mvp() -> Dictionary:
-	var names: Array = current_profile.get("player_names", [])
-	var scores: Array = current_profile.get("player_scores", [])
-	if names.is_empty() or scores.is_empty():
-		return {}
-	var best_index := 0
-	for index in range(scores.size()):
-		if int(scores[index]) > int(scores[best_index]):
-			best_index = index
-	if best_index >= names.size():
-		return {}
-	return {"name": str(names[best_index]), "score": int(scores[best_index])}
-
-
-func _show_team_hub() -> void:
-	if current_profile.is_empty() or current_profile.get("mode", "") != "multi":
-		_show_multi_slots()
-		return
-	_normalize_team_profile()
-	var role := str(current_profile.get("role_id", "auxiliar"))
-	var role_name := "Auxiliar docente" if role == "auxiliar" else "Administrativo" if role == "administrativo" else "Decano"
-	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	var names: Array = current_profile.get("player_names", [])
-	var content := _make_page("Equipo de " + str(program.get("name", "la universidad")), "%d participantes · turno de %s" % [names.size(), _current_player_name()], _show_multi_slots)
-	content.add_child(_label("Turno de " + _current_player_name(), 22, GREEN, true))
-	content.add_child(_label("Rol del equipo: " + role_name, 15, Color("#686a5d"), true))
-	_add_team_scoreboard(content)
-	if role == "auxiliar":
-		var done := int(current_profile.get("assistant_cases", 0))
-		if done < ASSISTANT_CASES.size():
-			_show_team_case_content(content, ASSISTANT_CASES[done], role, done)
-		else:
-			content.add_child(_label("Tres tutorías completadas. Ya puedes armar tu CV para postular a un cargo administrativo.", 18, GREEN, true))
-			_add_button(content, "Armar CV universitario", _show_cv_builder, true, 62)
-	elif role == "administrativo":
-		var done := int(current_profile.get("admin_cases", 0))
-		if done < ADMIN_CASES.size():
-			_show_team_case_content(content, ADMIN_CASES[done], role, done)
-		else:
-			content.add_child(_label("Has atendido tres casos y ahora puedes presentar una propuesta al consejo de facultad.", 18, GREEN, true))
-			_add_button(content, "Presentar candidatura a decano", _show_dean_vote, true, 62)
-	else:
-		var done := int(current_profile.get("dean_cases", 0))
-		if done < DEAN_CASES.size():
-			_show_team_case_content(content, DEAN_CASES[done], role, done)
-		else:
-			content.add_child(_label("Terminaste la gestión de facultad. El consejo recibió tus decisiones y su seguimiento.", 19, GREEN, true))
-			content.add_child(_label("Puntaje final del equipo: %d" % int(current_profile.get("team_score", 0)), 16, INK, true))
-			var mvp := _team_mvp()
-			if not mvp.is_empty():
-				content.add_child(_label("Mejor puntaje individual: %s (%d pts)" % [str(mvp["name"]), int(mvp["score"])], 15, GOLD, true))
-			_add_button(content, "Ver logros", _show_team_titles, false, 48)
-	_add_button(content, "Guardar y volver al inicio", _return_to_menu, false, 48)
-
-
-func _show_team_case_content(content: VBoxContainer, simulation: Dictionary, role: String, case_index: int) -> void:
-	var role_title := "Tutoría" if role == "auxiliar" else "Mesa administrativa" if role == "administrativo" else "Consejo de facultad"
-	content.add_child(_label("%s · situación %d de 3" % [role_title, case_index + 1], 23, GREEN, true))
-	content.add_child(_label("Decide " + _current_player_name(), 14, GOLD, true))
-	content.add_child(_label(str(simulation["question"]), 19, INK, true))
-	for option_index in range(simulation["options"].size()):
-		_add_button(content, str(simulation["options"][option_index]), _choose_team_case.bind(role, case_index, option_index), false, 52)
-
-
-func _choose_team_case(role: String, case_index: int, choice_index: int) -> void:
-	var cases: Array = ASSISTANT_CASES if role == "auxiliar" else ADMIN_CASES if role == "administrativo" else DEAN_CASES
-	var simulation: Dictionary = cases[case_index]
-	var best := choice_index == int(simulation["best"])
-	var feedback := str(simulation["good"] if best else simulation["bad"])
-	var deciding_player := _current_player_name()
-	_award_team_case(best)
-	if best:
-		current_profile["team_score"] = int(current_profile.get("team_score", 0)) + 10
-	if role == "auxiliar":
-		current_profile["assistant_cases"] = case_index + 1
-		if int(current_profile["assistant_cases"]) == ASSISTANT_CASES.size():
-			_award_title_once("Auxiliar atento · completaste las tres tutorías")
-	elif role == "administrativo":
-		current_profile["admin_cases"] = case_index + 1
-		if int(current_profile["admin_cases"]) == ADMIN_CASES.size():
-			_award_title_once("Gestión universitaria · resolviste tres trámites")
-	else:
-		current_profile["dean_cases"] = case_index + 1
-		if int(current_profile["dean_cases"]) == DEAN_CASES.size():
-			_award_title_once("Decano de facultad · ciclo de gestión completado")
-	_advance_team_turn()
-	_save_profile()
-	_show_result("Decisión de " + deciding_player, feedback + " Turno de %s." % _current_player_name(), best, Callable(self, "_show_team_hub"))
-
-
-func _show_cv_builder(reset: bool = true) -> void:
-	if reset:
-		cv_draft = current_profile.get("cv_items", []).duplicate()
-	var content := _make_page("Arma tu CV", "Turno de %s · elige al menos tres experiencias que puedas respaldar." % _current_player_name(), Callable(self, "_show_team_hub"))
-	for skill in CV_SKILLS:
-		var prefix := "☑  " if cv_draft.has(skill) else "□  "
-		_add_button(content, prefix + skill, _toggle_cv_item.bind(skill), false, 50)
-	content.add_child(_label("Experiencias elegidas: %d / 4" % cv_draft.size(), 15, Color("#686a5d"), true))
-	_add_button(content, "Enviar CV", _submit_cv, true, 58)
-
-
-func _toggle_cv_item(skill: String) -> void:
-	if cv_draft.has(skill):
-		cv_draft.erase(skill)
-	else:
-		cv_draft.append(skill)
-	_show_cv_builder(false)
-
-
-func _submit_cv() -> void:
-	if cv_draft.size() < 3:
-		_show_result("CV incompleto", "La convocatoria pide al menos tres experiencias. Completa el CV y vuelve a enviarlo.", false, _show_cv_builder)
-		return
-	current_profile["cv_items"] = cv_draft.duplicate()
-	current_profile["cv_submitted"] = true
-	_save_profile()
-	_show_admin_interview()
-
-
-func _show_admin_interview() -> void:
-	var content := _make_page("Entrevista administrativa", "Responde %s · criterio, atención y cuidado de datos." % _current_player_name(), Callable(self, "_show_cv_builder"))
-	content.add_child(_label("Llegan dos trámites con plazos distintos y a uno le faltan datos. ¿Cómo los atiendes?", 22, INK, true))
-	_add_button(content, "Verifico lo necesario, priorizo el vencimiento y dejo registro de lo pendiente", _answer_admin_interview.bind(true), false, 58)
-	_add_button(content, "Apruebo los dos sin revisar para terminar rápido", _answer_admin_interview.bind(false), false, 58)
-	_add_button(content, "Pido los datos personales completos de todo el grupo", _answer_admin_interview.bind(false), false, 58)
-
-
-func _answer_admin_interview(correct: bool) -> void:
-	if not correct:
-		_show_result("La entrevista sigue pendiente", "La convocatoria necesita una decisión verificable y centrada en el trámite. Puedes repasar tu CV e intentarlo otra vez.", false, _show_admin_interview)
-		return
-	current_profile["role_id"] = "administrativo"
-	current_profile["role_label"] = "Administrativo"
-	_award_title_once("Gestión responsable · CV y entrevista aprobados")
-	_advance_team_turn()
-	_save_profile()
-	_show_result("Te contrataron", "El CV y la entrevista abrieron el cargo. Ahora vienen casos de registros, recursos y atención universitaria. Turno de %s." % _current_player_name(), true, _show_team_hub)
-
-
-func _show_dean_vote() -> void:
-	var content := _make_page("Consejo de facultad", "Responde %s · la experiencia administrativa permite postular y el consejo revisa el criterio." % _current_player_name(), Callable(self, "_show_team_hub"))
-	content.add_child(_label("¿Cómo presentarías el presupuesto anual de 100 puntos?", 22, INK, true))
-	_add_button(content, "Repartirlo con criterios públicos, revisar necesidades y fijar seguimiento", _answer_dean_vote.bind(true), false, 58)
-	_add_button(content, "Asignarlo según popularidad y ver después qué falta", _answer_dean_vote.bind(false), false, 58)
-	_add_button(content, "Gastar todo en una compra antes de comparar propuestas", _answer_dean_vote.bind(false), false, 58)
-
-
-func _answer_dean_vote(approved: bool) -> void:
-	if not approved:
-		_show_result("La candidatura sigue en revisión", "El consejo pide una propuesta justificable y con seguimiento del dinero. Puedes ajustar el planteamiento e intentarlo otra vez.", false, _show_dean_vote)
-		return
-	current_profile["role_id"] = "decano"
-	current_profile["role_label"] = "Decano"
-	_award_title_once("Decano electo · candidatura aprobada")
-	_advance_team_turn()
-	_save_profile()
-	_show_result("El consejo te eligió", "La candidatura fue aprobada. Ahora tendrás que tomar decisiones de presupuesto, revisar inversiones y rendir cuentas. Turno de %s." % _current_player_name(), true, _show_team_hub)
-
-
-func _show_team_titles() -> void:
-	_show_global_achievements(Callable(self, "_show_team_hub"), false)
-
-
 func _return_to_menu() -> void:
 	_save_profile()
 	current_profile = {}
+	simulation = null
+	active_slot = 0
 	_show_main()
 
 
@@ -2450,8 +1833,7 @@ func _exit_game() -> void:
 
 
 func _show_result(title: String, body: String, positive: bool, next: Callable) -> void:
-	var return_page := Callable(self, "_show_solo_hub") if current_profile.get("mode", "solo") == "solo" else Callable(self, "_show_team_hub")
-	var content := _make_page(title, "", return_page)
+	var content := _make_page(title, "", Callable(self, "_show_solo_hub"))
 	var card := _card(content)
 	card.add_child(_label(body, 20, GREEN if positive else INK, true))
 	_add_button(content, "Continuar", next, true, 62)
@@ -2466,32 +1848,16 @@ func _legacy_save_path(slot: int) -> String:
 
 
 func _read_save(slot: int, mode: String) -> Dictionary:
-	var path := _save_path(slot, mode)
-	if not FileAccess.file_exists(path):
-		var legacy := _legacy_save_path(slot)
-		if not FileAccess.file_exists(legacy):
-			return {}
-		var legacy_parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(legacy))
-		if legacy_parsed is Dictionary and str(legacy_parsed.get("mode", "solo")) == mode:
-			return legacy_parsed
-		return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	if parsed is Dictionary:
-		return parsed
-	return {}
+	return save_store.read_slot(slot) if mode == "solo" else {}
 
 
 func _save_profile() -> void:
-	if current_profile.is_empty():
+	if current_profile.is_empty() or active_slot < 1 or active_slot > SAVE_COUNT:
 		return
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
-	current_profile["slot"] = active_slot
 	current_profile["updated_at"] = Time.get_datetime_string_from_system()
-	var mode := str(current_profile.get("mode", "solo"))
-	var file := FileAccess.open(_save_path(active_slot, mode), FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(current_profile, "\t"))
-		file.close()
+	var result := save_store.save_slot(active_slot, current_profile)
+	if result != OK:
+		push_error("No se pudo guardar la partida: %s." % error_string(result))
 
 
 const GraphScene := preload("res://scripts/curriculum_graph.gd")
@@ -2580,3 +1946,132 @@ func _show_graph_subject(sigla: String, data: Dictionary, details: VBoxContainer
 	details.add_child(_label("Semestre %s  ·  Requiere: %s" % [str(data.get("semester", "")), ", ".join(prerequisites) if not prerequisites.is_empty() else "Ingreso"], 12, _current_theme.get("sub", INK)))
 	if not topics.is_empty():
 		details.add_child(_label("Temas: " + ", ".join(topics), 12, _current_theme.get("sub", INK)))
+
+
+func _run_simulation_action(command: String) -> void:
+	var result: Dictionary = SimulationCommands.execute(simulation, command)
+	_save_profile()
+	if result["ok"] and command == "/cerrar":
+		for sigla in current_profile.get("passed_subjects", []):
+			_record_completed_subject(str(current_profile["program_id"]), str(current_profile["mention_id"]), str(sigla))
+	_show_result("Gestión registrada" if result["ok"] else "Revisa los requisitos", str(result["message"]), bool(result["ok"]), _show_solo_hub)
+
+
+func _show_simulation_console() -> void:
+	if current_profile.is_empty() or simulation == null:
+		return
+	if is_instance_valid(simulation_console):
+		_close_simulation_console()
+		return
+	# FRONTEND_TEMP: consola de integración para revisar el motor; sustituir por oficinas y formularios gráficos y eliminar este comentario.
+	simulation_console = AcceptDialog.new()
+	simulation_console.title = "Gestiones de la partida · F10"
+	simulation_console.min_size = Vector2i(760, 500)
+	var box := VBoxContainer.new()
+	simulation_console.add_child(box)
+	var output := RichTextLabel.new()
+	output.custom_minimum_size = Vector2(700, 360)
+	output.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	output.text = SimulationCommands.describe(simulation) + "\n\nEscribe /ayuda para consultar las acciones."
+	box.add_child(output)
+	var field := LineEdit.new()
+	field.placeholder_text = "Comando de gestión o /ayuda"
+	_style_input(field)
+	box.add_child(field)
+	field.text_submitted.connect(_submit_simulation_command.bind(field, output))
+	simulation_console.confirmed.connect(_close_simulation_console)
+	simulation_console.canceled.connect(_close_simulation_console)
+	add_child(simulation_console)
+	simulation_console.popup_centered_ratio(0.85)
+	field.grab_focus()
+
+
+func _close_simulation_console() -> void:
+	if is_instance_valid(simulation_console):
+		simulation_console.queue_free()
+	simulation_console = null
+	_show_solo_hub()
+
+
+func _submit_simulation_command(text: String, field: LineEdit, output: RichTextLabel) -> void:
+	var result: Dictionary = SimulationCommands.execute(simulation, text)
+	_save_profile()
+	field.clear()
+	if result.has("activity"):
+		_close_simulation_console()
+		_show_simulation_activity(str(result["activity"]), str(result["id"]))
+		return
+	if simulation.state["graduated"]:
+		var program := Catalog.program_by_id(str(current_profile["program_id"]))
+		_record_completed_career(str(current_profile["program_id"]), str(program.get("title", "Carrera")))
+	output.text = str(result["message"]) + "\n\n" + SimulationCommands.describe(simulation)
+
+
+func _show_simulation_activity(kind: String, id: String) -> void:
+	var question := {}
+	var index := 0
+	if kind == "examen":
+		var application: Dictionary = simulation._application(id)
+		if application.is_empty() or application["status"] != "HABILITADA":
+			_show_result("Postulación pendiente", "Completa el trámite y utiliza el identificador AUX que aparece en /tramites.", false, _show_solo_hub)
+			return
+		index = application["answers"].size()
+		var subject: Dictionary = simulation.course_data(str(application["course_id"]))
+		var course := Catalog.course_for_sigla(str(subject["program_id"]), str(subject["sigla"]), str(subject["mention_id"]))
+		question = course["partials"][index].duplicate(true)
+	elif kind == "apoyo":
+		var request: Dictionary = simulation.procedure(id)
+		if request.is_empty() or request["kind"] != "trabajo_auxiliar" or not ["PENDIENTE", "OBSERVADO"].has(request["status"]) or int(request["step"]) != 2:
+			_show_result("Actividad pendiente", "Primero consigue la firma del plan y el permiso de aula.", false, _show_solo_hub)
+			return
+		index = int(request["payload"].get("sessions", 0))
+		if index >= 3:
+			_show_result("Actividades completas", "Puedes continuar el trámite con /paso " + id, true, _show_solo_hub)
+			return
+		var item: Dictionary = ASSISTANT_CASES[index]
+		question = {"q": item["question"], "options": item["options"], "answer": item["best"], "why": item["good"] + " " + item["bad"]}
+	elif kind == "defensa":
+		var request: Dictionary = simulation.procedure(id)
+		var step := SimulationProcedures.current_step(request)
+		if step.is_empty() or not step.get("requires_defense", false) or request["payload"].get("defense_passed", false):
+			_show_result("Defensa pendiente", "Completa la habilitación del tribunal o continúa el trámite si ya aprobaste.", false, _show_solo_hub)
+			return
+		index = request["payload"].get("defense_answers", []).size()
+		var questions := [
+			{"q": "¿Cómo justificas el problema de tu trabajo?", "options": ["Con evidencia, objetivos y alcance", "Solo con una opinión", "Sin revisar antecedentes"], "answer": 0, "why": "El trabajo necesita un problema y objetivos sustentados."},
+			{"q": "¿Cómo sostienes que la solución funciona?", "options": ["Omitiendo los resultados negativos", "Con pruebas y resultados contrastables", "Por la cantidad de páginas"], "answer": 1, "why": "La validación relaciona resultados con objetivos y evidencia."},
+			{"q": "¿Cómo presentas las limitaciones?", "options": ["Las ocultas", "Prometes que no existen", "Explicas sus efectos y mejoras posibles"], "answer": 2, "why": "Reconocer límites permite evaluar con honestidad el alcance."}
+		]
+		question = questions[index].duplicate(true)
+	else:
+		return
+	current_question = question
+	current_question["activity"] = kind
+	current_question["activity_id"] = id
+	current_question["activity_index"] = index
+	var content := _make_page("%s · actividad %d/3" % [kind.capitalize(), index + 1], id, _show_solo_hub)
+	content.add_child(_label(str(question["q"]), 22, _current_theme.get("accent", GREEN), true))
+	for option in range(question["options"].size()):
+		_add_button(content, str(question["options"][option]), _answer_simulation_activity.bind(option), false, 56)
+
+
+func _answer_simulation_activity(option: int) -> void:
+	if not current_question.has("activity"):
+		return
+	var kind := str(current_question["activity"])
+	var id := str(current_question["activity_id"])
+	var index := int(current_question["activity_index"])
+	var correct := option == int(current_question["answer"])
+	var explanation := str(current_question.get("why", ""))
+	current_question = {}
+	var result := {}
+	if kind == "examen":
+		result = simulation.assistant_answer(id, index, correct)
+	elif kind == "apoyo":
+		result = simulation.support_session(id, index, correct)
+	else:
+		result = simulation.defense_answer(id, index, correct)
+	_save_profile()
+	var next := _show_solo_hub if result.get("finished", false) or (kind == "apoyo" and index == 2 and result["ok"]) else _show_simulation_activity.bind(kind, id)
+	var positive := bool(result.get("selected", result.get("passed", result["ok"])))
+	_show_result("Actividad registrada" if result["ok"] else "Repasa la actividad", str(result["message"]) + "\n" + explanation, positive, next)

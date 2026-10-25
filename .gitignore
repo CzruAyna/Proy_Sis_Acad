@@ -25,6 +25,7 @@ frontend/next-env.d.ts
 game/.godot/
 game/.tools/
 game/build/
+game/.test-artifacts/
 
 *.log
 .DS_Store
