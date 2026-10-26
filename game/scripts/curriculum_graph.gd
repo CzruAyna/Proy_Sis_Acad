@@ -8,6 +8,9 @@ const NODE_RADIUS := 36.0
 const SOURCE_RADIUS := 32.0
 const PALETTE := [Color("#8bb5c4"), Color("#d0ae74"), Color("#9f91c6"), Color("#80ad8d"), Color("#c98670"), Color("#75a9a0")]
 
+var font_scale := 1.0
+var animations_enabled := true
+var personal_states: Dictionary = {}
 var program_id := ""
 var mention_id := ""
 var graph_theme: Dictionary = {}
@@ -23,7 +26,8 @@ var refresh_time := 0.0
 
 
 func _ready() -> void:
-	set_process(true)
+	focus_mode = Control.FOCUS_ALL
+	set_process(animations_enabled)
 
 
 func _process(delta: float) -> void:
@@ -37,7 +41,7 @@ func _process(delta: float) -> void:
 func setup(pid: String, selected_mention: String = "", available_width: float = 660.0) -> void:
 	program_id = pid
 	mention_id = selected_mention
-	graph_width = maxf(available_width, 500.0)
+	graph_width = maxf(available_width, 360.0)
 	graph_theme = UniCatalog.get_theme(pid)
 	semesters = UniCatalog.semesters_for(program_id, mention_id)
 	semester_index = 0
@@ -50,9 +54,9 @@ func move_semester(step: int) -> void:
 		return
 	semester_index = next_index
 	_build_semester()
-	modulate.a = 0.72
-	var transition := create_tween()
-	transition.tween_property(self, "modulate:a", 1.0, 0.2)
+	if animations_enabled:
+		modulate.a = 0.72
+		create_tween().tween_property(self, "modulate:a", 1.0, 0.15)
 	semester_changed.emit(semester_index, semesters.size())
 
 
@@ -62,7 +66,7 @@ func _build_semester() -> void:
 	hovered = -1
 	selected = -1
 	if semesters.is_empty() or semester_index >= semesters.size():
-		custom_minimum_size = Vector2(graph_width, 300)
+		custom_minimum_size = Vector2(0, 300)
 		queue_redraw()
 		return
 	var semester: Dictionary = semesters[semester_index]
@@ -79,7 +83,7 @@ func _build_semester() -> void:
 					prerequisites.append(source)
 	var row_count := maxi(ceili(float(maxi(subjects.size(), prerequisites.size())) / 2.0), 1)
 	var area_height := maxf(320.0, float(row_count - 1) * 100.0 + 144.0)
-	custom_minimum_size = Vector2(graph_width, area_height)
+	custom_minimum_size = Vector2(0, area_height)
 	var index_by_sigla := {}
 	if semester_index == 0:
 		var root := {
@@ -138,12 +142,14 @@ func _grid_position(index: int, count: int, source: bool, area_height: float) ->
 func _animated_position(index: int) -> Vector2:
 	var base: Vector2 = visible_nodes[index].get("pos", Vector2.ZERO)
 	var phase := motion_time * 1.2 + float(index) * 0.92
-	return base + Vector2(sin(phase) * 2.1, cos(phase * 0.8) * 2.1)
+	return base + (Vector2(sin(phase) * 2.1, cos(phase * 0.8) * 2.1) if animations_enabled else Vector2.ZERO)
 
 
 func _draw() -> void:
 	if semesters.is_empty():
 		return
+	if has_focus():
+		draw_rect(Rect2(Vector2(2, 2), size - Vector2(4, 4)), Color("#91d7ed"), false, 2.0)
 	var text: Color = graph_theme.get("text", Color("#e6edf3"))
 	var secondary: Color = graph_theme.get("sub", Color("#9fb3c8"))
 	for edge_index in range(edges.size()):
@@ -168,9 +174,18 @@ func _draw() -> void:
 		var position := _animated_position(index)
 		var source := bool(item.get("source", false))
 		var radius := SOURCE_RADIUS if source else NODE_RADIUS
-		var pulse := 1.0 + sin(motion_time * 1.6 + float(index)) * 0.025
+		var pulse := 1.0 + (sin(motion_time * 1.6 + float(index)) * 0.025 if animations_enabled else 0.0)
 		radius *= pulse
 		var tint: Color = item.get("color", PALETTE[0])
+		var status := str(personal_states.get(item.get("sigla", ""), ""))
+		if status == "Aprobada":
+			tint = Color("#70ae8a")
+		elif status.begins_with("Cursando") or status == "Inscrita":
+			tint = Color("#7ec6e1")
+		elif status.contains("Reprobada") or status.contains("recursar"):
+			tint = Color("#e0a06e")
+		elif status == "Bloqueada":
+			tint = Color("#8c9199")
 		var active := index == hovered or index == selected
 		draw_circle(position + Vector2(0, 5), radius + 1, Color("#050608", 0.72))
 		draw_arc(position, radius + 6.0, motion_time * 0.18, motion_time * 0.18 + TAU * 0.76, 48, Color(tint, 0.3), 1.2, true)
@@ -178,13 +193,13 @@ func _draw() -> void:
 		draw_circle(position, radius - 3.0, tint.lightened(0.08) if active else tint)
 		draw_arc(position, radius - 4.0, PI * 1.12, PI * 1.82, 32, Color("#fff5d9", 0.65), 1.1, true)
 		var code := str(item.get("sigla", ""))
-		draw_string(ThemeDB.fallback_font, position + Vector2(-radius + 5, 3), code, HORIZONTAL_ALIGNMENT_CENTER, radius * 2.0 - 10, 11 if not source else 9, Color("#151a1e") if source else Color("#f5f3ed"))
+		draw_string(ThemeDB.fallback_font, position + Vector2(-radius + 5, 3), code, HORIZONTAL_ALIGNMENT_CENTER, radius * 2.0 - 10, int((12 if not source else 11) * font_scale), Color("#151a1e") if source else Color("#f5f3ed"))
 		var label := _short_name(str(item.get("name", "")), bool(item.get("admission", false)))
-		draw_string(ThemeDB.fallback_font, position + Vector2(-68, radius + 17), label, HORIZONTAL_ALIGNMENT_CENTER, 136, 9, Color("#e1e5e5"))
+		draw_string(ThemeDB.fallback_font, position + Vector2(-68, radius + 17), label, HORIZONTAL_ALIGNMENT_CENTER, 136, int(11 * font_scale), Color("#e1e5e5"))
 	if hovered >= 0 and hovered < visible_nodes.size():
 		var item: Dictionary = visible_nodes[hovered]
 		var hint := "%s · %s" % [item.get("sigla", ""), item.get("name", "")]
-		draw_string(ThemeDB.fallback_font, Vector2(4, 16), hint, HORIZONTAL_ALIGNMENT_LEFT, graph_width - 8, 10, secondary)
+		draw_string(ThemeDB.fallback_font, Vector2(4, 16), hint, HORIZONTAL_ALIGNMENT_LEFT, graph_width - 8, int(12 * font_scale), secondary)
 
 
 func _short_name(value: String, admission: bool) -> String:
@@ -196,7 +211,16 @@ func _short_name(value: String, admission: bool) -> String:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
+	if event is InputEventKey and event.pressed:
+		if event.keycode in [KEY_RIGHT, KEY_DOWN, KEY_LEFT, KEY_UP] and not visible_nodes.is_empty():
+			selected = posmod(selected + (-1 if event.keycode in [KEY_LEFT, KEY_UP] else 1), visible_nodes.size())
+			subject_selected.emit(str(visible_nodes[selected].get("sigla", "")), visible_nodes[selected].duplicate(true))
+			queue_redraw()
+			accept_event()
+		elif event.keycode in [KEY_ENTER, KEY_SPACE] and selected >= 0:
+			subject_selected.emit(str(visible_nodes[selected].get("sigla", "")), visible_nodes[selected].duplicate(true))
+			accept_event()
+	elif event is InputEventMouseMotion:
 		var previous := hovered
 		hovered = _node_at(event.position)
 		if previous != hovered:
@@ -204,6 +228,7 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var index := _node_at(event.position)
 		if index >= 0:
+			grab_focus()
 			selected = index
 			subject_selected.emit(str(visible_nodes[index].get("sigla", "")), visible_nodes[index].duplicate(true))
 			queue_redraw()
@@ -216,3 +241,14 @@ func _node_at(point: Vector2) -> int:
 		if point.distance_to(_animated_position(index)) <= radius + 5.0:
 			return index
 	return -1
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED and size.x > 10 and not semesters.is_empty():
+		if not is_equal_approx(graph_width, size.x):
+			var remembered := str(visible_nodes[selected].get("sigla", "")) if selected >= 0 and selected < visible_nodes.size() else ""
+			graph_width = size.x
+			_build_semester()
+			for index in range(visible_nodes.size()):
+				if visible_nodes[index].get("sigla", "") == remembered:
+					selected = index

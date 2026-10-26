@@ -26,9 +26,10 @@ game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --expor
 - **Trámites:** matrícula, carta, materia externa, cambio de carrera K-03 y cambio de mención K-02.
 - **Auxiliatura:** postulación durante la carrera, competencia con rivales simulados, asignación de paralelo y trabajo con el docente.
 - **Graduación:** excelencia sin reprobaciones y promedio mayor que 65, o tesis/proyecto con defensa. Concluir materias no entrega automáticamente el título.
-- **Gestiones temporales:** F10 abre la consola del motor; `/ayuda` enumera las acciones y `/desbloquear todo` habilita explorar las materias sin aprobarlas automáticamente.
+- **Campus gráfico:** navegación común entre materias, malla, trámites, historial, auxiliatura y graduación. La matrícula, los documentos, las solicitudes y las defensas se realizan con botones y formularios.
+- **Exploración:** F10 conserva una consola opcional; `/desbloquear todo` habilita las materias sin aprobarlas automáticamente. No hace falta utilizar comandos para el recorrido normal.
 - **Guardado:** tres espacios individuales, archivo temporal y respaldo `.bak`; se migran las materias conocidas de partidas antiguas sin inventar sus notas. Los archivos multijugador anteriores se conservan sin cargarlos como modo jugable.
-- **Interfaz:** estilo cuaderno, iconos, animaciones, ajuste de texto, antialiasing opcional, mejor legibilidad.
+- **Interfaz:** contenido desplazable con navegación y regreso visibles, columnas adaptables, texto 80–120%, repaso libre, malla con estados y teclado, y modelos interactivos de estudio.
 - **Sin audio.** Solo local.
 
 ## Estructura
@@ -38,6 +39,9 @@ game/
   project.godot
   scenes/main.tscn
   scripts/game.gd
+  scripts/student_campus.gd
+  scripts/study_demo.gd
+  scripts/study_model.gd
   scripts/catalog.gd
   scripts/student_simulation.gd
   scripts/simulation_procedures.gd
@@ -52,4 +56,12 @@ game/
 
 **No es necesaria para este juego.** Usa archivos JSON en `user://partidas/`. El PostgreSQL/Django solo aplica al sistema académico (`backend/`), que se mantiene intacto.
 
-Las reglas están en `docs/SIMULACION_ESTUDIANTE.md`. El contrato para sustituir la consola temporal por oficinas y formularios gráficos está en `docs/PENDIENTES_FRONTEND_SIMULACION.md`.
+Las reglas están en `docs/SIMULACION_ESTUDIANTE.md`. La integración gráfica y sus verificaciones se documentan en `docs/PENDIENTES_FRONTEND_SIMULACION.md`.
+
+## Verificar la interfaz
+
+```powershell
+game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --script res://tests/test_frontend_campus.gd
+```
+
+La prueba usa partidas ficticias y no lee ni escribe las partidas del jugador. `tests/capture_frontend.gd` genera capturas con el renderizador real, también con datos aislados, en `game/.test-artifacts/frontend/`. Necesita un entorno gráfico; no se ejecuta con `--headless`.

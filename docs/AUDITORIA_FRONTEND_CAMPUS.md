@@ -2,6 +2,8 @@
 
 Fecha: 24 de octubre de 2026.
 
+Actualización del 25 de octubre: se implementó la integración gráfica del motor individual. Este documento conserva el diagnóstico original; el estado actual y las verificaciones están en `PENDIENTES_FRONTEND_SIMULACION.md`. Los problemas de distribución, navegación y demo aquí descritos ya no deben asumirse vigentes sin consultar esa actualización.
+
 ## Alcance y evidencia
 
 El producto principal confirmado por el usuario es el juego de escritorio Godot, `game/`. Se revisaron sus pantallas, navegación, presentación del progreso, malla, estudio, opciones y estados de guardado. Se inspeccionó también el frontend Next.js para distinguir las dos experiencias existentes, sin tratarlo como destino principal del rediseño.

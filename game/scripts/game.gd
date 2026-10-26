@@ -90,6 +90,11 @@ const ASSISTANT_CASES := [
 ]
 
 var current_profile: Dictionary = {}
+const CampusUI = preload("res://scripts/student_campus.gd")
+var campus_ui: RefCounted
+var _campus_section := "resumen"
+var _save_feedback := ""
+var _save_failed := false
 var simulation: RefCounted
 var simulation_console: AcceptDialog
 var save_store := SimulationSaveStore.new()
@@ -130,13 +135,12 @@ var _home_cosmic_time := 0.0
 func _ready() -> void:
 	random.randomize()
 	_load_settings()
-	settings["fullscreen"] = true
 	_load_global_profile()
 	_setup_theme()
 	_use_menu_theme()
 	get_window().min_size = Vector2i(900, 640)
 	_apply_image_settings()
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings["fullscreen"] else DisplayServer.WINDOW_MODE_WINDOWED)
 	_show_main()
 	queue_redraw()
 
@@ -852,7 +856,7 @@ func _setup_theme() -> void:
 	formula_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	formula_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	var game_theme := Theme.new()
-	game_theme.default_font = system_font
+	game_theme.default_font = ThemeDB.fallback_font
 	game_theme.default_font_size = 18
 	theme = game_theme
 
@@ -979,10 +983,6 @@ func _show_global_achievements(back: Callable = Callable(), menu_backdrop: bool 
 		for title in achievements:
 			var card := _card(list, true)
 			card.add_child(_label("✦  " + str(title), 16, _current_theme.get("accent", GREEN)))
-	if menu_backdrop:
-		_add_menu_button(content, "Volver", back, false, 42)
-	else:
-		_add_button(content, "Volver", back, false, 42)
 
 
 func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false) -> VBoxContainer:
@@ -998,57 +998,97 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 			continue
 		remove_child(child)
 		child.queue_free()
-
 	var margin := MarginContainer.new()
-	if menu_backdrop:
-		var centering := CenterContainer.new()
-		centering.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		add_child(centering)
-		var shell := PanelContainer.new()
-		shell.custom_minimum_size = Vector2(minf(size.x - 56.0, 820.0), 0.0)
-		shell.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		shell.add_theme_stylebox_override("panel", _home_panel_style())
-		centering.add_child(shell)
-		shell.add_child(margin)
-	else:
-		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		add_child(margin)
-	margin.add_theme_constant_override("margin_left", 22 if menu_backdrop else 42)
-	margin.add_theme_constant_override("margin_right", 22 if menu_backdrop else 42)
-	margin.add_theme_constant_override("margin_top", 20 if menu_backdrop else 26)
-	margin.add_theme_constant_override("margin_bottom", 18 if menu_backdrop else 22)
-
+	margin.name = "PageMargin"
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(margin)
+	for edge in ["left", "right"]:
+		margin.add_theme_constant_override("margin_" + edge, 24)
+	for edge in ["top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + edge, 18)
 	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 11 if menu_backdrop else 15)
+	layout.add_theme_constant_override("separation", 10)
 	margin.add_child(layout)
 	if not title.is_empty():
-		var heading := _label(title, 28, _current_theme.get("text", INK), false)
-		layout.add_child(heading)
-		var accent_rule := ColorRect.new()
-		accent_rule.color = _current_theme.get("accent", GOLD)
-		accent_rule.custom_minimum_size = Vector2(58, 3)
-		accent_rule.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		layout.add_child(accent_rule)
+		layout.add_child(_label(title, 26, _current_theme.get("text", INK)))
 	if not subtitle.is_empty():
-		var subheading := _label(subtitle, 15, _current_theme.get("sub", Color("#686a5d")), false)
-		layout.add_child(subheading)
-
-	var page_content := VBoxContainer.new()
-	page_content.add_theme_constant_override("separation", 13)
-	page_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	layout.add_child(page_content)
+		layout.add_child(_label(subtitle, 14, _current_theme.get("sub", INK)))
+	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
+		_add_campus_navigation(layout)
+	var scroll := ScrollContainer.new()
+	scroll.name = "PageScroll"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	layout.add_child(scroll)
+	var content := VBoxContainer.new()
+	content.name = "PageContent"
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 14)
+	scroll.add_child(content)
 	if back.is_valid():
 		var footer := HBoxContainer.new()
-		footer.alignment = BoxContainer.ALIGNMENT_BEGIN
 		layout.add_child(footer)
-		var back_action := Callable(self, "_transition_to").bind(back) if menu_backdrop else back
-		_add_button(footer, "← Atrás", back_action, false, 42)
+		var action := Callable(self, "_transition_to").bind(back) if menu_backdrop else back
+		var button := _add_button(footer, "← Atrás", action, false, 42)
+		button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		if not _save_feedback.is_empty() and not current_profile.is_empty():
+			footer.add_child(_label(_save_feedback, 13, _current_theme.get("sub", INK)))
 	if bool(settings["animations"]):
 		margin.modulate.a = 0.0
-		var intro := margin.create_tween()
-		intro.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		intro.tween_property(margin, "modulate:a", 1.0, 0.24 if menu_backdrop else 0.16)
-	return page_content
+		margin.create_tween().tween_property(margin, "modulate:a", 1.0, 0.14)
+	return content
+
+
+func _campus() -> RefCounted:
+	if campus_ui == null:
+		campus_ui = CampusUI.new(self)
+	return campus_ui
+
+
+func _show_campus_section(section: String) -> void:
+	if simulation == null:
+		_show_solo_slots()
+		return
+	_campus_section = section
+	if section == "malla":
+		_show_curriculum_graph(str(current_profile["program_id"]), true)
+	else:
+		_campus().render(section)
+
+
+func _add_campus_navigation(parent: Control) -> void:
+	var navigation := HFlowContainer.new()
+	navigation.name = "CampusNavigation"
+	navigation.add_theme_constant_override("h_separation", 6)
+	navigation.add_theme_constant_override("v_separation", 6)
+	parent.add_child(navigation)
+	var sections := [["resumen", "Mi campus"], ["materias", "Materias"], ["malla", "Malla"], ["tramites", "Trámites"], ["historial", "Historial"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]
+	for section in sections:
+		var button := _add_button(navigation, section[1], _show_campus_section.bind(section[0]), _campus_section == section[0], 38)
+		button.custom_minimum_size.x = 104
+		button.add_theme_font_size_override("font_size", int(14 * float(settings["font_scale"])))
+		if _campus_section == section[0]:
+			_focus_control.call_deferred(weakref(button))
+
+
+func _adaptive_grid(parent: Control, minimum_width: float = 360.0, maximum_columns: int = 3) -> GridContainer:
+	var grid := GridContainer.new()
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 14)
+	parent.add_child(grid)
+	var update := func() -> void:
+		grid.columns = clampi(floori((grid.size.x + 14.0) / (minimum_width * float(settings["font_scale"]) + 14.0)), 1, maximum_columns)
+	grid.resized.connect(update)
+	update.call_deferred()
+	return grid
+
+
+func _focus_control(reference: WeakRef) -> void:
+	var control = reference.get_ref()
+	if is_instance_valid(control) and control.is_inside_tree() and control.is_visible_in_tree():
+		control.grab_focus()
 
 
 func _label(text: String, font_size: int = 18, color: Color = INK, centered: bool = false) -> Label:
@@ -1078,7 +1118,8 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 	button.add_theme_constant_override("icon_max_width", 24)
 	button.add_theme_constant_override("h_separation", 12)
 	button.custom_minimum_size = Vector2(0, height)
-	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.custom_minimum_size.x = 168
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", int(round(18 * float(settings["font_scale"]))))
@@ -1274,24 +1315,36 @@ func _show_main() -> void:
 	_home_quote_index = randi_range(0, HOME_QUOTES.size() - 1)
 	_home_quote_time = 0.0
 	_activate_menu_backdrop()
+	var menu_scroll := ScrollContainer.new()
+	menu_scroll.position = Vector2(24, 24)
+	menu_scroll.size = Vector2(minf(420.0, size.x - 48.0), size.y - 48.0)
+	menu_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	menu_scroll.follow_focus = true
+	stage.add_child(menu_scroll)
+	stage.resized.connect(func() -> void: menu_scroll.size = Vector2(minf(420.0, stage.size.x - 48.0), stage.size.y - 48.0))
 	var menu_panel := PanelContainer.new()
-	menu_panel.position = Vector2(24, 24)
-	menu_panel.custom_minimum_size = Vector2(332, 0)
+	menu_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	menu_panel.add_theme_stylebox_override("panel", _home_panel_style())
-	stage.add_child(menu_panel)
+	menu_scroll.add_child(menu_panel)
 	var menu := VBoxContainer.new()
 	menu.add_theme_constant_override("separation", 10)
 	menu_panel.add_child(menu)
-	var eyebrow := _label("CIENCIA · CAMPUS · DECISIONES", 12, Color("#8ff5ff"))
+	var eyebrow := _label("SISTEMAS · INFORMÁTICA · TU RECORRIDO", 12, Color("#8ff5ff"))
 	menu.add_child(eyebrow)
 	var title := _label(HOME_NAME, 32, Color("#f4fdff"))
-	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu.add_child(title)
-	menu.add_child(_label("Una vida universitaria para explorar, materia a materia.", 15, Color("#c6d0d4")))
+	menu.add_child(_label("Explora tu carrera, elige tus materias y vive las decisiones del campus.", 15, Color("#c6d0d4")))
 	var menu_gap := Control.new()
 	menu_gap.custom_minimum_size.y = 5
 	menu.add_child(menu_gap)
-	var play_button := _add_menu_button(menu, "Jugar", _show_modes, true, 48)
+	var recent := _recent_slot()
+	if recent > 0:
+		var saved := _read_save(recent, "solo")
+		menu.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")), 14, Color("#c6d0d4")))
+		_add_menu_button(menu, "Continuar mi recorrido", _open_slot.bind(recent, "solo"), true, 48)
+	var play_button := _add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 46)
+	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 42)
 	play_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	play_button.custom_minimum_size.x = 0
 	var options_button := _add_menu_button(menu, "Opciones", _show_options, false, 43)
@@ -1304,12 +1357,12 @@ func _show_main() -> void:
 	exit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	exit_button.custom_minimum_size.x = 0
 	_home_quote_label = _label("", 14, Color("#d1d4d2"), true)
-	_home_quote_label.custom_minimum_size = Vector2(310, 58)
+	_home_quote_label.custom_minimum_size = Vector2(0, 58)
 	_home_quote_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	var quote_panel := PanelContainer.new()
 	quote_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	quote_panel.offset_left = -370
-	quote_panel.offset_top = -112
+	quote_panel.offset_top = -180
 	quote_panel.offset_right = -24
 	quote_panel.offset_bottom = -22
 	quote_panel.custom_minimum_size = Vector2(346, 90)
@@ -1321,7 +1374,7 @@ func _show_main() -> void:
 
 func _home_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#07101b", 0.82)
+	style.bg_color = Color("#07101b", 0.94)
 	var accent: Color = _current_theme.get("accent", NEON_THEME["accent"])
 	style.border_color = Color(accent, 0.76)
 	style.set_border_width_all(2)
@@ -1368,7 +1421,7 @@ func _transition_to(action: Callable) -> void:
 	_transition_overlay = effect
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(effect, "progress", 1.0, 0.34)
+	tween.tween_property(effect, "progress", 1.0, 0.16)
 	tween.tween_callback(Callable(self, "_reveal_menu_target").bind(action, effect))
 
 
@@ -1381,7 +1434,7 @@ func _reveal_menu_target(action: Callable, effect: Control) -> void:
 	_transition_revealing = true
 	var reveal := create_tween()
 	reveal.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	reveal.tween_property(effect, "progress", 0.0, 0.48)
+	reveal.tween_property(effect, "progress", 0.0, 0.2)
 	reveal.tween_callback(Callable(self, "_complete_menu_transition").bind(effect))
 
 
@@ -1399,11 +1452,7 @@ func _complete_menu_transition(effect: Control) -> void:
 func _show_options() -> void:
 	_use_neutral_theme()
 	var content := _make_page("Opciones", "Ajustes visuales para este equipo.", Callable(self, "_show_main"), true)
-	var options_grid := GridContainer.new()
-	options_grid.columns = 2
-	options_grid.add_theme_constant_override("h_separation", 10)
-	options_grid.add_theme_constant_override("v_separation", 8)
-	content.add_child(options_grid)
+	var options_grid := _adaptive_grid(content, 320.0, 2)
 	_add_button(options_grid, "Pantalla completa: " + ("Sí" if settings["fullscreen"] else "No"), _toggle_fullscreen, false, 42)
 	_add_button(options_grid, "Animaciones: " + ("Activadas" if settings["animations"] else "Reducidas"), _toggle_animations, false, 42)
 	_add_button(options_grid, "Suavizado: " + ("Activado" if settings["antialiasing"] else "Desactivado"), _toggle_antialiasing, false, 42)
@@ -1412,6 +1461,7 @@ func _show_options() -> void:
 	var scale_label := _label("Tamaño del texto: %d%%" % int(round(float(settings["font_scale"]) * 100.0)), 17)
 	content.add_child(scale_label)
 	var slider := HSlider.new()
+	slider.name = "TextScale"
 	slider.min_value = 0.8
 	slider.max_value = 1.2
 	slider.step = 0.05
@@ -1458,10 +1508,19 @@ func _change_font_scale(value: float, scale_label: Label) -> void:
 	settings["font_scale"] = value
 	scale_label.text = "Tamaño del texto: %d%%" % int(round(value * 100.0))
 	_save_settings()
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_rebuild_options(false)
 
 
 func _rebuild_options(_changed: bool) -> void:
-	_show_options.call_deferred()
+	_refresh_options.call_deferred()
+
+
+func _refresh_options() -> void:
+	_show_options()
+	var slider := find_child("TextScale", true, false)
+	if slider != null:
+		_focus_control.call_deferred(weakref(slider))
 
 
 func _show_modes() -> void:
@@ -1499,9 +1558,14 @@ func _show_slots(mode: String) -> void:
 
 func _begin_new_game(slot: int) -> void:
 	_save_profile()
+	if _save_failed:
+		_show_result("No se pudo guardar", _save_feedback, false, _show_solo_hub)
+		return
 	current_profile = {}
 	simulation = null
 	active_slot = slot
+	draft_player_name = ""
+	campus_ui = null
 	_show_new_solo()
 
 
@@ -1509,6 +1573,9 @@ func _open_slot(slot: int, mode: String) -> void:
 	if mode != "solo":
 		return
 	_save_profile()
+	if _save_failed:
+		_show_result("No se pudo guardar", _save_feedback, false, _show_solo_hub)
+		return
 	var loaded := _read_save(slot, mode)
 	if loaded.is_empty():
 		_show_slots(mode)
@@ -1522,6 +1589,7 @@ func _open_slot(slot: int, mode: String) -> void:
 	current_profile["slot"] = slot
 	active_slot = slot
 	simulation = Simulation.new(current_profile)
+	campus_ui = null
 	_save_profile()
 	_show_solo_hub()
 
@@ -1561,30 +1629,41 @@ func _find_free_slot(mode: String) -> int:
 
 func _show_new_solo() -> void:
 	_use_neutral_theme()
-	var content := _make_page("Una partida nueva", "Primero ponle nombre a tu estudiante.", _show_solo_slots)
-	var name_field := LineEdit.new()
-	name_field.placeholder_text = "Tu nombre o apodo"
-	name_field.custom_minimum_size.y = 54
-	name_field.text = "Estudiante"
-	_style_input(name_field)
-	content.add_child(name_field)
-	_add_button(content, "Elegir facultad", _choose_faculty_from_field.bind(name_field), true)
+	selected_faculty = "ingenieria"
+	var content := _make_page("Crea tu recorrido", "Facultad de Ingeniería · Sistemas e Informática", _show_solo_slots)
+	content.add_child(_label("¿Cómo te llamas?", 18))
+	var field := LineEdit.new()
+	field.name = "StudentName"
+	field.placeholder_text = "Tu nombre o apodo"
+	field.text = draft_player_name
+	field.max_length = 48
+	field.custom_minimum_size.y = 48
+	_style_input(field)
+	content.add_child(field)
+	field.text_changed.connect(func(value: String) -> void: draft_player_name = value)
+	field.text_submitted.connect(func(_value: String) -> void: _choose_faculty_from_field(field))
+	content.add_child(_label("Elige una carrera y después explora sus menciones. Puedes consultar el plan antes de comenzar.", 15))
+	var grid := _adaptive_grid(content, 380.0, 2)
+	for program in Catalog.PROGRAMS:
+		var card := _card(grid)
+		card.add_child(_label(str(program["name"]), 22, Catalog.get_theme(str(program["id"]))["accent"]))
+		card.add_child(_label(str(program["summary"]), 16))
+		_add_button(card, "Explorar menciones", _choose_new_program.bind(str(program["id"])), true, 46)
+	_focus_control.call_deferred(weakref(field))
+
+
+func _choose_new_program(program_id: String) -> void:
+	selected_faculty = "ingenieria"
+	_show_mentions(program_id)
 
 
 func _choose_faculty_from_field(name_field: LineEdit) -> void:
 	draft_player_name = name_field.text.strip_edges()
-	if draft_player_name.is_empty():
-		draft_player_name = "Estudiante"
-	_show_faculties()
+	_show_mentions("sistemas")
 
 
 func _show_faculties() -> void:
-	_use_neutral_theme()
-	var content := _make_page("Elige una facultad", "Facultad de Ingeniería · Ingeniería de Sistemas e Ingeniería Informática.", _show_new_solo)
-	var rows := _add_compact_list(content)
-	for faculty in Catalog.FACULTIES:
-		var button := _add_button(rows, str(faculty["name"]) + "\n" + str(faculty["description"]), _select_faculty.bind(str(faculty["id"])), false, 82)
-		button.add_theme_font_size_override("font_size", int(round(16 * float(settings["font_scale"]))))
+	_show_new_solo()
 
 
 func _select_faculty(faculty_id: String) -> void:
@@ -1593,19 +1672,7 @@ func _select_faculty(faculty_id: String) -> void:
 
 
 func _show_programs() -> void:
-	_use_neutral_theme()
-	var faculty := Catalog.faculty_by_id(selected_faculty)
-	var content := _make_page(str(faculty.get("name", "Carreras")), "Plan de estudios por semestres con prerrequisitos.", _show_faculties)
-	var rows := _add_compact_list(content)
-	for program in Catalog.programs_for_faculty(selected_faculty):
-		var card := _card(rows)
-		var theme := Catalog.get_theme(str(program["id"]))
-		var accent: Color = theme.get("accent", GREEN)
-		card.add_child(_label(str(program["name"]), 21, accent))
-		card.add_child(_label(str(program["summary"]), 15, _current_theme.get("sub", Color("#5f6257"))))
-		card.add_child(_label(str(program.get("description", "")), 14, _current_theme.get("sub", Color("#6c6859"))))
-		card.add_child(_label("Título al completar: " + str(program["title"]), 14, _current_theme.get("sub", Color("#767262"))))
-		_add_button(card, "Ver menciones y actividades", _show_mentions.bind(str(program["id"])), true, 46)
+	_show_new_solo()
 
 
 func _show_mentions(program_id: String) -> void:
@@ -1620,11 +1687,7 @@ func _show_mentions(program_id: String) -> void:
 	var info_card := _card(content)
 	info_card.add_child(_label(str(program["name"]), 21, accent))
 	info_card.add_child(_label(str(program.get("description", "")), 15, theme.get("sub", Color("#5f6257"))))
-	var rows := GridContainer.new()
-	rows.columns = 2
-	rows.add_theme_constant_override("h_separation", 10)
-	rows.add_theme_constant_override("v_separation", 10)
-	content.add_child(rows)
+	var rows := _adaptive_grid(content, 440.0, 2)
 	var art_colors := [Color("#5d8975"), Color("#57859a"), Color("#b87754"), Color("#8b70a0"), Color("#bd9b50")]
 	var mention_index := 0
 	for mention in Catalog.mentions_for_program(program_id):
@@ -1655,11 +1718,12 @@ func _create_solo_save(program_id: String, mention_id: String) -> void:
 	if Catalog.program_by_id(program_id).is_empty() or mention.is_empty():
 		_show_solo_slots()
 		return
-	current_profile = {"slot": active_slot, "mode": "solo", "player_name": draft_player_name,
+	current_profile = {"slot": active_slot, "mode": "solo", "player_name": draft_player_name.strip_edges() if not draft_player_name.strip_edges().is_empty() else "Estudiante",
 		"program_id": program_id, "mention_id": mention_id, "mention_name": mention.get("name", ""),
 		"role_id": "estudiante", "confidence": 60, "chanchullo_used": [],
 		"created_at": Time.get_datetime_string_from_system()}
 	simulation = Simulation.new(current_profile)
+	campus_ui = null
 	_save_profile()
 	_show_solo_hub()
 
@@ -1670,53 +1734,7 @@ func _show_solo_hub() -> void:
 		return
 	if simulation == null:
 		simulation = Simulation.new(current_profile)
-	var program := Catalog.program_by_id(str(current_profile.get("program_id", "")))
-	var theme := Catalog.get_theme(str(program.get("id", "sistemas")))
-	var accent: Color = theme.get("accent", GREEN)
-	_current_theme = theme
-	queue_redraw()
-	var snapshot: Dictionary = simulation.snapshot()
-	var page := _make_page("Hola, " + str(current_profile.get("player_name", "Estudiante")), "%s · %s" % [program.get("name", "Carrera"), current_profile.get("mention_name", "")], _show_solo_slots)
-	var info := _card(page, true)
-	info.add_child(_label("SEMESTRE %02d · %s" % [int(snapshot["term"]), snapshot["phase"]], 21, accent, true))
-	info.add_child(_label("%d / %d materias aprobadas · Promedio %s" % [current_profile["passed_subjects"].size(), simulation.curriculum().size(), "%.2f" % float(snapshot["average"]) if snapshot["average"] != null else "pendiente"], 15, theme.get("sub", INK), true))
-	if snapshot["graduated"]:
-		info.add_child(_label("TÍTULO OBTENIDO · " + str(program.get("title", "Carrera")), 20, GREEN, true))
-	elif snapshot["studies_complete"]:
-		info.add_child(_label("ESTUDIOS CONCLUIDOS · Falta completar la graduación", 18, accent, true))
-		info.add_child(_label(str(snapshot["excellence"]["message"]), 14, theme.get("sub", INK), true))
-	else:
-		info.add_child(_label("Las notas se consolidan al cerrar el semestre. Las reprobadas se recursan en el siguiente.", 14, theme.get("sub", INK), true))
-		var grid := GridContainer.new()
-		grid.columns = 3 if size.x >= 1100 else 2
-		grid.add_theme_constant_override("h_separation", 10)
-		grid.add_theme_constant_override("v_separation", 8)
-		page.add_child(grid)
-		for key in simulation.state["enrollments"]:
-			var subject: Dictionary = simulation.course_data(key)
-			var entry: Dictionary = simulation.state["enrollments"][key]
-			var status := "Inscrita · " + str(entry["origin"])
-			if entry["score"] != null:
-				status = "%s · %.2f" % ["APROBADA" if float(entry["score"]) >= Simulation.PASS_MARK else "REPROBADA", float(entry["score"])]
-			elif snapshot["phase"] == "CURSANDO":
-				status = "Parcial %d/3" % (entry["answers"].size() + 1)
-			var button := _add_button(grid, "%s\n%s\n%s" % [subject["sigla"], subject["name"], status], _start_subject.bind(str(key)), false, 94)
-			button.custom_minimum_size.x = 220
-			button.add_theme_font_size_override("font_size", int(14 * float(settings["font_scale"])))
-			button.disabled = snapshot["phase"] != "CURSANDO" or entry["score"] != null
-		if snapshot["phase"] == "INSCRIPCION":
-			_add_button(page, "Iniciar semestre", _run_simulation_action.bind("/iniciar"), true, 46)
-		else:
-			_add_button(page, "Cerrar semestre y consolidar resultados", _run_simulation_action.bind("/cerrar"), true, 46)
-	# FRONTEND_TEMP: consumir snapshot() para planificación, trámites, malla e historial gráficos; eliminar al integrar.
-	page.add_child(_label("F10 · Gestiones: matrícula, inscripción, cartas, auxiliaturas y graduación. /ayuda muestra las acciones disponibles.", 13, theme.get("sub", INK)))
-	var actions := HFlowContainer.new()
-	actions.add_theme_constant_override("h_separation", 8)
-	page.add_child(actions)
-	_add_button(actions, "Gestiones · F10", _show_simulation_console, false, 42)
-	_add_button(actions, "Ver malla", Callable(self, "_show_curriculum_graph").bind(str(program.get("id", "")), true), false, 42)
-	_add_button(actions, "Logros", _show_titles, false, 42)
-	_add_button(actions, "Guardar y salir", _return_to_menu, false, 42)
+	_show_campus_section("resumen")
 
 
 func _start_subject(key: String) -> void:
@@ -1728,6 +1746,8 @@ func _start_subject(key: String) -> void:
 		_show_solo_hub()
 		return
 	current_profile["current_subject"] = key
+	_campus_section = "materias"
+	_campus().section = "materias"
 	current_profile["partial_index"] = entry["answers"].size()
 	_save_profile()
 	_show_exam()
@@ -1751,15 +1771,13 @@ func _show_exam() -> void:
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
 	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, course["name"], subject["sigla"]], "Semestre cursado %d · Tres parciales determinan la nota final" % int(simulation.state["term"]), Callable(self, "_show_solo_hub"))
-	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 18)
-	content.add_child(columns)
+	var columns := _adaptive_grid(content, 470.0, 2)
 	var lesson := _card(columns, true)
 	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
 	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
 	var demo := StudyDemo.new()
-	demo.setup(course, partial_index)
+	demo.setup(course, partial_index, float(settings["font_scale"]))
 	lesson.add_child(demo)
 	var exam := VBoxContainer.new()
 	exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1821,14 +1839,21 @@ func _show_titles() -> void:
 
 func _return_to_menu() -> void:
 	_save_profile()
+	if _save_failed:
+		_show_result("No se pudo guardar", _save_feedback + ". La partida sigue abierta; vuelve a intentar guardar.", false, _show_solo_hub)
+		return
 	current_profile = {}
 	simulation = null
+	campus_ui = null
 	active_slot = 0
 	_show_main()
 
 
 func _exit_game() -> void:
 	_save_profile()
+	if _save_failed:
+		_show_result("No se pudo guardar", _save_feedback + ". La partida sigue abierta; vuelve a intentar guardar.", false, _show_solo_hub)
+		return
 	get_tree().quit()
 
 
@@ -1852,12 +1877,17 @@ func _read_save(slot: int, mode: String) -> Dictionary:
 
 
 func _save_profile() -> void:
+	_save_failed = false
 	if current_profile.is_empty() or active_slot < 1 or active_slot > SAVE_COUNT:
 		return
 	current_profile["updated_at"] = Time.get_datetime_string_from_system()
 	var result := save_store.save_slot(active_slot, current_profile)
 	if result != OK:
+		_save_failed = true
+		_save_feedback = "Error de guardado: " + error_string(result)
 		push_error("No se pudo guardar la partida: %s." % error_string(result))
+	else:
+		_save_feedback = "Guardado · " + Time.get_time_string_from_system()
 
 
 const GraphScene := preload("res://scripts/curriculum_graph.gd")
@@ -1865,87 +1895,17 @@ const StudyDemo := preload("res://scripts/study_demo.gd")
 const MentionArt := preload("res://scripts/mention_art.gd")
 
 func _show_curriculum_graph(program_id: String, return_to_hub: bool = false, selected_mention_id: String = "") -> void:
-	var program := Catalog.program_by_id(program_id)
-	if program.is_empty(): return
-	var theme := Catalog.get_theme(program_id)
-	_current_theme = theme
-	queue_redraw()
-	var mention_id := str(current_profile.get("mention_id", "")) if return_to_hub else selected_mention_id
-	var mention := Catalog.mention_by_id(program_id, mention_id)
-	var page_back := Callable(self, "_show_solo_hub") if return_to_hub else Callable(self, "_show_mentions").bind(program_id)
-	var page_subtitle := str(program.get("name", "")) + " · Plan FNI 2011"
-	if not mention.is_empty():
-		page_subtitle += " · " + str(mention.get("name", ""))
-	var content := _make_page("Plan de estudios y recorrido", page_subtitle, page_back)
-	var graph := GraphScene.new()
-	var graph_width := minf(660.0, size.x - 42.0 * 2.0 - 310.0)
-	graph.setup(program_id, mention_id, graph_width)
-	var semester := HBoxContainer.new()
-	semester.alignment = BoxContainer.ALIGNMENT_CENTER
-	semester.add_theme_constant_override("separation", 10)
-	content.add_child(semester)
-	var back_semester := _add_button(semester, "← Semestre anterior", Callable(graph, "move_semester").bind(-1), false, 42)
-	var counter := _label("SEMESTRE 1 / 10", 18, theme.get("accent", GREEN), true)
-	counter.custom_minimum_size.x = 230
-	semester.add_child(counter)
-	var next_semester := _add_button(semester, "Siguiente semestre →", Callable(graph, "move_semester").bind(1), true, 42)
-	var overview := HBoxContainer.new()
-	overview.add_theme_constant_override("separation", 14)
-	overview.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(overview)
-	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	overview.add_child(graph)
-	var details := _card(overview)
-	details.custom_minimum_size.x = 280
-	var pager := HBoxContainer.new()
-	pager.alignment = BoxContainer.ALIGNMENT_CENTER
-	pager.add_theme_constant_override("separation", 5)
-	content.add_child(pager)
-	var dots: Array[Label] = []
-	for index in range(Catalog.semesters_for(program_id, mention_id).size()):
-		var dot := _label("●" if index == 0 else "·", 17 if index == 0 else 14, theme.get("accent", GREEN), true)
-		dot.custom_minimum_size.x = 18
-		pager.add_child(dot)
-		dots.append(dot)
-	details.add_child(_label("Elige una materia para consultar su descripción, temas y prerrequisitos.", 13, theme.get("sub", Color("#9fb3c8"))))
-	back_semester.disabled = true
-	graph.semester_changed.connect(_update_graph_pager.bind(counter, dots, back_semester, next_semester))
-	graph.subject_selected.connect(_show_graph_subject.bind(details))
+	if return_to_hub:
+		_campus_section = "malla"
+	_campus().show_graph(program_id, return_to_hub, selected_mention_id)
 
-
-func _update_graph_pager(index: int, count: int, counter: Label, dots: Array[Label], previous: Button, next: Button) -> void:
-	counter.text = "SEMESTRE %d / %d" % [index + 1, count]
-	previous.disabled = index <= 0
-	next.disabled = index >= count - 1
-	for dot_index in range(dots.size()):
-		dots[dot_index].text = "●" if dot_index == index else "·"
-		dots[dot_index].add_theme_font_size_override("font_size", 17 if dot_index == index else 14)
 
 func _show_curriculum(program_id: String, mention_id: String) -> void:
 	_show_curriculum_graph(program_id, false, mention_id)
 
 
-func _show_graph_subject(sigla: String, data: Dictionary, details: VBoxContainer) -> void:
-	for child in details.get_children():
-		details.remove_child(child)
-		child.queue_free()
-	if bool(data.get("admission", false)):
-		details.add_child(_label("INGRESO A LA FNI", 17, Color("#d0ae74")))
-		details.add_child(_label(str(data.get("desc", "")), 12, _current_theme.get("sub", INK)))
-		for admission_mode in data.get("admission_modes", []):
-			details.add_child(_label("• " + str(admission_mode), 11, _current_theme.get("text", INK)))
-		details.add_child(_label(str(data.get("notice", "")), 11, _current_theme.get("accent", GOLD)))
-		return
-	var prerequisites: Array = data.get("prereq", [])
-	var topics: Array = data.get("topics", [])
-	details.add_child(_label(str(data.get("name", "")) + " · " + sigla, 18, _current_theme.get("accent", GREEN)))
-	var description := _label(str(data.get("desc", "")), 13, _current_theme.get("sub", INK))
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	details.add_child(description)
-	details.add_child(_label("Semestre %s  ·  Requiere: %s" % [str(data.get("semester", "")), ", ".join(prerequisites) if not prerequisites.is_empty() else "Ingreso"], 12, _current_theme.get("sub", INK)))
-	if not topics.is_empty():
-		details.add_child(_label("Temas: " + ", ".join(topics), 12, _current_theme.get("sub", INK)))
+func _show_course_preview(key: String) -> void:
+	_campus().show_course_preview(key)
 
 
 func _run_simulation_action(command: String) -> void:
@@ -1963,9 +1923,8 @@ func _show_simulation_console() -> void:
 	if is_instance_valid(simulation_console):
 		_close_simulation_console()
 		return
-	# FRONTEND_TEMP: consola de integración para revisar el motor; sustituir por oficinas y formularios gráficos y eliminar este comentario.
 	simulation_console = AcceptDialog.new()
-	simulation_console.title = "Gestiones de la partida · F10"
+	simulation_console.title = "Consola de exploración · F10"
 	simulation_console.min_size = Vector2i(760, 500)
 	var box := VBoxContainer.new()
 	simulation_console.add_child(box)
@@ -2013,7 +1972,7 @@ func _show_simulation_activity(kind: String, id: String) -> void:
 	if kind == "examen":
 		var application: Dictionary = simulation._application(id)
 		if application.is_empty() or application["status"] != "HABILITADA":
-			_show_result("Postulación pendiente", "Completa el trámite y utiliza el identificador AUX que aparece en /tramites.", false, _show_solo_hub)
+			_show_result("Postulación pendiente", "Completa primero el expediente de postulación desde Auxiliatura.", false, _show_solo_hub)
 			return
 		index = application["answers"].size()
 		var subject: Dictionary = simulation.course_data(str(application["course_id"]))
@@ -2026,7 +1985,7 @@ func _show_simulation_activity(kind: String, id: String) -> void:
 			return
 		index = int(request["payload"].get("sessions", 0))
 		if index >= 3:
-			_show_result("Actividades completas", "Puedes continuar el trámite con /paso " + id, true, _show_solo_hub)
+			_show_result("Actividades completas", "Puedes continuar el expediente desde Trámites.", true, _show_solo_hub)
 			return
 		var item: Dictionary = ASSISTANT_CASES[index]
 		question = {"q": item["question"], "options": item["options"], "answer": item["best"], "why": item["good"] + " " + item["bad"]}
@@ -2049,7 +2008,8 @@ func _show_simulation_activity(kind: String, id: String) -> void:
 	current_question["activity"] = kind
 	current_question["activity_id"] = id
 	current_question["activity_index"] = index
-	var content := _make_page("%s · actividad %d/3" % [kind.capitalize(), index + 1], id, _show_solo_hub)
+	var activity_titles := {"examen": "Competencia de auxiliatura", "apoyo": "Trabajo con el docente", "defensa": "Defensa ante tribunal"}
+	var content := _make_page("%s · actividad %d/3" % [activity_titles.get(kind, kind.capitalize()), index + 1], id, _show_campus_section.bind("auxiliatura" if kind != "defensa" else "graduacion"))
 	content.add_child(_label(str(question["q"]), 22, _current_theme.get("accent", GREEN), true))
 	for option in range(question["options"].size()):
 		_add_button(content, str(question["options"][option]), _answer_simulation_activity.bind(option), false, 56)
@@ -2072,6 +2032,30 @@ func _answer_simulation_activity(option: int) -> void:
 	else:
 		result = simulation.defense_answer(id, index, correct)
 	_save_profile()
-	var next := _show_solo_hub if result.get("finished", false) or (kind == "apoyo" and index == 2 and result["ok"]) else _show_simulation_activity.bind(kind, id)
+	var next := _show_simulation_activity.bind(kind, id)
+	if result.get("finished", false) or (kind == "apoyo" and index == 2 and result["ok"]):
+		if kind == "examen":
+			next = _campus().open_request.bind(str(result["request_id"])) if result.has("request_id") else _show_campus_section.bind("auxiliatura")
+		else:
+			next = _campus().open_request.bind(id)
 	var positive := bool(result.get("selected", result.get("passed", result["ok"])))
 	_show_result("Actividad registrada" if result["ok"] else "Repasa la actividad", str(result["message"]) + "\n" + explanation, positive, next)
+
+
+func _recent_slot() -> int:
+	var found := 0
+	var updated := ""
+	for slot in range(1, SAVE_COUNT + 1):
+		var saved := _read_save(slot, "solo")
+		if not saved.is_empty() and (found == 0 or str(saved.get("updated_at", "")) > updated):
+			found = slot
+			updated = str(saved.get("updated_at", ""))
+	return found
+
+
+func _new_available_game() -> void:
+	var slot := _find_free_slot("solo")
+	if slot > 0:
+		_begin_new_game(slot)
+	else:
+		_show_solo_slots()
