@@ -64,6 +64,12 @@ func _init(saved_profile: Dictionary, fixture_courses: Array = []) -> void:
 	if profile.get("simulation") is Dictionary and int(profile["simulation"].get("version", 0)) == VERSION:
 		state = profile["simulation"]
 		_refresh_indexes()
+		if int(state["term"]) == 1 and state["phase"] == "INSCRIPCION":
+			var has_results := false
+			for entry in state["enrollments"].values():
+				has_results = has_results or not entry["answers"].is_empty() or entry["score"] != null
+			if not has_results:
+				_auto_enroll()
 	else:
 		_create_state()
 	profile["mode"] = "solo"
@@ -261,6 +267,16 @@ func _eligibility(key: String, allow_concurrent: bool, visiting: Array) -> Dicti
 
 
 func enroll(value: String) -> Dictionary:
+	if int(state["term"]) == 1:
+		return _error("En el primer semestre las materias se asignan automáticamente. La planificación comienza en el segundo semestre.")
+	return _enroll_course(value)
+
+
+func planning_available() -> bool:
+	return int(state["term"]) >= 2 and state["phase"] == "INSCRIPCION" and not state["studies_complete"] and not state["graduated"]
+
+
+func _enroll_course(value: String) -> Dictionary:
 	if state["phase"] != "INSCRIPCION":
 		return _error("Las inscripciones se modifican antes de iniciar el semestre.")
 	var key := resolve_course(value)
@@ -285,6 +301,8 @@ func enroll(value: String) -> Dictionary:
 
 
 func withdraw(value: String) -> Dictionary:
+	if int(state["term"]) == 1:
+		return _error("En el primer semestre debes cursar las materias iniciales asignadas. Podrás planificar desde el segundo semestre.")
 	if state["phase"] != "INSCRIPCION":
 		return _error("El semestre ya comenzó.")
 	var key := resolve_course(value)
@@ -303,12 +321,14 @@ func withdraw(value: String) -> Dictionary:
 func _auto_enroll() -> void:
 	state["enrollments"] = {}
 	for key in retakes().slice(0, load_limit()):
-		enroll(key)
+		_enroll_course(key)
 	for key in curriculum():
 		if state["enrollments"].size() >= load_limit():
 			break
+		if int(state["term"]) == 1 and int(courses[key].get("semester", 1)) != 1:
+			continue
 		if eligibility(key, false)["ok"]:
-			enroll(key)
+			_enroll_course(key)
 
 
 func start_term() -> Dictionary:
@@ -775,7 +795,7 @@ func snapshot() -> Dictionary:
 			row["eligibility"] = eligibility(key)
 			row["enrollment"] = state["enrollments"][key].duplicate(true)
 			subjects.append(row)
-	return {"term": state["term"], "phase": state["phase"], "subjects": subjects, "load_limit": load_limit(), "history": state["history"].duplicate(true), "procedures": state["procedures"].duplicate(true), "documents": state["documents"].duplicate(true), "applications": state["applications"].duplicate(true), "assignments": state["assignments"].duplicate(true), "studies_complete": state["studies_complete"], "graduated": state["graduated"], "average": average(), "excellence": excellence(), "unlocked_all": state["unlocked_all"]}
+	return {"term": state["term"], "phase": state["phase"], "planning_available": planning_available(), "subjects": subjects, "load_limit": load_limit(), "history": state["history"].duplicate(true), "procedures": state["procedures"].duplicate(true), "documents": state["documents"].duplicate(true), "applications": state["applications"].duplicate(true), "assignments": state["assignments"].duplicate(true), "studies_complete": state["studies_complete"], "graduated": state["graduated"], "average": average(), "excellence": excellence(), "unlocked_all": state["unlocked_all"]}
 
 
 func _ok(message: String, extra: Dictionary = {}) -> Dictionary:

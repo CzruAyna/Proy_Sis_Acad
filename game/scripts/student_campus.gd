@@ -102,6 +102,8 @@ func render(destination: String) -> void:
 	var titles := {"resumen": "Tu campus", "materias": "Materias y planificación", "tramites": "Oficinas y trámites", "historial": "Tu historial académico", "auxiliatura": "Tu actividad de auxiliatura", "graduacion": "Del egreso al título"}
 	var program := Catalog.program_by_id(str(profile["program_id"]))
 	var snapshot: Dictionary = _model().snapshot()
+	if int(snapshot["term"]) == 1:
+		titles["materias"] = "Materias del primer semestre"
 	var subtitle := "%s · %s · Semestre cursado %d" % [profile.get("player_name", "Estudiante"), program["name"], int(snapshot["term"])]
 	var page: VBoxContainer = ui._make_page(titles.get(section, "Tu campus"), subtitle, ui._return_to_menu)
 	if not notice.is_empty():
@@ -124,6 +126,8 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 	var model := _model()
 	var stats: VBoxContainer = ui._card(page, true)
 	var phase := {"INSCRIPCION": "Planifica tu semestre", "CURSANDO": "Tu semestre está en marcha", "TITULADO": "¡Tu título está emitido!"}
+	if int(snapshot["term"]) == 1:
+		phase["INSCRIPCION"] = "Prepara tu primer semestre"
 	_text(stats, phase.get(snapshot["phase"], snapshot["phase"]), 23)
 	var approved := 0
 	var enrolled := 0
@@ -145,7 +149,9 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 	else:
 		var row := _actions(stats)
 		if snapshot["phase"] == "INSCRIPCION":
-			_button(row, "Organizar mis materias", _go.bind("materias"), true, true)
+			_button(row, "Organizar mis materias" if snapshot["planning_available"] else "Ver mis materias iniciales", _go.bind("materias"), true, true)
+			if int(snapshot["term"]) == 1:
+				_text(stats, "Tus materias iniciales están asignadas. La planificación comienza en el segundo semestre.", 15, true)
 			_button(row, "Iniciar semestre", perform.bind("start_term", [], "resumen"))
 		else:
 			_button(row, "Continuar estudiando", _go.bind("materias"), true, true)
@@ -221,7 +227,10 @@ func subject_status(subject: Dictionary, snapshot: Dictionary) -> String:
 
 
 func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
-	_text(page, "Carga %d/%d · %s" % [_model().state["enrollments"].size(), int(snapshot["load_limit"]), "Puedes ajustar tu inscripción antes de comenzar." if snapshot["phase"] == "INSCRIPCION" else "El periodo ya comenzó; puedes alternar entre las materias inscritas."], 16)
+	var message := "Puedes ajustar tu inscripción antes de comenzar." if snapshot["planning_available"] else "El periodo ya comenzó; puedes alternar entre las materias inscritas."
+	if int(snapshot["term"]) == 1:
+		message = "Las materias iniciales se asignan automáticamente. Podrás planificar desde el segundo semestre."
+	_text(page, "Carga %d/%d · %s" % [_model().state["enrollments"].size(), int(snapshot["load_limit"]), message], 16)
 	var search := LineEdit.new()
 	search.name = "SubjectSearch"
 	search.placeholder_text = "Buscar por nombre o sigla"
@@ -281,7 +290,7 @@ func course_actions(parent: Control, subject: Dictionary, snapshot: Dictionary) 
 	var row := _actions(parent)
 	var key := str(subject["id"])
 	var entry: Dictionary = subject["enrollment"]
-	if snapshot["phase"] == "INSCRIPCION" and not subject["approved"]:
+	if snapshot["planning_available"] and not subject["approved"]:
 		if entry.is_empty():
 			_button(row, "Inscribir", _enroll.bind(key), bool(subject["eligibility"]["ok"]), true)
 		else:

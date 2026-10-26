@@ -7,7 +7,7 @@ Este documento describe las reglas del juego de escritorio acordadas con el usua
 | Regla | Comportamiento |
 |---|---|
 | SIM-01 | Una persona juega como estudiante. La auxiliatura es una actividad del estudiante; las autoridades son oficinas y personajes simulados. No hay modo equipo ni ascenso a administrativo o decano. |
-| SIM-02 | El semestre tiene inscripción, cursado y cierre. El plan inicial incluye las materias de ingreso. Los siguientes planes priorizan reprobadas pendientes y agregan materias habilitadas por aprobaciones anteriores. |
+| SIM-02 | El semestre tiene inscripción, cursado y cierre. En el primer semestre se asignan las materias de ingreso, sin planificación manual. Desde el segundo se permite ajustar las inscripciones; los planes priorizan reprobadas pendientes y agregan materias habilitadas por aprobaciones anteriores. |
 | SIM-03 | Una correlativa puede cursarse junto con todas sus regulares pendientes, que se incorporan obligatoriamente a la inscripción. El paquete completo respeta el límite de carga y se registra íntegramente o se rechaza. No se retira una regular mientras otra inscripción dependa de ella. |
 | SIM-04 | Los resultados de regular y correlativa son independientes. La correlativa aprobada se conserva aunque se repruebe la regular. Los nuevos desbloqueos académicos se consolidan al cerrar el semestre. |
 | SIM-05 | Tres parciales aportan cada uno 0 o 100; la nota final es su media. Se aprueba desde 51. Un resultado final no se repite en el mismo semestre. Reprobar un parcial no equivale a reprobar la materia. |
@@ -47,6 +47,10 @@ Referencias institucionales consultadas durante el análisis:
 Los documentos publicados tienen distintas fechas y no equivalen a un reglamento consolidado vigente. Los calendarios, importes y particularidades de cada convocatoria deben configurarse al ampliar el catálogo.
 
 ## Guardado y compatibilidad
+
+Para crear un recorrido se exige un nombre o apodo no vacío. Los espacios de borde se eliminan y el nombre se conserva al volver entre la selección de carrera y mención. La creación nunca reemplaza un nombre vacío por «Estudiante».
+
+Los logros globales tienen un catálogo en `game/scripts/achievement_catalog.gd`, con identificadores estables. Se muestran todos los logros públicos, indicando si están pendientes o desbloqueados. Los ocultos solo muestran su cantidad hasta conseguirlos; después revelan su nombre y descripción. Los títulos guardados por versiones anteriores se migran sin perder los recuerdos históricos. El logro de completar todas las carreras se corresponde con las dos carreras disponibles.
 
 Las partidas continúan en `user://partidas/solo_partida_N.json`, con tres espacios. El guardado escribe primero un archivo temporal y conserva la última versión legible en `.bak`. La carga intenta recuperar ese respaldo si el principal está incompleto. Al borrar una partida se eliminan también sus temporales y respaldo. Los archivos multijugador antiguos se conservan sin ofrecerlos como modo jugable.
 

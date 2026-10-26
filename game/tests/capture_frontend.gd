@@ -51,6 +51,11 @@ func _run() -> void:
 	game._show_main()
 	await _capture("01-inicio")
 	game.active_slot = 1
+	game.draft_player_name = ""
+	game._show_new_solo()
+	await _capture("02a-nombre-obligatorio")
+	game._choose_new_program("sistemas")
+	await _capture("02b-nombre-requerido")
 	game.draft_player_name = "Alex"
 	game._show_new_solo()
 	await _capture("02-nueva-carrera")
@@ -83,6 +88,12 @@ func _run() -> void:
 	game.settings["font_scale"] = 1.2
 	game._show_mentions("sistemas")
 	await _capture("12-menciones-texto120")
+	game.settings["font_scale"] = 1.0
+	game._show_global_achievements()
+	await _capture("13-catalogo-logros")
+	var achievements_scroll: ScrollContainer = game.find_child("PageScroll", true, false)
+	achievements_scroll.scroll_vertical = int(achievements_scroll.get_v_scroll_bar().max_value)
+	await _capture("14-logros-ocultos")
 	game.queue_free()
 	await process_frame
 	quit(0)

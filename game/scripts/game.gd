@@ -1,6 +1,7 @@
 extends Control
 
 const Catalog = preload("res://scripts/catalog.gd")
+const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
 const SimulationProcedures = preload("res://scripts/simulation_procedures.gd")
@@ -892,31 +893,17 @@ func _load_global_profile() -> void:
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(GLOBAL_PROFILE_PATH))
 		if parsed is Dictionary:
 			global_profile = parsed
-	for key in ["achievements", "completed_programs", "completed_subjects"]:
-		if not (global_profile.get(key) is Array):
-			global_profile[key] = []
-	var changed := false
+	var changed := Achievements.ensure_profile(global_profile)
 	for slot in range(1, SAVE_COUNT + 1):
-		var save := _read_save(slot, "solo")
-		if save.is_empty():
-			continue
-		for sigla in save.get("passed_subjects", []):
-			changed = _record_completed_subject(str(save.get("program_id", "")), str(save.get("mention_id", "")), str(sigla), false) or changed
-		var saved_state: Dictionary = save.get("simulation", {})
-		if saved_state.get("graduated", false):
-			var program := Catalog.program_by_id(str(save.get("program_id", "")))
-			changed = _record_completed_career(str(save.get("program_id", "")), str(program.get("title", "Carrera")), false) or changed
+		var saved := _read_save(slot, "solo")
+		if not saved.is_empty():
+			changed = Achievements.evaluate(global_profile, saved) or changed
 	if changed:
 		_save_global_profile()
 
 
 func _append_global_achievement(title: String) -> bool:
-	var achievements: Array = global_profile.get("achievements", [])
-	if achievements.has(title):
-		return false
-	achievements.append(title)
-	global_profile["achievements"] = achievements
-	return true
+	return Achievements.record_title(global_profile, title)
 
 
 func _award_title_once(title: String) -> void:
@@ -925,32 +912,24 @@ func _award_title_once(title: String) -> void:
 
 
 func _record_completed_subject(program_id: String, mention_id: String, sigla: String, persist: bool = true) -> bool:
-	var completed: Array = global_profile.get("completed_subjects", [])
+	var changed := Achievements.ensure_profile(global_profile)
 	var key := "%s:%s:%s" % [program_id, mention_id, sigla]
-	var changed := false
-	if not completed.has(key):
-		completed.append(key)
-		global_profile["completed_subjects"] = completed
+	if not global_profile["completed_subjects"].has(key):
+		global_profile["completed_subjects"].append(key)
 		changed = true
-	if completed.size() >= 5:
-		changed = _append_global_achievement("Ritmo constante · aprobaste cinco materias en total") or changed
-	if completed.size() >= 20:
-		changed = _append_global_achievement("Estudiante incansable · aprobaste veinte materias distintas") or changed
+	changed = Achievements.evaluate(global_profile) or changed
 	if persist and changed:
 		_save_global_profile()
 	return changed
 
 
 func _record_completed_career(program_id: String, career_title: String, persist: bool = true) -> bool:
-	var completed: Array = global_profile.get("completed_programs", [])
-	var changed := false
-	if not completed.has(program_id):
-		completed.append(program_id)
-		global_profile["completed_programs"] = completed
+	var changed := Achievements.ensure_profile(global_profile)
+	if not global_profile["completed_programs"].has(program_id):
+		global_profile["completed_programs"].append(program_id)
 		changed = true
 	changed = _append_global_achievement("Título: " + career_title) or changed
-	if completed.size() >= 3:
-		changed = _append_global_achievement("Explorador académico · completaste tres carreras diferentes") or changed
+	changed = Achievements.evaluate(global_profile) or changed
 	if persist and changed:
 		_save_global_profile()
 	return changed
@@ -963,26 +942,27 @@ func _save_global_profile() -> void:
 		file.close()
 
 
-func _show_global_achievements(back: Callable = Callable(), menu_backdrop: bool = true) -> void:
+func _show_global_achievements(back: Callable = Callable(), _menu_backdrop: bool = true) -> void:
+	_refresh_global_achievements()
 	if not back.is_valid():
 		back = Callable(self, "_show_main")
-	var content := _make_page("Logros globales", "Se conservan entre partidas y no se borran al eliminar una partida guardada.", back, menu_backdrop)
-	var achievements: Array = global_profile.get("achievements", [])
-	content.add_child(_label("%d logros desbloqueados" % achievements.size(), 17, _current_theme.get("accent", GREEN), true))
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size.y = 300
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 7)
-	scroll.add_child(list)
-	if achievements.is_empty():
-		list.add_child(_label("Todavía no hay logros. Los progresos de tus partidas cuentan para este perfil general.", 16, _current_theme.get("sub", INK), true))
-	else:
-		for title in achievements:
-			var card := _card(list, true)
-			card.add_child(_label("✦  " + str(title), 16, _current_theme.get("accent", GREEN)))
+	_use_neutral_theme()
+	var content := _make_page("Logros globales", "Consulta todos los logros públicos. Los ocultos se revelan cuando los consigues.", back, false)
+	var catalog := Achievements.presentation(global_profile)
+	content.add_child(_label("%d / %d logros públicos desbloqueados" % [int(catalog["public_unlocked"]), catalog["public"].size()], 17, _current_theme.get("accent", GREEN)))
+	content.add_child(_label("Los logros se conservan entre partidas y al borrar un recorrido.", 14, _current_theme.get("sub", INK)))
+	for item in catalog["public"]:
+		_achievement_card(content, item)
+	content.add_child(_label("Logros ocultos · %d / %d descubiertos" % [catalog["secrets"].size(), int(catalog["hidden_total"])], 21, _current_theme.get("accent", GREEN)))
+	if catalog["secrets"].size() < int(catalog["hidden_total"]):
+		content.add_child(_label("Todavía quedan secretos por descubrir durante tus recorridos.", 15, _current_theme.get("sub", INK)))
+	for item in catalog["secrets"]:
+		_achievement_card(content, item)
+	if not catalog["legacy"].is_empty():
+		content.add_child(_label("Logros de recorridos anteriores", 21, _current_theme.get("accent", GREEN)))
+		for title in catalog["legacy"]:
+			var card := _card(content)
+			card.add_child(_label("✦ " + str(title), 16, _current_theme.get("text", INK)))
 
 
 func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false) -> VBoxContainer:
@@ -1627,7 +1607,7 @@ func _find_free_slot(mode: String) -> int:
 	return 0
 
 
-func _show_new_solo() -> void:
+func _show_new_solo(name_error: String = "") -> void:
 	_use_neutral_theme()
 	selected_faculty = "ingenieria"
 	var content := _make_page("Crea tu recorrido", "Facultad de Ingeniería · Sistemas e Informática", _show_solo_slots)
@@ -1640,7 +1620,17 @@ func _show_new_solo() -> void:
 	field.custom_minimum_size.y = 48
 	_style_input(field)
 	content.add_child(field)
-	field.text_changed.connect(func(value: String) -> void: draft_player_name = value)
+	var error_label := _label(name_error, 14, Color("#ffc7a3"))
+	error_label.name = "StudentNameError"
+	error_label.visible = not name_error.is_empty()
+	content.add_child(error_label)
+	var career_buttons: Array[Button] = []
+	field.text_changed.connect(func(value: String) -> void:
+		draft_player_name = value
+		var valid := not value.strip_edges().is_empty()
+		for button in career_buttons:
+			button.disabled = not valid
+		error_label.visible = not valid and not error_label.text.is_empty())
 	field.text_submitted.connect(func(_value: String) -> void: _choose_faculty_from_field(field))
 	content.add_child(_label("Elige una carrera y después explora sus menciones. Puedes consultar el plan antes de comenzar.", 15))
 	var grid := _adaptive_grid(content, 380.0, 2)
@@ -1648,7 +1638,10 @@ func _show_new_solo() -> void:
 		var card := _card(grid)
 		card.add_child(_label(str(program["name"]), 22, Catalog.get_theme(str(program["id"]))["accent"]))
 		card.add_child(_label(str(program["summary"]), 16))
-		_add_button(card, "Explorar menciones", _choose_new_program.bind(str(program["id"])), true, 46)
+		var button := _add_button(card, "Explorar menciones", _choose_new_program.bind(str(program["id"])), true, 46)
+		button.disabled = draft_player_name.strip_edges().is_empty()
+		button.tooltip_text = "Escribe tu nombre para elegir una carrera."
+		career_buttons.append(button)
 	_focus_control.call_deferred(weakref(field))
 
 
@@ -1660,6 +1653,14 @@ func _choose_new_program(program_id: String) -> void:
 func _choose_faculty_from_field(name_field: LineEdit) -> void:
 	draft_player_name = name_field.text.strip_edges()
 	_show_mentions("sistemas")
+
+
+func _require_player_name() -> bool:
+	draft_player_name = draft_player_name.strip_edges()
+	if not draft_player_name.is_empty():
+		return true
+	_show_new_solo("Escribe tu nombre o apodo antes de elegir una carrera.")
+	return false
 
 
 func _show_faculties() -> void:
@@ -1676,6 +1677,8 @@ func _show_programs() -> void:
 
 
 func _show_mentions(program_id: String) -> void:
+	if not _require_player_name():
+		return
 	_use_neutral_theme()
 	var program := Catalog.program_by_id(program_id)
 	if program.is_empty():
@@ -1714,11 +1717,13 @@ func _show_mentions(program_id: String) -> void:
 
 
 func _create_solo_save(program_id: String, mention_id: String) -> void:
+	if not _require_player_name():
+		return
 	var mention := Catalog.mention_by_id(program_id, mention_id)
 	if Catalog.program_by_id(program_id).is_empty() or mention.is_empty():
 		_show_solo_slots()
 		return
-	current_profile = {"slot": active_slot, "mode": "solo", "player_name": draft_player_name.strip_edges() if not draft_player_name.strip_edges().is_empty() else "Estudiante",
+	current_profile = {"slot": active_slot, "mode": "solo", "player_name": draft_player_name,
 		"program_id": program_id, "mention_id": mention_id, "mention_name": mention.get("name", ""),
 		"role_id": "estudiante", "confidence": 60, "chanchullo_used": [],
 		"created_at": Time.get_datetime_string_from_system()}
@@ -1888,6 +1893,7 @@ func _save_profile() -> void:
 		push_error("No se pudo guardar la partida: %s." % error_string(result))
 	else:
 		_save_feedback = "Guardado · " + Time.get_time_string_from_system()
+		_refresh_global_achievements()
 
 
 const GraphScene := preload("res://scripts/curriculum_graph.gd")
@@ -2059,3 +2065,18 @@ func _new_available_game() -> void:
 		_begin_new_game(slot)
 	else:
 		_show_solo_slots()
+
+
+func _refresh_global_achievements() -> void:
+	if Achievements.evaluate(global_profile, current_profile):
+		_save_global_profile()
+
+
+func _achievement_card(parent: Control, item: Dictionary) -> void:
+	var card := _card(parent, bool(item["unlocked"]))
+	card.name = "Achievement_" + str(item["id"])
+	card.set_meta("achievement_id", item["id"])
+	card.set_meta("unlocked", item["unlocked"])
+	card.add_child(_label(("✦ " if item["unlocked"] else "◇ ") + str(item["title"]), 18, _current_theme.get("accent", GREEN) if item["unlocked"] else _current_theme.get("text", INK)))
+	card.add_child(_label(str(item["description"]), 15, _current_theme.get("sub", INK)))
+	card.add_child(_label("Desbloqueado" if item["unlocked"] else "Pendiente", 14, _current_theme.get("sub", INK)))

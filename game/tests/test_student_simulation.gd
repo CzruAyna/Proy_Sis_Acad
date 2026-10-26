@@ -19,6 +19,7 @@ func _initialize() -> void:
 	_test_catalog_and_commands()
 	_test_full_real_curricula()
 	_test_plan_scopes_and_validation()
+	_test_first_term_fixed_enrollment()
 	for failure in failures:
 		push_error(failure)
 	print("SIMULATION_TESTS: %d assertions, %d failures" % [assertions, failures.size()])
@@ -47,6 +48,13 @@ func _fixtures() -> Array:
 
 func _new_sim() -> RefCounted:
 	return Simulation.new({"program_id": "p", "mention_id": "m", "player_name": "Prueba"}, _fixtures())
+
+
+func _planning_sim() -> RefCounted:
+	var sim := _new_sim()
+	sim.state["term"] = 2
+	sim.state["procedures"] = []
+	return sim
 
 
 func _finish_procedure(sim: RefCounted, id: String) -> void:
@@ -78,7 +86,7 @@ func _answer_course(sim: RefCounted, key: String, count: int) -> void:
 
 
 func _test_mixed_results_and_correlatives() -> void:
-	var sim := _new_sim()
+	var sim := _planning_sim()
 	_check(sim.state["enrollments"].size() == 2, "Solo materias de ingreso inicialmente")
 	_check(sim.eligibility("E")["ok"] and sim.eligibility("E")["regulars"].size() == 2, "Una correlativa identifica todas sus regulares obligatorias")
 	_check(sim.enroll("C")["ok"], "Correlativa con regular simultánea")
@@ -95,7 +103,7 @@ func _test_mixed_results_and_correlatives() -> void:
 	_answer_course(sim, "C", 2)
 	_check(not sim.is_approved(sim.resolve_course("C")), "El desbloqueo se aplica al cerrar el semestre")
 	_check(sim.close_term()["ok"], "Cierre con resultados mixtos")
-	_check(sim.state["term"] == 2, "Avanza aunque una materia esté reprobada")
+	_check(sim.state["term"] == 3, "Avanza aunque una materia esté reprobada")
 	_check(sim.is_approved(sim.resolve_course("C")), "La correlativa aprobada se conserva")
 	_check(sim.retakes().has(sim.resolve_course("A")), "La regular reprobada debe recursarse")
 	_check(sim.state["enrollments"].has(sim.resolve_course("A")), "Arrastre automático de la regular")
@@ -177,7 +185,7 @@ func _test_excellence_and_graduation() -> void:
 
 
 func _test_procedures_and_plan_changes() -> void:
-	var sim := _new_sim()
+	var sim := _planning_sim()
 	_matriculate(sim)
 	_history_document(sim)
 	_check(not sim.open_procedure("carta", {"course_id": "E", "reason": "corta"})["ok"], "Carta requiere justificación")
@@ -191,7 +199,7 @@ func _test_procedures_and_plan_changes() -> void:
 	_finish_procedure(sim, str(opened["request_id"]))
 	_check(sim.enroll("q/x/X")["ok"], "Permiso externo habilita inscripción")
 	_check(sim.snapshot()["subjects"].back()["id"] == "q/x/X", "Snapshot publica materia externa")
-	sim.state["term"] = 2
+	sim.state["term"] = int(sim.state["term"]) + 1
 	_check(not sim.eligibility("q/x/X")["ok"], "Permiso externo expira al cambiar semestre")
 	var common := _completed_sim(80.0, true)
 	common.state["studies_complete"] = false
@@ -317,6 +325,8 @@ func _test_atomic_load_limit() -> void:
 		rows.append({"program_id": "p", "mention_id": "m", "sigla": "R%d" % index, "name": "Regular %d" % index, "semester": 1, "prereq": ["INGRESO"]})
 	rows.append({"program_id": "p", "mention_id": "m", "sigla": "C", "name": "Correlativa", "semester": 2, "prereq": ["R0"]})
 	var sim := Simulation.new({"program_id": "p", "mention_id": "m"}, rows)
+	sim.state["term"] = 2
+	sim.state["procedures"] = []
 	_check(sim.state["enrollments"].size() == 6, "Carga inicial de seis")
 	_check(not sim.enroll("C")["ok"], "La correlativa respeta el límite de carga")
 	_check(sim.state["enrollments"].size() == 6, "Inscripción rechazada no deja un paquete parcial")
@@ -374,7 +384,7 @@ func _test_plan_scopes_and_validation() -> void:
 	var broken: Dictionary = real.profile.duplicate(true)
 	broken["simulation"]["history"] = "inválido"
 	_check(not Simulation.validate_profile(broken)["ok"], "Historial mal formado no se carga")
-	var chain := _new_sim()
+	var chain := _planning_sim()
 	_check(chain.enroll("E")["ok"], "Paquete de correlativas incorpora todas las regulares")
 	_check(chain.state["enrollments"].has(chain.resolve_course("C")), "Regular intermedia incorporada")
 	_check(not chain.withdraw("C")["ok"] and not chain.withdraw("A")["ok"], "Todas las regulares del paquete son obligatorias")
@@ -382,3 +392,31 @@ func _test_plan_scopes_and_validation() -> void:
 	rows[0]["prereq"] = ["E"]
 	var cyclic := Simulation.new({"program_id": "p", "mention_id": "m"}, rows)
 	_check(not cyclic.eligibility("E")["ok"], "Un ciclo curricular no provoca recursión infinita")
+
+
+func _test_first_term_fixed_enrollment() -> void:
+	var sim := _new_sim()
+	var initial := JSON.stringify(sim.state["enrollments"])
+	var previous := _new_sim()
+	previous.state["enrollments"].erase(previous.resolve_course("A"))
+	previous.state["enrollments"][previous.resolve_course("C")] = {"answers": [], "score": null, "regulars": [], "origin": "ORDINARIA"}
+	var restored := Simulation.new(previous.profile, _fixtures())
+	_check(restored.state["enrollments"].has(restored.resolve_course("A")) and not restored.state["enrollments"].has(restored.resolve_course("C")), "Una planificación antigua sin comenzar se ajusta a las materias iniciales")
+	_check(not sim.snapshot()["planning_available"], "El primer semestre no permite planificación")
+	_check(not sim.enroll("C")["ok"], "No se agregan correlativas al primer semestre")
+	_check(not sim.withdraw("A")["ok"], "No se retiran materias iniciales")
+	_check(not Commands.execute(sim, "/inscribir C")["ok"], "La consola también respeta el primer semestre")
+	_check(not Commands.execute(sim, "/retirar A")["ok"], "La consola no retira materias iniciales")
+	_check(JSON.stringify(sim.state["enrollments"]) == initial, "Los rechazos conservan intacta la carga inicial")
+	_check(sim.unlock_all()["ok"] and not sim.enroll("E")["ok"], "Desbloquear no habilita planificación en el primer semestre")
+	_matriculate(sim)
+	_check(sim.start_term()["ok"], "El primer semestre inicia sin planificación manual")
+	_check(sim.answer("A", 0, false)["ok"], "Primer parcial iniciado antes de recargar")
+	sim = Simulation.new(sim.profile, _fixtures())
+	_check(sim.state["enrollments"][sim.resolve_course("A")]["answers"].size() == 1, "Una partida ya comenzada conserva sus parciales al recargar")
+	_check(sim.answer("A", 1, false)["ok"] and sim.answer("A", 2, false)["ok"], "Se completa la materia después de recargar")
+	_answer_course(sim, "B", 3)
+	_check(sim.close_term()["ok"], "Primer semestre cierra con resultados mixtos")
+	_check(sim.snapshot()["planning_available"], "La planificación se habilita en el segundo semestre")
+	_check(sim.enroll("C")["ok"], "Desde segundo se agregan correlativas con su regular")
+	_check(sim.withdraw("D")["ok"], "Desde segundo se puede ajustar una materia opcional")

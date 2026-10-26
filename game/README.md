@@ -22,7 +22,8 @@ game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --expor
 
 ## Estado
 
-- **Estudiante:** semestres con resultados mixtos, reprobadas obligatorias, correlativas con sus regulares y conservación del historial de intentos.
+- **Estudiante:** nombre obligatorio, primer semestre con materias asignadas automáticamente y planificación desde el segundo; resultados mixtos, reprobadas obligatorias, correlativas con sus regulares e historial de intentos.
+- **Logros globales:** catálogo completo de logros públicos pendientes/desbloqueados y logros ocultos que se revelan al conseguirlos. Se conservan entre recorridos.
 - **Trámites:** matrícula, carta, materia externa, cambio de carrera K-03 y cambio de mención K-02.
 - **Auxiliatura:** postulación durante la carrera, competencia con rivales simulados, asignación de paralelo y trabajo con el docente.
 - **Graduación:** excelencia sin reprobaciones y promedio mayor que 65, o tesis/proyecto con defensa. Concluir materias no entrega automáticamente el título.
@@ -47,6 +48,7 @@ game/
   scripts/simulation_procedures.gd
   scripts/simulation_commands.gd
   scripts/simulation_save_store.gd
+  scripts/achievement_catalog.gd
   tests/
   assets/campus_vector.svg
   build/           (ejecutable/exportado)
