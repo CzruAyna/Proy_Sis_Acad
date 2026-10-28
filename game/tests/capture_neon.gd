@@ -29,6 +29,9 @@ func _run() -> void:
 			await _capture(mid + "-campus")
 			game._show_campus_section("malla")
 			await _capture(mid + "-grafo")
+			var graph = game.find_child("ExpandedCurriculumGraph", true, false)
+			graph.move_semester(3)
+			await _capture(mid + "-grafo-avanzado")
 			var request: Dictionary = game.simulation.snapshot()["procedures"][0]
 			game.simulation.pay("matricula")
 			for index in range(3):
@@ -44,6 +47,11 @@ func _run() -> void:
 		await _capture(pid + "-graduacion")
 		game._show_titles()
 		await _capture(pid + "-logros")
+	root.size = Vector2i(1152, 900)
+	root.content_scale_size = Vector2i(1152, 900)
+	game._create_solo_save("sistemas", "gestion_sistemas")
+	game._show_campus_section("malla")
+	await _capture("grafo-protegido-completo")
 	game.queue_free()
 	await process_frame
 	quit(0)

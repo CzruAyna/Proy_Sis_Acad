@@ -210,13 +210,26 @@ func _layout_scenarios() -> void:
 					graph = control
 			_check(graph != null and not graph.is_processing(), "Malla respeta animaciones reducidas")
 			if graph != null:
-				_check(graph.size.x >= 300, "El grafo recibe un ancho visible en la rejilla")
+				_check(graph.size.x >= dimensions.x - 80, "El grafo aprovecha todo el ancho disponible")
+				var detail = game.find_child("GraphSubjectDetail", true, false)
+				_check(not detail.get_parent().visible, "La ficha vacía no ocupa espacio junto al grafo")
 				_check(not graph.personal_states.is_empty(), "Malla recibe estados personales")
 				var keyboard := InputEventKey.new()
 				keyboard.keycode = KEY_RIGHT
 				keyboard.pressed = true
 				graph._gui_input(keyboard)
 				_check(graph.selected == 0, "Las flechas seleccionan nodos de la malla")
+				await _settle()
+				_check(detail.get_parent().visible and detail.get_global_rect().position.y >= graph.get_global_rect().end.y, "La selección abre el detalle debajo del grafo")
+				var before_layout: String = JSON.stringify(game.simulation.snapshot())
+				graph._move_node(0, Vector2(180, 180))
+				var saved_point: Vector2 = graph.visible_nodes[0]["pos"]
+				game._show_campus_section("resumen")
+				game._show_campus_section("malla")
+				await _settle()
+				graph = game.find_child("ExpandedCurriculumGraph", true, false)
+				_check(graph.visible_nodes[0]["pos"].is_equal_approx(saved_point), "Navegar conserva la distribución manual del semestre")
+				_check(before_layout == JSON.stringify(game.simulation.snapshot()), "Reorganizar la malla no modifica el estado académico")
 				graph.move_semester(1)
 				_check(game._campus().graph_semester == graph.semester_index, "Malla conserva el semestre consultado")
 	game.settings["font_scale"] = 1.0

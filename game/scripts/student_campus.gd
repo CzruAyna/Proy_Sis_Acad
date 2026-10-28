@@ -19,6 +19,7 @@ var form_mention := ""
 var form_course := ""
 var form_reason := ""
 var graph_semester := 0
+var graph_layouts: Dictionary = {}
 var show_request_form := false
 var show_documents := false
 var show_closed_requests := false
@@ -640,6 +641,7 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	graph.font_scale = float(ui.settings["font_scale"])
 	graph.animations_enabled = bool(ui.settings["animations"])
 	graph.low_performance = bool(ui.settings.get("low_performance", false))
+	graph.manual_positions = graph_layouts.duplicate(true)
 	var snapshot: Dictionary = _model().snapshot() if personal else {}
 	if personal:
 		for subject in snapshot["subjects"]:
@@ -651,12 +653,29 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	var controls := _actions(page)
 	var previous := _button(controls, "← Anterior", graph.move_semester.bind(-1))
 	var counter := _text(controls, "", 18)
+	counter.autowrap_mode = TextServer.AUTOWRAP_OFF
+	counter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var next := _button(controls, "Siguiente →", graph.move_semester.bind(1))
-	_text(page, "Selecciona un nodo con el ratón o usa las flechas y Enter. La lista inferior ofrece las mismas materias con botones.", 14, true)
-	var columns: GridContainer = ui._adaptive_grid(page, 440.0, 2)
+	previous.custom_minimum_size.x = 126
+	next.custom_minimum_size.x = 126
+	var zoom_out := _button(controls, "−", graph.zoom_at_center.bind(0.85))
+	zoom_out.custom_minimum_size.x = 44
+	zoom_out.tooltip_text = "Alejar el grafo"
+	var zoom_in := _button(controls, "+", graph.zoom_at_center.bind(1.18))
+	zoom_in.custom_minimum_size.x = 44
+	zoom_in.tooltip_text = "Acercar el grafo"
+	var reset := _button(controls, "Restablecer", graph.reset_layout)
+	reset.custom_minimum_size.x = 136
+	for button in [previous, next, zoom_out, zoom_in, reset]:
+		button.size_flags_horizontal = Control.SIZE_FILL
+	_text(page, "Conexiones protegidas: el arrastre se limita antes de cruzar o juntar aristas. Rueda: zoom. Arrastra el fondo para mover la vista.", 14, true)
 	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columns.add_child(graph)
-	var details: VBoxContainer = ui._card(columns)
+	graph.name = "ExpandedCurriculumGraph"
+	page.add_child(graph)
+	var details: VBoxContainer = ui._card(page)
+	details.name = "GraphSubjectDetail"
+	details.get_parent().visible = false
 	var list := VBoxContainer.new()
 	page.add_child(list)
 	var update := func(_index: int = 0, _count: int = 0) -> void:
@@ -666,7 +685,7 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 		previous.disabled = graph.semester_index == 0
 		next.disabled = graph.semester_index >= graph.semesters.size() - 1
 		_clear(details)
-		_text(details, "Selecciona una materia para ver sus requisitos, estado y actividades.", 17)
+		details.get_parent().visible = false
 		_clear(list)
 		for node in graph.visible_nodes:
 			if node.get("source", false):
@@ -677,6 +696,7 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 			_button(list, label, _graph_detail.bind(node.duplicate(true), details, snapshot))
 	graph.subject_selected.connect(func(_sigla: String, data: Dictionary) -> void: _graph_detail(data, details, snapshot))
 	graph.semester_changed.connect(update)
+	graph.layout_changed.connect(func() -> void: graph_layouts = graph.manual_positions.duplicate(true))
 	update.call()
 
 
@@ -688,6 +708,7 @@ func _clear(parent: Control) -> void:
 
 func _graph_detail(data: Dictionary, details: VBoxContainer, snapshot: Dictionary) -> void:
 	_clear(details)
+	details.get_parent().visible = true
 	_text(details, str(data.get("name", "Ingreso")), 21)
 	_text(details, str(data.get("desc", "")), 16, true)
 	if data.get("admission", false):

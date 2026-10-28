@@ -10,7 +10,7 @@ Actualizado: 25 de octubre de 2026. Las tareas temporales del contrato original 
 | Creación | Nombre y elección de Sistemas/Informática juntos; mención y consulta del plan antes de iniciar. El nombre se conserva al retroceder. |
 | Campus | Resumen contextual, próximos pasos y siete accesos comunes: campus, materias, malla, trámites, historial, auxiliatura y graduación. |
 | Materias | Búsqueda por nombre/sigla, filtros, estados personales, inscripción, retiro, paquete de regulares, estudio y repaso sin registrar resultados. |
-| Malla | Estados de la partida, semestre consultado conservado, detalle sincronizado, acceso a las acciones y lista equivalente de materias. Flechas/Enter y ratón; respeta reducción de movimiento y escala de texto. |
+| Malla | Grafo a todo el ancho, esferas con volumen y aristas protegidas contra cruces y contactos, con puertos separados por esfera. Arrastre validado, desplazamiento, zoom, restablecimiento y distribución conservada durante la sesión. Ficha bajo el grafo, estados personales y lista equivalente de materias. Flechas/Enter y ratón; respeta reducción de movimiento y escala de texto. |
 | Trámites | Expedientes por oficina, pasos cumplidos y pendientes, observaciones, documentos, comprobantes simulados y cancelación. Incluye formularios de carta, materia externa, K-02 y K-03. |
 | Historial | Intentos y resultados por semestre cursado, con el plan de origen. Se conservan las reprobaciones y las materias de otros planes. |
 | Auxiliatura | Elegibilidad explicada, postulación, expediente, competencia, puesto y resultado, asignación de docente/paralelo y trabajo con plan firmado, aula, apoyo e informe. |
