@@ -5,11 +5,13 @@ signal subject_selected(sigla: String, data: Dictionary)
 signal semester_changed(index: int, count: int)
 
 const NODE_RADIUS := 36.0
+const Neon = preload("res://scripts/neon_visuals.gd")
 const SOURCE_RADIUS := 32.0
 const PALETTE := [Color("#8bb5c4"), Color("#d0ae74"), Color("#9f91c6"), Color("#80ad8d"), Color("#c98670"), Color("#75a9a0")]
 
 var font_scale := 1.0
 var animations_enabled := true
+var low_performance := false
 var personal_states: Dictionary = {}
 var program_id := ""
 var mention_id := ""
@@ -42,7 +44,7 @@ func setup(pid: String, selected_mention: String = "", available_width: float = 
 	program_id = pid
 	mention_id = selected_mention
 	graph_width = maxf(available_width, 360.0)
-	graph_theme = UniCatalog.get_theme(pid)
+	graph_theme = Neon.career(pid, selected_mention)
 	semesters = UniCatalog.semesters_for(program_id, mention_id)
 	semester_index = 0
 	_build_semester()
@@ -148,10 +150,9 @@ func _animated_position(index: int) -> Vector2:
 func _draw() -> void:
 	if semesters.is_empty():
 		return
+	var glow: Color = graph_theme["neon"]
 	if has_focus():
-		draw_rect(Rect2(Vector2(2, 2), size - Vector2(4, 4)), Color("#91d7ed"), false, 2.0)
-	var text: Color = graph_theme.get("text", Color("#e6edf3"))
-	var secondary: Color = graph_theme.get("sub", Color("#9fb3c8"))
+		draw_rect(Rect2(Vector2(2, 2), size - Vector2(4, 4)), Color(glow, 0.9), false, 2.0)
 	for edge_index in range(edges.size()):
 		var edge := edges[edge_index]
 		var start: Vector2 = _animated_position(edge.x)
@@ -164,42 +165,40 @@ func _draw() -> void:
 		var curve := Curve2D.new()
 		curve.add_point(start, Vector2.ZERO, Vector2(bend, 0))
 		curve.add_point(finish, Vector2(bend, 0), Vector2.ZERO)
-		var points := curve.get_baked_points()
-		var line_color: Color = PALETTE[edge_index % PALETTE.size()]
-		for point_index in range(points.size() - 1):
-			draw_line(points[point_index], points[point_index + 1], Color(line_color, 0.18), 6.0, true)
-			draw_line(points[point_index], points[point_index + 1], Color(line_color, 0.88), 1.7, true)
+		Neon.path(self, curve.get_baked_points(), Color(glow, 0.86), 2.0, low_performance)
 	for index in range(visible_nodes.size()):
 		var item: Dictionary = visible_nodes[index]
 		var position := _animated_position(index)
 		var source := bool(item.get("source", false))
 		var radius := SOURCE_RADIUS if source else NODE_RADIUS
-		var pulse := 1.0 + (sin(motion_time * 1.6 + float(index)) * 0.025 if animations_enabled else 0.0)
-		radius *= pulse
-		var tint: Color = item.get("color", PALETTE[0])
+		if animations_enabled:
+			radius *= 1.0 + sin(motion_time * 1.6 + float(index)) * 0.025
 		var status := str(personal_states.get(item.get("sigla", ""), ""))
-		if status == "Aprobada":
-			tint = Color("#70ae8a")
-		elif status.begins_with("Cursando") or status == "Inscrita":
-			tint = Color("#7ec6e1")
-		elif status.contains("Reprobada") or status.contains("recursar"):
-			tint = Color("#e0a06e")
-		elif status == "Bloqueada":
-			tint = Color("#8c9199")
 		var active := index == hovered or index == selected
-		draw_circle(position + Vector2(0, 5), radius + 1, Color("#050608", 0.72))
-		draw_arc(position, radius + 6.0, motion_time * 0.18, motion_time * 0.18 + TAU * 0.76, 48, Color(tint, 0.3), 1.2, true)
-		draw_circle(position, radius, tint.darkened(0.42))
-		draw_circle(position, radius - 3.0, tint.lightened(0.08) if active else tint)
-		draw_arc(position, radius - 4.0, PI * 1.12, PI * 1.82, 32, Color("#fff5d9", 0.65), 1.1, true)
+		draw_circle(position, radius - 1.0, graph_theme["panel"])
+		Neon.ring(self, position, radius, glow, low_performance)
+		if active:
+			draw_arc(position, radius + 5.0, 0, TAU, 48, graph_theme["core"], 1.8, true)
+		var font_size := int((12 if not source else 11) * font_scale)
 		var code := str(item.get("sigla", ""))
-		draw_string(ThemeDB.fallback_font, position + Vector2(-radius + 5, 3), code, HORIZONTAL_ALIGNMENT_CENTER, radius * 2.0 - 10, int((12 if not source else 11) * font_scale), Color("#151a1e") if source else Color("#f5f3ed"))
+		var code_width := ThemeDB.fallback_font.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		Neon.text(self, ThemeDB.fallback_font, position + Vector2(-code_width * 0.5, 4), code, font_size, glow, low_performance)
 		var label := _short_name(str(item.get("name", "")), bool(item.get("admission", false)))
-		draw_string(ThemeDB.fallback_font, position + Vector2(-68, radius + 17), label, HORIZONTAL_ALIGNMENT_CENTER, 136, int(11 * font_scale), Color("#e1e5e5"))
+		draw_string(ThemeDB.fallback_font, position + Vector2(-68, radius + 19), label, HORIZONTAL_ALIGNMENT_CENTER, 136, int(11 * font_scale), graph_theme["text"])
+		if not status.is_empty():
+			var indicator := glow
+			if status == "Aprobada":
+				indicator = Color("#61ffc4")
+			elif status.contains("Reprobada") or status.contains("recursar"):
+				indicator = Color("#ffd36a")
+			elif status == "Bloqueada":
+				indicator = Color("#a0a7bb")
+			var badge := position + Vector2(radius * 0.77, radius * 0.62)
+			draw_circle(badge, 5.0, indicator)
+			Neon.ring(self, badge, 5.0, indicator, low_performance)
 	if hovered >= 0 and hovered < visible_nodes.size():
 		var item: Dictionary = visible_nodes[hovered]
-		var hint := "%s · %s" % [item.get("sigla", ""), item.get("name", "")]
-		draw_string(ThemeDB.fallback_font, Vector2(4, 16), hint, HORIZONTAL_ALIGNMENT_LEFT, graph_width - 8, int(12 * font_scale), secondary)
+		Neon.text(self, ThemeDB.fallback_font, Vector2(4, 18), "%s · %s" % [item.get("sigla", ""), item.get("name", "")], int(12 * font_scale), glow, low_performance, graph_width - 8)
 
 
 func _short_name(value: String, admission: bool) -> String:

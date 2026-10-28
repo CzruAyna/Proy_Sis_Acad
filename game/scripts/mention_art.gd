@@ -1,5 +1,7 @@
 extends Control
 
+const Neon = preload("res://scripts/neon_visuals.gd")
+
 var mention_id := ""
 var ink := Color("#78a9bc")
 
@@ -29,9 +31,11 @@ func _draw() -> void:
 
 func _frame() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#15191e")
+	style.bg_color = Color("#040a15")
+	style.shadow_color = Color(ink, 0.32)
+	style.shadow_size = 8
 	style.border_color = Color(ink, 0.75)
-	style.set_border_width_all(1)
+	style.set_border_width_all(2)
 	style.set_corner_radius_all(14)
 	return style
 
@@ -41,7 +45,7 @@ func _draw_code(bounds: Rect2) -> void:
 	for index in range(lines.size()):
 		var y := bounds.position.y + 23.0 + float(index) * 18.0
 		draw_circle(Vector2(bounds.position.x + 12, y - 4), 2.5, ink if index == 0 else Color(ink, 0.6))
-		draw_string(ThemeDB.fallback_font, Vector2(bounds.position.x + 21, y), lines[index], HORIZONTAL_ALIGNMENT_LEFT, bounds.size.x - 28, 9, Color("#cbd4d8"))
+		draw_string(ThemeDB.fallback_font, Vector2(bounds.position.x + 21, y), lines[index], HORIZONTAL_ALIGNMENT_LEFT, bounds.size.x - 28, 9, ink.lightened(0.65))
 
 
 func _draw_router(bounds: Rect2) -> void:
@@ -71,23 +75,23 @@ func _draw_database(bounds: Rect2) -> void:
 		draw_rect(Rect2(center.x - width * 0.5, y, width, 17), Color(ink, 0.15 + float(layer) * 0.04), true)
 		draw_arc(Vector2(center.x, y + 1), width * 0.5, PI, TAU, 32, ink, 1.5, true)
 		draw_arc(Vector2(center.x, y + 16), width * 0.5, 0, PI, 32, ink, 1.2, true)
-	draw_string(ThemeDB.fallback_font, center + Vector2(37, 5), "SQL · datos", HORIZONTAL_ALIGNMENT_LEFT, 80, 10, Color("#d6dcde"))
+	draw_string(ThemeDB.fallback_font, center + Vector2(37, 5), "SQL · datos", HORIZONTAL_ALIGNMENT_LEFT, 80, 10, ink.lightened(0.65))
 
 
 func _draw_optimization(bounds: Rect2) -> void:
 	var left := bounds.position + Vector2(22, bounds.size.y - 21)
 	var width := bounds.size.x - 43.0
 	var height := bounds.size.y - 47.0
-	draw_line(left, left + Vector2(width, 0), Color(ink, 0.65), 1.0)
-	draw_line(left, left - Vector2(0, height), Color(ink, 0.65), 1.0)
+	Neon.line(self, left, left + Vector2(width, 0), Color(ink, 0.7), 1.0)
+	Neon.line(self, left, left - Vector2(0, height), Color(ink, 0.7), 1.0)
 	var points := PackedVector2Array()
 	for index in range(33):
 		var t := float(index) / 32.0
 		points.append(Vector2(left.x + t * width, left.y - (0.18 + (t - 0.62) * (t - 0.62) * 2.8) * height))
-	draw_polyline(points, ink, 2.0, true)
-	draw_line(left + Vector2(width * 0.25, -height * 0.34), left + Vector2(width * 0.7, -height * 0.34), Color("#d0ae74"), 1.3)
-	draw_circle(left + Vector2(width * 0.62, -height * 0.34), 4, Color("#d0ae74"))
-	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(9, 16), "minimizar costo · restricciones", HORIZONTAL_ALIGNMENT_LEFT, bounds.size.x - 18, 9, Color("#d6dcde"))
+	Neon.path(self, points, ink, 2.0)
+	draw_line(left + Vector2(width * 0.25, -height * 0.34), left + Vector2(width * 0.7, -height * 0.34), ink.lightened(0.35), 1.3)
+	draw_circle(left + Vector2(width * 0.62, -height * 0.34), 4, ink.lightened(0.35))
+	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(9, 16), "minimizar costo · restricciones", HORIZONTAL_ALIGNMENT_LEFT, bounds.size.x - 18, 9, ink.lightened(0.65))
 
 
 func _draw_management(bounds: Rect2) -> void:
@@ -98,5 +102,5 @@ func _draw_management(bounds: Rect2) -> void:
 		draw_rect(Rect2(x, left.y - heights[index], 13, heights[index]), Color(ink, 0.2), true)
 		draw_rect(Rect2(x, left.y - heights[index], 13, heights[index]), ink, false, 1.0)
 		if index > 0:
-			draw_line(Vector2(x - 12, left.y - heights[index - 1] - 5), Vector2(x + 5, left.y - heights[index] - 5), Color("#d0ae74"), 1.5, true)
-	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(10, 16), "procesos · indicadores · decisiones", HORIZONTAL_ALIGNMENT_LEFT, bounds.size.x - 20, 9, Color("#d6dcde"))
+			draw_line(Vector2(x - 12, left.y - heights[index - 1] - 5), Vector2(x + 5, left.y - heights[index] - 5), ink.lightened(0.35), 1.5, true)
+	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(10, 16), "procesos · indicadores · decisiones", HORIZONTAL_ALIGNMENT_LEFT, bounds.size.x - 20, 9, ink.lightened(0.65))

@@ -1,6 +1,7 @@
 extends Control
 
 const Catalog = preload("res://scripts/catalog.gd")
+const NeonVisuals = preload("res://scripts/neon_visuals.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
@@ -83,6 +84,8 @@ class MenuTransitionEffect extends Control:
 				draw_line(center + direction * radius * 0.84, center + direction * radius * 1.12, Color("#fff0b0", 0.72 * progress), 2.0 + progress * 2.0, true)
 
 var _current_theme: Dictionary = {}
+var _visual_program_id := ""
+var _visual_mention_id := ""
 
 const ASSISTANT_CASES := [
 	{"question": "En la tutoría, alguien memoriza una fórmula pero no entiende cuándo usarla. ¿Qué haces?", "options": ["Resolver todo por esa persona", "Proponer un ejemplo sencillo y pedirle que explique el paso", "Decir que vuelva cuando ya sepa"], "best": 1, "good": "La persona practica el razonamiento y puede detectar qué parte le cuesta.", "bad": "La tutoría sirve más cuando ayuda a entender el proceso, no solo a copiar el resultado."},
@@ -157,6 +160,8 @@ func _draw() -> void:
 			draw_line(Vector2(0, y), Vector2(size.x, y), Color(grid, 0.15), 1.0)
 	if _home_art:
 		_draw_home_science()
+	elif not _visual_program_id.is_empty():
+		NeonVisuals.background(self, size, _current_theme, bool(settings.get("low_performance", false)))
 
 
 func _draw_home_cosmos() -> void:
@@ -338,31 +343,21 @@ func _draw_home_formula(body: Dictionary) -> void:
 	if burn > 0.0:
 		color = color.lerp(Color("#ff3d16"), burn * 0.92)
 		color.a *= 1.0 - burn * 0.35
-	var glow := Color(color, color.a * 0.17)
 	if _home_cosmic_event == "sun" and burn > 0.08:
 		_draw_home_flames(body, burn)
+	var economical := bool(settings.get("low_performance", false))
 	var kind := str(body.get("kind", "text"))
 	if kind in ["integral", "definite_integral"]:
 		var symbol_size := int(round(font_size * 1.58))
-		var limit_size := maxi(9, int(round(font_size * 0.58)))
+		var limit_size := maxi(10, int(round(font_size * 0.58)))
 		var symbol_width := formula_font.get_string_size("∫", HORIZONTAL_ALIGNMENT_LEFT, -1, symbol_size).x
-		var symbol_baseline := position + Vector2(0.0, font_size * 1.72)
-		var text_baseline := position + Vector2(symbol_width + 7.0, font_size * 1.35)
-		var integrand := str(body["integrand"])
-		var result := str(body["result"])
-		draw_string(formula_font, symbol_baseline, "∫", HORIZONTAL_ALIGNMENT_LEFT, -1, symbol_size + 2, glow)
-		draw_string(formula_font, symbol_baseline, "∫", HORIZONTAL_ALIGNMENT_LEFT, -1, symbol_size, color)
+		NeonVisuals.text(self, formula_font, position + Vector2(0.0, font_size * 1.72), "∫", symbol_size, color, economical)
 		if kind == "definite_integral":
-			var limit_position := position + Vector2(symbol_width * 0.72, font_size * 0.67)
-			var lower_position := position + Vector2(symbol_width * 0.78, font_size * 2.05)
-			draw_string(formula_font, limit_position, str(body["upper"]), HORIZONTAL_ALIGNMENT_LEFT, -1, limit_size, color)
-			draw_string(formula_font, lower_position, str(body["lower"]), HORIZONTAL_ALIGNMENT_LEFT, -1, limit_size, color)
-		draw_string(formula_font, text_baseline + Vector2(0.0, 1.0), integrand + " " + result, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, glow)
-		draw_string(formula_font, text_baseline, integrand + " " + result, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
-		return
-	var baseline := position + Vector2(0.0, font_size)
-	draw_string(formula_font, baseline + Vector2(0.0, 1.0), str(body["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size + 2, glow)
-	draw_string(formula_font, baseline, str(body["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+			NeonVisuals.text(self, formula_font, position + Vector2(symbol_width * 0.72, font_size * 0.67), str(body["upper"]), limit_size, color, economical)
+			NeonVisuals.text(self, formula_font, position + Vector2(symbol_width * 0.78, font_size * 2.05), str(body["lower"]), limit_size, color, economical)
+		NeonVisuals.text(self, formula_font, position + Vector2(symbol_width + 7.0, font_size * 1.35), str(body["integrand"]) + " " + str(body["result"]), font_size, color, economical)
+	else:
+		NeonVisuals.text(self, formula_font, position + Vector2(0.0, font_size), str(body["text"]), font_size, color, economical)
 
 
 func _draw_home_flames(body: Dictionary, burn: float) -> void:
@@ -380,7 +375,6 @@ func _draw_home_flames(body: Dictionary, burn: float) -> void:
 
 
 func _draw_home_trace(segments: Array[PackedVector2Array], color: Color) -> void:
-	var aura := _home_curve_aura()
 	for segment in segments:
 		if segment.size() < 2:
 			continue
@@ -388,13 +382,11 @@ func _draw_home_trace(segments: Array[PackedVector2Array], color: Color) -> void
 		for point in segment:
 			visible_points.append(_home_curve_visual_point(point))
 		if str(HOME_CURVES[_home_curve_index]) != "tan":
-			draw_polyline(visible_points, Color(aura, 0.2), 8.0, true)
-			draw_polyline(visible_points, color, 2.4, true)
+			NeonVisuals.path(self, visible_points, color, 2.8, bool(settings.get("low_performance", false)))
 			continue
 		for i in range(1, visible_points.size()):
 			if absf(visible_points[i].y - visible_points[i - 1].y) < minf(size.y * 0.15, 120.0):
-				draw_line(visible_points[i - 1], visible_points[i], Color(aura, 0.2), 8.0, true)
-				draw_line(visible_points[i - 1], visible_points[i], color, 2.4, true)
+				NeonVisuals.line(self, visible_points[i - 1], visible_points[i], color, 2.8, 1.0, bool(settings.get("low_performance", false)))
 
 
 func _home_curve_aura() -> Color:
@@ -808,12 +800,16 @@ func _update_home_quote() -> void:
 
 
 func _use_neutral_theme() -> void:
+	_visual_program_id = ""
+	_visual_mention_id = ""
 	_current_theme = NEUTRAL_THEME.duplicate()
 	RenderingServer.set_default_clear_color(NEUTRAL_THEME["bg"])
 	queue_redraw()
 
 
 func _use_menu_theme() -> void:
+	_visual_program_id = ""
+	_visual_mention_id = ""
 	_current_theme = NEON_THEME.duplicate()
 	match _home_cosmic_event:
 		"sun": _current_theme["accent"] = Color("#ffae48")
@@ -966,6 +962,8 @@ func _show_global_achievements(back: Callable = Callable(), _menu_backdrop: bool
 
 
 func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false) -> VBoxContainer:
+	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
+		_apply_career_theme(str(current_profile["program_id"]), str(current_profile["mention_id"]))
 	if menu_backdrop:
 		_activate_menu_backdrop()
 	else:
@@ -1085,6 +1083,11 @@ func _label(text: String, font_size: int = 18, color: Color = INK, centered: boo
 	if _menu_backdrop_active:
 		label.add_theme_color_override("font_outline_color", Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.38))
 		label.add_theme_constant_override("outline_size", 1)
+	if _current_theme.has("neon") and font_size >= 20:
+		label.add_theme_color_override("font_shadow_color", Color(_current_theme["neon"], 0.5))
+		label.add_theme_constant_override("shadow_outline_size", 3)
+		label.add_theme_constant_override("shadow_offset_x", 0)
+		label.add_theme_constant_override("shadow_offset_y", 0)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if centered:
@@ -1115,6 +1118,9 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 		button.add_theme_color_override("font_pressed_color", _current_theme.get("accent", GREEN))
 		button.add_theme_color_override("font_focus_color", _current_theme.get("accent", GREEN))
 		button.add_theme_color_override("font_disabled_color", Color("#9c9688"))
+	if _current_theme.has("neon"):
+		button.add_theme_color_override("font_shadow_color", Color(_current_theme["neon"], 0.4))
+		button.add_theme_constant_override("shadow_outline_size", 2)
 	button.add_theme_stylebox_override("normal", _button_style(accent, "normal"))
 	button.add_theme_stylebox_override("hover", _button_style(accent, "hover"))
 	button.add_theme_stylebox_override("pressed", _button_style(accent, "pressed"))
@@ -1136,6 +1142,8 @@ func _add_menu_button(parent: Control, text: String, action: Callable, accent: b
 
 
 func _button_style(accent: bool, state: String) -> StyleBoxFlat:
+	if _current_theme.has("neon"):
+		return NeonVisuals.button(_current_theme, accent, state, bool(settings.get("low_performance", false)))
 	var style := StyleBoxFlat.new()
 	var accent_color = _current_theme.get("accent", GREEN)
 	if _menu_backdrop_active:
@@ -1193,8 +1201,8 @@ func _focus_style() -> StyleBoxFlat:
 	style.border_color = _current_theme.get("accent", GOLD)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(16)
-	style.shadow_color = Color(0, 0, 0, 0.3)
-	style.shadow_size = 1
+	style.shadow_color = Color(_current_theme.get("neon", _current_theme.get("accent", Color("#39bcff"))), 0.45)
+	style.shadow_size = 9
 	style.shadow_offset = Vector2(1, 1)
 	if _menu_backdrop_active:
 		style.shadow_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.42)
@@ -1214,6 +1222,8 @@ func _card(parent: Control, tinted: bool = false) -> VBoxContainer:
 
 
 func _card_style(tinted: bool) -> StyleBoxFlat:
+	if _current_theme.has("neon"):
+		return NeonVisuals.panel(_current_theme, tinted, bool(settings.get("low_performance", false)))
 	var style := StyleBoxFlat.new()
 	if _current_theme.is_empty():
 		_current_theme = Catalog.THEME.get("sistemas", {})
@@ -1238,29 +1248,62 @@ func _card_style(tinted: bool) -> StyleBoxFlat:
 
 
 func _input_style(focused: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#fffdf7")
-	style.border_color = GREEN if focused else Color("#b9b09c")
-	style.set_border_width_all(2 if focused else 1)
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8
-	style.corner_radius_bottom_right = 8
-	style.content_margin_left = 14
-	style.content_margin_right = 14
+	var theme_data := _current_theme if _current_theme.has("neon") else NeonVisuals.career("sistemas")
+	var style := NeonVisuals.panel(theme_data, focused, bool(settings.get("low_performance", false)))
+	style.bg_color = theme_data["bg"]
 	style.content_margin_top = 10
 	style.content_margin_bottom = 10
+	style.set_corner_radius_all(8)
 	return style
 
 
 func _style_input(field: LineEdit) -> void:
 	field.add_theme_stylebox_override("normal", _input_style(false))
 	field.add_theme_stylebox_override("focus", _input_style(true))
-	field.add_theme_color_override("font_color", INK)
-	field.add_theme_color_override("font_placeholder_color", Color("#9b9381"))
-	field.add_theme_color_override("caret_color", GREEN)
-	field.add_theme_color_override("selection_color", Color("#d7e0cc"))
+	field.add_theme_color_override("font_color", _current_theme.get("text", Color("#edf8ff")))
+	field.add_theme_color_override("font_placeholder_color", _current_theme.get("sub", Color("#b3cde6")))
+	field.add_theme_color_override("caret_color", _current_theme.get("neon", Color("#39bcff")))
+	field.add_theme_color_override("selection_color", Color(_current_theme.get("accent", Color("#338aff")), 0.5))
 	field.add_theme_font_size_override("font_size", int(round(18 * float(settings["font_scale"]))))
+
+
+func _style_select(field: Control) -> void:
+	field.add_theme_stylebox_override("normal", _input_style(false))
+	field.add_theme_stylebox_override("focus", _input_style(true))
+	field.add_theme_color_override("font_color", _current_theme.get("text", Color("#edf8ff")))
+	field.add_theme_color_override("font_hover_color", _current_theme.get("core", Color.WHITE))
+	if field is OptionButton:
+		field.add_theme_stylebox_override("hover", _button_style(false, "hover"))
+		field.add_theme_stylebox_override("pressed", _button_style(false, "pressed"))
+		field.get_popup().add_theme_stylebox_override("panel", _input_style(false))
+		field.get_popup().add_theme_color_override("font_color", _current_theme.get("text", Color.WHITE))
+	elif field is TextEdit:
+		field.add_theme_color_override("caret_color", _current_theme.get("neon", Color("#39bcff")))
+		field.add_theme_color_override("selection_color", Color(_current_theme.get("accent", Color("#338aff")), 0.5))
+
+
+func _style_slider(slider: HSlider) -> void:
+	var glow: Color = _current_theme.get("neon", Color("#39bcff"))
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(glow, 0.16)
+	track.set_corner_radius_all(3)
+	track.content_margin_top = 3
+	track.content_margin_bottom = 3
+	var fill := track.duplicate() as StyleBoxFlat
+	fill.bg_color = glow
+	fill.shadow_color = Color(glow, 0.5)
+	fill.shadow_size = 6
+	slider.add_theme_stylebox_override("slider", track)
+	slider.add_theme_stylebox_override("grabber_area", fill)
+	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
+
+
+func _apply_career_theme(program_id: String, mention_id: String = "") -> void:
+	_visual_program_id = program_id
+	_visual_mention_id = mention_id
+	_current_theme = NeonVisuals.career(program_id, mention_id)
+	RenderingServer.set_default_clear_color(_current_theme["bg"])
+	queue_redraw()
 
 
 func _animate_button(button: Button, hovering: bool) -> void:
@@ -1449,6 +1492,7 @@ func _show_options() -> void:
 	slider.custom_minimum_size.y = 28
 	slider.value_changed.connect(_change_font_scale.bind(scale_label))
 	slider.drag_ended.connect(_rebuild_options)
+	_style_slider(slider)
 	content.add_child(slider)
 	content.add_child(_label("Las preferencias se guardan en este equipo.", 14, Color("#9db6c8"), true))
 	_add_menu_button(content, "Ver logros globales", _show_global_achievements.bind(Callable(self, "_show_options")), false, 42)
@@ -1636,9 +1680,13 @@ func _show_new_solo(name_error: String = "") -> void:
 	var grid := _adaptive_grid(content, 380.0, 2)
 	for program in Catalog.PROGRAMS:
 		var card := _card(grid)
-		card.add_child(_label(str(program["name"]), 22, Catalog.get_theme(str(program["id"]))["accent"]))
+		var preview_theme := NeonVisuals.career(str(program["id"]))
+		card.get_parent().add_theme_stylebox_override("panel", NeonVisuals.panel(preview_theme, true))
+		card.add_child(_label(str(program["name"]), 22, preview_theme["neon"]))
 		card.add_child(_label(str(program["summary"]), 16))
 		var button := _add_button(card, "Explorar menciones", _choose_new_program.bind(str(program["id"])), true, 46)
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			button.add_theme_stylebox_override(state, NeonVisuals.button(preview_theme, true, state))
 		button.disabled = draft_player_name.strip_edges().is_empty()
 		button.tooltip_text = "Escribe tu nombre para elegir una carrera."
 		career_buttons.append(button)
@@ -1684,21 +1732,20 @@ func _show_mentions(program_id: String) -> void:
 	if program.is_empty():
 		_show_programs()
 		return
-	var theme := Catalog.get_theme(program_id)
+	_apply_career_theme(program_id)
+	var theme := _current_theme
 	var accent: Color = theme.get("accent", GREEN)
 	var content := _make_page("Menciones y enfoques", str(program["name"]) + " · planes FNI publicados en 2011; los temarios detallados requieren revisión", _show_programs)
 	var info_card := _card(content)
 	info_card.add_child(_label(str(program["name"]), 21, accent))
 	info_card.add_child(_label(str(program.get("description", "")), 15, theme.get("sub", Color("#5f6257"))))
 	var rows := _adaptive_grid(content, 440.0, 2)
-	var art_colors := [Color("#5d8975"), Color("#57859a"), Color("#b87754"), Color("#8b70a0"), Color("#bd9b50")]
-	var mention_index := 0
 	for mention in Catalog.mentions_for_program(program_id):
 		var card := _card(rows)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 14)
 		card.add_child(row)
-		var color: Color = art_colors[mention_index % art_colors.size()]
+		var color: Color = theme["neon"]
 		var illustration := MentionArt.new()
 		illustration.setup(str(mention["id"]), color)
 		row.add_child(illustration)
@@ -1713,7 +1760,6 @@ func _show_mentions(program_id: String) -> void:
 		card.add_child(actions)
 		_add_button(actions, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 42)
 		_add_button(actions, "Plan y simulación", Callable(self, "_show_curriculum").bind(program_id, str(mention["id"])), false, 42)
-		mention_index += 1
 
 
 func _create_solo_save(program_id: String, mention_id: String) -> void:
@@ -1772,7 +1818,7 @@ func _show_exam() -> void:
 	var partial_index: int = entry["answers"].size()
 	current_profile["partial_index"] = partial_index
 	current_question = course["partials"][partial_index].duplicate(true)
-	var theme := Catalog.get_theme(str(current_profile["program_id"]))
+	var theme := NeonVisuals.career(str(current_profile["program_id"]), str(current_profile["mention_id"]))
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
 	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, course["name"], subject["sigla"]], "Semestre cursado %d · Tres parciales determinan la nota final" % int(simulation.state["term"]), Callable(self, "_show_solo_hub"))
@@ -1782,7 +1828,8 @@ func _show_exam() -> void:
 	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
 	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
 	var demo := StudyDemo.new()
-	demo.setup(course, partial_index, float(settings["font_scale"]))
+	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme)
+	_style_slider(demo.slider)
 	lesson.add_child(demo)
 	var exam := VBoxContainer.new()
 	exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -9,7 +9,7 @@ var value_label: Label
 var model: Control
 
 
-func setup(course: Dictionary, partial: int, font_scale: float = 1.0) -> void:
+func setup(course: Dictionary, partial: int, font_scale: float = 1.0, visual_theme: Dictionary = {}) -> void:
 	subject_name = str(course.get("name", "Materia"))
 	var topics: Array = course.get("topics", [])
 	topic = str(topics[posmod(partial, topics.size())]) if not topics.is_empty() else subject_name
@@ -31,6 +31,7 @@ func setup(course: Dictionary, partial: int, font_scale: float = 1.0) -> void:
 	add_child(slider)
 	model = Model.new()
 	model.name = "InteractiveModel"
+	model.visual_theme = visual_theme.duplicate()
 	model.subject_name = subject_name
 	model.font_scale = font_scale
 	model.custom_minimum_size = Vector2(0, 170 * font_scale)

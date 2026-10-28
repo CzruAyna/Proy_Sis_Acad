@@ -97,7 +97,7 @@ func render(destination: String) -> void:
 	section = destination
 	var ui := _ui()
 	var profile: Dictionary = ui.current_profile
-	ui._current_theme = Catalog.get_theme(str(profile["program_id"]))
+	ui._apply_career_theme(str(profile["program_id"]), str(profile["mention_id"]))
 	ui.queue_redraw()
 	var titles := {"resumen": "Tu campus", "materias": "Materias y planificación", "tramites": "Oficinas y trámites", "historial": "Tu historial académico", "auxiliatura": "Tu actividad de auxiliatura", "graduacion": "Del egreso al título"}
 	var program := Catalog.program_by_id(str(profile["program_id"]))
@@ -244,6 +244,7 @@ func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
 	picker.select(subject_filter)
 	picker.custom_minimum_size.y = 44
 	picker.add_theme_font_size_override("font_size", int(16 * float(_ui().settings["font_scale"])))
+	_ui()._style_select(picker)
 	page.add_child(picker)
 	var list := VBoxContainer.new()
 	list.name = "SubjectResults"
@@ -449,6 +450,7 @@ func _picker(parent: Control, label: String, entries: Array, selected: String, c
 		if str(entry[0]) == selected:
 			picker.select(picker.item_count - 1)
 	picker.item_selected.connect(func(index: int) -> void: changed.call(str(picker.get_item_metadata(index))))
+	_ui()._style_select(picker)
 	parent.add_child(picker)
 	return picker
 
@@ -507,6 +509,7 @@ func _procedure_form(page: VBoxContainer) -> void:
 		reason.text = form_reason
 		reason.placeholder_text = "Explica por qué necesitas esta autorización."
 		reason.text_changed.connect(func() -> void: form_reason = reason.text)
+		_ui()._style_select(reason)
 		card.add_child(reason)
 	_button(card, "Presentar solicitud", _submit_form, available and model.snapshot()["phase"] == "INSCRIPCION", true)
 
@@ -610,7 +613,8 @@ func show_course_preview(key: String) -> void:
 	for topic in course.get("topics", []):
 		_text(page, "• " + str(topic), 16)
 	var demo := Demo.new()
-	demo.setup(course, 0, float(_ui().settings["font_scale"]))
+	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme)
+	_ui()._style_slider(demo.slider)
 	page.add_child(demo)
 	var prompts: Array = course.get("partials", [])
 	for question in prompts:
@@ -629,12 +633,13 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	if personal:
 		section = "malla"
 		mention_id = str(ui.current_profile["mention_id"])
-	ui._current_theme = Catalog.get_theme(program_id)
+	ui._apply_career_theme(program_id, str(ui.current_profile["mention_id"]) if personal else mention_id)
 	var back: Callable = _go.bind("resumen") if personal else ui._show_mentions.bind(program_id)
 	var page: VBoxContainer = ui._make_page("Tu malla y sus conexiones" if personal else "Explora el plan de estudios", "El semestre curricular ubica la materia en el plan; tu periodo de cursado puede combinar varios niveles.", back)
 	var graph := Graph.new()
 	graph.font_scale = float(ui.settings["font_scale"])
 	graph.animations_enabled = bool(ui.settings["animations"])
+	graph.low_performance = bool(ui.settings.get("low_performance", false))
 	var snapshot: Dictionary = _model().snapshot() if personal else {}
 	if personal:
 		for subject in snapshot["subjects"]:
