@@ -80,7 +80,8 @@ func _run() -> void:
 	graph._build_semester()
 	_check(_independent_clearance(graph.edge_paths), "Descarta posiciones antiguas que juntarían conexiones")
 	var original: Vector2 = graph.visible_nodes[0]["pos"]
-	_check(not graph._move_node(0, graph.visible_nodes[1]["pos"]) and graph.visible_nodes[0]["pos"] == original, "No permite apilar esferas conectadas")
+	graph._move_node(0, graph.visible_nodes[1]["pos"])
+	_check(Vector2(graph.visible_nodes[0]["pos"]).distance_to(graph.visible_nodes[1]["pos"]) >= graph._radius(0) + graph._radius(1) + 34 and _independent_clearance(graph.edge_paths), "El arrastre se detiene antes de apilar esferas o cruzar conexiones")
 	_check(not graph._move_node(0, Vector2(INF, NAN)), "Rechaza coordenadas no finitas")
 	# Future data can describe a graph with no planar embedding. All nine
 	# relationships remain visible as explicitly labelled visual references.

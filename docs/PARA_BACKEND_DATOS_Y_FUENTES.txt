@@ -1,0 +1,129 @@
+PARA BACKEND: INFORMACIÓN REAL Y MATERIAL ORIGINAL PARA CAMPUS EN JUEGO
+Solicitud del usuario: 29/10/2026. Revisar también /REGLAS_USUARIO.txt.
+Este archivo solicita revisión y datos; NO confirma vigencia ni modifica reglas.
+
+OBJETIVO
+El juego debe informar sobre Sistemas e Informática y sus menciones mediante
+datos trazables. La simulación actual contiene reglas acordadas para jugar;
+no debe confundirse con un sistema institucional ni con normativa vigente.
+Frontend no ha sustituido reglas del motor por supuestas normas reales.
+
+ESTADO QUE YA CONOCEMOS EN EL REPOSITORIO
+- Godot es la experiencia principal. Django/Next.js son componentes separados.
+- game/scripts/uto_curricula.gd contiene las cinco mallas y descripciones.
+  El propio producto identifica planes publicados en 2011. Confirmar cuál
+  corresponde a cada cohorte y si existen modificaciones posteriores.
+- game/scripts/student_simulation.gd implementa las reglas del juego descritas
+  en docs/SIMULACION_ESTUDIANTE.md. Los pagos/documentos son simulados.
+- Los temarios, preguntas, nombres de docentes simulados, plazas y rivales de
+  auxiliatura NO se deben promover a información institucional verificada.
+- docs/SIMULACION_ESTUDIANTE.md contiene referencias anteriores a K-02, K-03,
+  auxiliatura y defensa. Sus enlaces no prueban vigencia actual por sí solos.
+- docs/MODELO_DATOS.md describe recursos de la API. El juego usa el snapshot
+  local; no se ha añadido una integración nueva con Django en esta entrega.
+
+REVISIÓN SOLICITADA AL RESPONSABLE DE BACKEND
+1. Revisar los grupos siguientes y devolver una lista concreta para el usuario:
+   qué material conseguir, dónde consultarlo y qué campo quedaría pendiente.
+2. Distinguir regla del juego, documento histórico y dato institucional vigente.
+3. Proponer contratos/versiones de datos sin cambiar partidas silenciosamente.
+4. Confirmar cómo representar resultados parciales, reprobación final, recursado,
+   materias conservadas y cambios de plan. Frontend lee el estado del motor;
+   no debe deducir aprobación por el número de semestre ni por un desbloqueo.
+5. Especificar las diferencias entre matrícula/inscripción y semestre curricular/
+   periodo cursado; no usar una misma etiqueta para conceptos distintos.
+
+MATERIAL QUE NECESITAMOS DEL USUARIO, POR PRIORIDAD
+
+P0. PLANES Y CORRELATIVIDADES
+- PDF o documento ORIGINAL completo de las mallas de ambas carreras y las
+  cinco menciones, con resolución, fecha, versión y cohorte aplicable.
+- Resoluciones de modificación, equivalencias y cambios de sigla/nombre.
+- Para cada materia: código, nombre oficial, semestre, prerrequisitos,
+  correquisitos, créditos/horas, tipo obligatoria/electiva y vigencia.
+- Confirmar cuándo una materia aprobada se conserva al reprobar su regular,
+  y cómo se reconocen materias al cambiar de carrera o mención.
+Entrega sugerida: PDF original + tabla revisada con código de cada relación.
+
+P0. EVALUACIÓN, INSCRIPCIÓN Y RECURSADO
+- Reglamento y resoluciones aplicables sobre aprobación, notas, parciales,
+  carga máxima, prioridad de reprobadas, retiros, arrastre y repetición.
+- Confirmar si los umbrales 51 y 65 del juego tienen respaldo institucional,
+  a qué caso corresponden y desde cuándo. No generalizarlos sin evidencia.
+- Ejemplos ANONIMIZADOS de historial y matrícula para verificar etiquetas.
+Entrega: documentos completos y páginas/artículos pertinentes identificados.
+
+P0. TRÁMITES Y OFICINAS
+- Originales vigentes de matrícula, K-02, K-03, solicitud por carta y materias
+  externas: formulario en blanco, instructivo y resolución si existe.
+- Secuencia real de oficinas, requisitos por paso, responsable institucional,
+  plazos, observaciones, subsanación y vigencia de documentos/permisos.
+- Tarifario fechado si se pretende mostrar importes. No inventar montos.
+Entrega: PDF original en blanco + explicación confirmada del procedimiento.
+
+P1. AUXILIATURA
+- Reglamento vigente y convocatoria ORIGINAL del periodo de referencia.
+- Requisitos, documentos, forma de calificación, plazas/paralelos, vigencia,
+  plan de trabajo, autorización de aula, informes y certificación.
+- Confirmar si las dos plazas A/B, rivales y asignaciones del juego se conservan
+  como ficción o deben cambiar. No presentarlos como oferta real de vacantes.
+Entrega: convocatoria, formularios y modelos en blanco, con fechas.
+
+P1. EGRESO Y TITULACIÓN
+- Reglamentos/instructivos para excelencia, tesis y proyecto de grado.
+- Condiciones de elegibilidad, tribunal, defensa, reintentos, diploma y título.
+- Documentación, oficinas y tarifas vigentes por cada etapa.
+Entrega: originales completos y referencias de páginas/artículos.
+
+P1. CONTENIDO ACADÉMICO
+- Programas analíticos oficiales de las materias y bibliografía autorizada.
+- Temarios por unidad y resultados de aprendizaje para revisar descripciones.
+- Ejercicios/preguntas que puedan utilizarse legalmente y sus soluciones,
+  revisados por un docente. Separar demostración didáctica de examen real.
+Entrega: programa original y materiales con permiso de uso o licencia clara.
+
+P2. ENTORNO E IMÁGENES
+- Fotografías propias o autorizadas del campus, facultad, direcciones, Caja,
+  Kardex, Cómputo/DTIC, biblioteca, laboratorios y señalética.
+- Croquis/plano público o autorizado que permita ubicar esas oficinas.
+- Logos/escudos en archivo oficial y autorización o condiciones de uso.
+- Imágenes de formularios EN BLANCO y portadas documentales para mostrarlas
+  como referencia. No enviar firmas, carnets, historiales o datos personales.
+Entrega: archivos originales, nombre del lugar, fecha, autor, permiso/licencia.
+
+FICHA MÍNIMA POR CADA FUENTE
+ID de fuente:
+Título original:
+Entidad emisora:
+Fecha de emisión / resolución / versión:
+Carrera, mención y cohorte a las que aplica:
+Vigencia confirmada por / fecha de revisión:
+URL institucional o ubicación del archivo original:
+Archivo local y huella digital si backend la incorpora:
+Páginas/artículos que sostienen el dato:
+Permiso/licencia de reproducción de texto o imagen:
+Datos extraídos / responsable de revisión:
+Estado: pendiente / histórico / verificado / sustituido:
+
+CONTRATO SUGERIDO PARA FRONTEND (PENDIENTE DE ACUERDO)
+- Entidades con ID estable y versión de plan; no identificar solo por el nombre.
+- Campos source_ids[], verification_status, reviewed_at, effective_from,
+  effective_to y applicable_cohorts para datos institucionales.
+- Referencias de archivo por recurso autorizado; sin rutas locales privadas.
+- Títulos, resúmenes legibles, páginas consultables y metadatos para imágenes.
+- Estado académico por materia desde snapshot: aprobación, inscripción,
+  intentos/resultados, semestre de origen y motivo de bloqueo/recursado.
+- Mantener acciones/transacciones en el motor; frontend presenta el resultado.
+
+COMPORTAMIENTO DE PRESENTACIÓN HASTA CONFIRMAR LAS FUENTES
+- Mostrar “Simulación” en las gestiones y evaluaciones del juego.
+- Mostrar “Pendiente de verificación” cuando falte respaldo institucional.
+- Conservar el aviso de la fecha histórica del plan donde corresponde.
+- No fabricar imágenes, sellos, firmas, aranceles o documentos oficiales.
+- Presentar documentos/imágenes en páginas con botones. Sin rueda del ratón,
+  barras de desplazamiento ni deslizadores, según la regla permanente.
+
+RESPUESTA ESPERADA DE BACKEND PARA EL USUARIO
+Por cada pendiente: prioridad, pregunta concreta, documento/imagen que debe
+conseguir, fuente recomendada, campos que resuelve y qué puede implementarse
+con seguridad mientras tanto. Registrar dudas y contradicciones entre fuentes.

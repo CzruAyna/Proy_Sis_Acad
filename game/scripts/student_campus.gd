@@ -4,6 +4,7 @@ const Catalog = preload("res://scripts/catalog.gd")
 const Procedures = preload("res://scripts/simulation_procedures.gd")
 const Graph = preload("res://scripts/curriculum_graph.gd")
 const Demo = preload("res://scripts/study_demo.gd")
+const Choice = preload("res://scripts/choice_picker.gd")
 const DOCUMENT_NAMES := {"ci": "Identidad", "matricula": "Matrícula vigente", "carnet": "Carnet universitario", "historial": "Historial académico", "formulario": "Formulario de solicitud", "conclusion": "Conclusión de estudios", "solvencia": "Solvencia", "perfil": "Perfil y propuesta de tutor", "borrador": "Borrador del trabajo", "plan_aux": "Plan de trabajo", "plan_firmado": "Plan firmado", "permiso_aula": "Permiso de aula", "informe_aux": "Informe docente", "acta_defensa": "Acta de defensa", "diploma": "Diploma académico", "titulo": "Título"}
 
 var host: WeakRef
@@ -19,6 +20,7 @@ var form_mention := ""
 var form_course := ""
 var form_reason := ""
 var graph_semester := 0
+var graph_term_seen := 0
 var graph_layouts: Dictionary = {}
 var show_request_form := false
 var show_documents := false
@@ -101,11 +103,10 @@ func render(destination: String) -> void:
 	ui._apply_career_theme(str(profile["program_id"]), str(profile["mention_id"]))
 	ui.queue_redraw()
 	var titles := {"resumen": "Tu campus", "materias": "Materias y planificación", "tramites": "Oficinas y trámites", "historial": "Tu historial académico", "auxiliatura": "Tu actividad de auxiliatura", "graduacion": "Del egreso al título"}
-	var program := Catalog.program_by_id(str(profile["program_id"]))
 	var snapshot: Dictionary = _model().snapshot()
 	if int(snapshot["term"]) == 1:
 		titles["materias"] = "Materias del primer semestre"
-	var subtitle := "%s · %s · Semestre cursado %d" % [profile.get("player_name", "Estudiante"), program["name"], int(snapshot["term"])]
+	var subtitle := "Decisiones y progreso de tu partida" if section == "resumen" else str(profile.get("mention_name", ""))
 	var page: VBoxContainer = ui._make_page(titles.get(section, "Tu campus"), subtitle, ui._return_to_menu)
 	if not notice.is_empty():
 		var feedback: VBoxContainer = ui._card(page, true)
@@ -173,15 +174,12 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 	var map_card: VBoxContainer = ui._card(grid)
 	_text(map_card, "Elige tu recorrido", 21)
 	_text(map_card, "Consulta lo habilitado y sus requisitos. Materias de distintos semestres pueden convivir en tu periodo.", 15, true)
-	_button(map_card, "Explorar mi malla", _go.bind("malla"))
-	var activity: VBoxContainer = ui._card(grid)
-	_text(activity, "Más allá del aula", 21)
-	_text(activity, "Postula a una auxiliatura, sigue tus expedientes y conserva cada intento de tu carrera.", 15, true)
-	_button(activity, "Ver auxiliaturas", _go.bind("auxiliatura"))
+	var map_actions := _actions(map_card)
+	_button(map_actions, "Explorar mi malla", _go.bind("malla"))
+	_button(map_actions, "Ver auxiliaturas", _go.bind("auxiliatura"))
 	var row := _actions(page)
 	_button(row, "Mis partidas", ui._show_solo_slots)
 	_button(row, "Logros", ui._show_titles)
-	_button(row, "Guardar y salir", ui._return_to_menu)
 
 
 func _confirm_close() -> void:
@@ -218,6 +216,8 @@ func subject_status(subject: Dictionary, snapshot: Dictionary) -> String:
 	if not entry.is_empty():
 		if entry["score"] != null:
 			return "%s provisional · %.2f" % ["Aprobada" if float(entry["score"]) >= 51.0 else "Reprobada", float(entry["score"])]
+		if _pending_retaking(subject, snapshot):
+			return "Recursando · %d/3 parciales" % entry["answers"].size() if snapshot["phase"] == "CURSANDO" else "Inscrita para recursar"
 		return "Cursando · %d/3 parciales" % entry["answers"].size() if snapshot["phase"] == "CURSANDO" else "Inscrita"
 	for record in snapshot["history"]:
 		if record["course_id"] == subject["id"] and not record["passed"]:
@@ -225,6 +225,15 @@ func subject_status(subject: Dictionary, snapshot: Dictionary) -> String:
 	if not subject["eligibility"]["ok"]:
 		return "Bloqueada"
 	return "Correlativa habilitada" if not subject["eligibility"].get("regulars", []).is_empty() else "Habilitada"
+
+
+func _pending_retaking(subject: Dictionary, snapshot: Dictionary) -> bool:
+	if subject["approved"]:
+		return false
+	for record in snapshot["history"]:
+		if record["course_id"] == subject["id"] and not record["passed"]:
+			return true
+	return false
 
 
 func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
@@ -238,7 +247,7 @@ func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
 	search.text = subject_search
 	_ui()._style_input(search)
 	page.add_child(search)
-	var picker := OptionButton.new()
+	var picker := Choice.new()
 	picker.name = "SubjectFilter"
 	for label in ["Mi semestre", "Todas las materias", "Habilitadas", "Pendientes", "Aprobadas"]:
 		picker.add_item(label)
@@ -438,9 +447,9 @@ func _request_detail(page: VBoxContainer, request: Dictionary, snapshot: Diction
 		_text(card, "• " + _friendly(str(event.get("observation", event.get("action", "Paso registrado")))), 14, true)
 
 
-func _picker(parent: Control, label: String, entries: Array, selected: String, changed: Callable) -> OptionButton:
+func _picker(parent: Control, label: String, entries: Array, selected: String, changed: Callable) -> Button:
 	_text(parent, label, 15)
-	var picker := OptionButton.new()
+	var picker := Choice.new()
 	picker.custom_minimum_size.y = 44
 	picker.add_theme_font_size_override("font_size", int(16 * float(_ui().settings["font_scale"])))
 	picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -503,14 +512,15 @@ func _procedure_form(page: VBoxContainer) -> void:
 		else:
 			_text(card, "No hay materias pendientes de ese plan para esta solicitud. Elige otro destino.", 15)
 		_text(card, "Justificación (al menos diez caracteres)", 15)
-		var reason := TextEdit.new()
+		var reason := LineEdit.new()
+		reason.name = "RequestReason"
+		reason.max_length = 350
 		reason.add_theme_font_size_override("font_size", int(16 * float(_ui().settings["font_scale"])))
-		reason.custom_minimum_size.y = 100
-		reason.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+		reason.custom_minimum_size.y = 44
 		reason.text = form_reason
 		reason.placeholder_text = "Explica por qué necesitas esta autorización."
-		reason.text_changed.connect(func() -> void: form_reason = reason.text)
-		_ui()._style_select(reason)
+		reason.text_changed.connect(func(value: String) -> void: form_reason = value)
+		_ui()._style_input(reason)
 		card.add_child(reason)
 	_button(card, "Presentar solicitud", _submit_form, available and model.snapshot()["phase"] == "INSCRIPCION", true)
 
@@ -615,7 +625,6 @@ func show_course_preview(key: String) -> void:
 		_text(page, "• " + str(topic), 16)
 	var demo := Demo.new()
 	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme)
-	_ui()._style_slider(demo.slider)
 	page.add_child(demo)
 	var prompts: Array = course.get("partials", [])
 	for question in prompts:
@@ -645,59 +654,108 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	var snapshot: Dictionary = _model().snapshot() if personal else {}
 	if personal:
 		for subject in snapshot["subjects"]:
+			if subject.get("program_id", "") != program_id or subject.get("mention_id", "") != mention_id:
+				continue
 			graph.personal_states[str(subject["sigla"])] = subject_status(subject, snapshot)
+			if _pending_retaking(subject, snapshot):
+				graph.carry_subjects.append(subject.duplicate(true))
 	graph.setup(program_id, mention_id, 500.0)
 	if personal:
+		if graph_term_seen != int(snapshot["term"]):
+			graph_semester = _current_graph_semester(snapshot)
+			graph_term_seen = int(snapshot["term"])
 		graph.semester_index = clampi(graph_semester, 0, graph.semesters.size() - 1)
 		graph._build_semester()
-	var controls := _actions(page)
+	var workspace := VBoxContainer.new()
+	workspace.name = "GraphWorkspace"
+	workspace.set_meta("page_atomic", true)
+	workspace.add_theme_constant_override("separation", 8)
+	page.add_child(workspace)
+	var controls := _actions(workspace)
 	var previous := _button(controls, "← Anterior", graph.move_semester.bind(-1))
-	var counter := _text(controls, "", 18)
+	var counter := _text(controls, "", 16)
 	counter.autowrap_mode = TextServer.AUTOWRAP_OFF
 	counter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var next := _button(controls, "Siguiente →", graph.move_semester.bind(1))
-	previous.custom_minimum_size.x = 126
-	next.custom_minimum_size.x = 126
+	previous.custom_minimum_size.x = 120
+	next.custom_minimum_size.x = 120
+	previous.autowrap_mode = TextServer.AUTOWRAP_OFF
+	next.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if personal:
+		var current := _button(controls, "Mi periodo", _graph_current_view.bind(graph, snapshot))
+		current.custom_minimum_size.x = 110
+		current.autowrap_mode = TextServer.AUTOWRAP_OFF
+		current.tooltip_text = "Volver al nivel de las materias inscritas en tu periodo actual"
 	var zoom_out := _button(controls, "−", graph.zoom_at_center.bind(0.85))
 	zoom_out.custom_minimum_size.x = 44
 	zoom_out.tooltip_text = "Alejar el grafo"
 	var zoom_in := _button(controls, "+", graph.zoom_at_center.bind(1.18))
 	zoom_in.custom_minimum_size.x = 44
 	zoom_in.tooltip_text = "Acercar el grafo"
+	var fit := _button(controls, "Ver todo", graph.fit_view)
+	fit.custom_minimum_size.x = 105
 	var reset := _button(controls, "Restablecer", graph.reset_layout)
 	reset.custom_minimum_size.x = 136
-	for button in [previous, next, zoom_out, zoom_in, reset]:
+	for button in [previous, next, zoom_out, zoom_in, fit, reset]:
 		button.size_flags_horizontal = Control.SIZE_FILL
-	_text(page, "Conexiones protegidas: el arrastre se limita antes de cruzar o juntar aristas. Rueda: zoom. Arrastra el fondo para mover la vista.", 14, true)
+	_text(workspace, "Mueve esferas o el fondo. Usa −/+ y las flechas de la vista. Ámbar: materia pendiente de recursar. Los cruces se bloquean.", 13, true)
 	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	graph.name = "ExpandedCurriculumGraph"
-	page.add_child(graph)
+	workspace.add_child(graph)
+	var pager = ui.find_child("PageNavigator", true, false)
+	pager.space_changed.connect(func(available: Vector2) -> void:
+		var other := workspace.get_combined_minimum_size().y - graph.custom_minimum_size.y
+		graph.set_display_height(available.y - other - 8))
 	var details: VBoxContainer = ui._card(page)
 	details.name = "GraphSubjectDetail"
+	details.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	details.get_parent().custom_minimum_size.x = 740
 	details.get_parent().visible = false
-	var list := VBoxContainer.new()
-	page.add_child(list)
+	var list: GridContainer = ui._adaptive_grid(page, 350, 2)
+	list.name = "GraphSubjectCards"
+	details.set_meta("subject_list", weakref(list))
+	details.set_meta("workspace", weakref(workspace))
 	var update := func(_index: int = 0, _count: int = 0) -> void:
 		if personal:
 			graph_semester = graph.semester_index
-		counter.text = "Semestre curricular %d / %d" % [graph.semester_index + 1, graph.semesters.size()]
+		counter.text = "Plan: semestre %d / %d" % [graph.semester_index + 1, graph.semesters.size()]
 		previous.disabled = graph.semester_index == 0
 		next.disabled = graph.semester_index >= graph.semesters.size() - 1
 		_clear(details)
 		details.get_parent().visible = false
+		list.visible = true
 		_clear(list)
 		for node in graph.visible_nodes:
-			if node.get("source", false):
+			if node.get("source", false) and not node.get("retained", false):
 				continue
-			var label := "%s · %s" % [node["sigla"], node["name"]]
+			var card: VBoxContainer = ui._card(list)
+			_text(card, "%s · %s" % [node["sigla"], node["name"]], 17)
 			if personal:
-				label += " · " + str(graph.personal_states.get(node["sigla"], "Pendiente"))
-			_button(list, label, _graph_detail.bind(node.duplicate(true), details, snapshot))
+				_text(card, str(graph.personal_states.get(node["sigla"], "Pendiente")), 14, true)
+			_button(card, "Ver materia", _graph_detail.bind(node.duplicate(true), details, snapshot))
+
 	graph.subject_selected.connect(func(_sigla: String, data: Dictionary) -> void: _graph_detail(data, details, snapshot))
 	graph.semester_changed.connect(update)
 	graph.layout_changed.connect(func() -> void: graph_layouts = graph.manual_positions.duplicate(true))
 	update.call()
+
+
+func _current_graph_semester(snapshot: Dictionary) -> int:
+	var semester := 1
+	for subject in snapshot["subjects"]:
+		if subject.get("program_id", "") != _ui().current_profile["program_id"] or subject.get("mention_id", "") != _ui().current_profile["mention_id"]:
+			continue
+		if not subject["enrollment"].is_empty() and not subject.get("graduation_node", false):
+			semester = maxi(semester, int(subject.get("semester", 1)))
+	return semester - 1
+
+
+func _graph_current_view(graph: Control, snapshot: Dictionary) -> void:
+	graph.semester_index = clampi(_current_graph_semester(snapshot), 0, graph.semesters.size() - 1)
+	graph.reset_view()
+	graph._build_semester()
+	graph.semester_changed.emit(graph.semester_index, graph.semesters.size())
 
 
 func _clear(parent: Control) -> void:
@@ -709,6 +767,12 @@ func _clear(parent: Control) -> void:
 func _graph_detail(data: Dictionary, details: VBoxContainer, snapshot: Dictionary) -> void:
 	_clear(details)
 	details.get_parent().visible = true
+	if details.has_meta("subject_list"):
+		var list = details.get_meta("subject_list").get_ref()
+		if is_instance_valid(list):
+			list.visible = false
+	_button(details, "← Volver al grafo", _return_graph_detail.bind(details))
+	_focus_graph_detail.call_deferred(weakref(details))
 	_text(details, str(data.get("name", "Ingreso")), 21)
 	_text(details, str(data.get("desc", "")), 16, true)
 	if data.get("admission", false):
@@ -726,3 +790,28 @@ func _graph_detail(data: Dictionary, details: VBoxContainer, snapshot: Dictionar
 				else:
 					course_actions(details, subject, snapshot)
 				break
+
+
+func _focus_graph_detail(reference: WeakRef) -> void:
+	var ui := _ui()
+	if not is_instance_valid(ui) or not ui.is_inside_tree():
+		return
+	var tree := ui.get_tree()
+	for frame in range(7):
+		await tree.process_frame
+	var details = reference.get_ref()
+	if is_instance_valid(details) and details.is_inside_tree():
+		var pager = ui.find_child("PageNavigator", true, false)
+		if pager != null:
+			pager.show_control(details.get_parent())
+
+
+func _return_graph_detail(details: VBoxContainer) -> void:
+	details.get_parent().visible = false
+	var list = details.get_meta("subject_list").get_ref()
+	if is_instance_valid(list):
+		list.visible = true
+	var pager = _ui().find_child("PageNavigator", true, false)
+	if pager != null:
+		pager.change_page(-pager.page_index)
+		pager.request_layout()

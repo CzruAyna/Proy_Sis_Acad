@@ -66,7 +66,7 @@ func _run() -> void:
 	graph._set_zoom(100, anchor)
 	_check(is_equal_approx(graph.view_zoom, 1.65), "Acercamiento limitado")
 	graph._set_zoom(0.001, anchor)
-	_check(is_equal_approx(graph.view_zoom, 0.65), "Alejamiento limitado")
+	_check(is_equal_approx(graph.view_zoom, 0.35), "Alejamiento limitado")
 	graph.reset_view()
 	press.position = Vector2(40, 40)
 	press.pressed = true

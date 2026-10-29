@@ -45,7 +45,7 @@ func _run() -> void:
 	await process_frame
 	_check(is_instance_valid(game.simulation_console), "Consola de integración abre")
 	var fields := game.simulation_console.find_children("*", "LineEdit", true, false)
-	var outputs := game.simulation_console.find_children("*", "RichTextLabel", true, false)
+	var outputs := game.simulation_console.find_children("ConsoleOutput", "VBoxContainer", true, false)
 	_check(fields.size() == 1 and outputs.size() == 1, "Consola ofrece entrada y resultados")
 	if fields.size() == 1 and outputs.size() == 1:
 		game._submit_simulation_command("/desbloquear todo", fields[0], outputs[0])

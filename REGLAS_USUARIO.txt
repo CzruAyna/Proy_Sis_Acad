@@ -1,0 +1,46 @@
+REGLAS PERMANENTES DEL USUARIO
+Registro acumulativo. Leer este archivo completo ANTES de trabajar en el proyecto.
+No borrar ni relajar una regla sin una instrucción expresa del usuario.
+
+1. NAVEGACIÓN SIN RUEDA NI DESLIZADORES. Regla irrompible, indicada el 29/10/2026.
+   Ninguna pantalla debe necesitar la rueda del ratón para acceder a contenido
+   o acciones. No utilizar deslizadores ni barras de desplazamiento como
+   controles de la interfaz. Usar botones explícitos, pasos, pestañas o páginas
+   con indicadores claros. Aplicar también a opciones, demostraciones y grafos.
+
+2. ECONOMÍA VISUAL. Usar contenedores de ancho contenido, jerarquía legible y
+   espacio entre grupos. Evitar botones innecesariamente alargados y paneles
+   que ocupen todo el ancho de la ventana. El grafo puede aprovechar más área.
+
+3. OPCIONES COMPRENSIBLES. Explicar para qué sirve cada ajuste y cómo cambia
+   el comportamiento del juego. Permitir elegir el tamaño de las letras con
+   controles explícitos, sin deslizador.
+
+4. IDENTIDAD DE PARTIDA. Mantener visible en la cabecera de la partida quién
+   juega y el contexto académico de esa partida.
+
+5. GRAFOS LEGIBLES E INTERACTIVOS. Esferas con volumen y neón brillante;
+   Sistemas azul, Informática rojo; fondo oscuro con temática por mención.
+   Permitir movimiento dentro de posiciones seguras: no superponer nodos,
+   cruzar ni juntar aristas. Mantener visibles los estados reales de la partida,
+   incluidas materias pendientes o reprobadas de semestres anteriores.
+
+6. INFORMACIÓN Y FUENTES. No inventar datos institucionales ni presentarlos
+   como confirmados. Identificar información pendiente de verificación y
+   registrar para backend qué fuentes, documentos originales e imágenes debe
+   aportar el usuario. Conservar la distinción entre simulación y dato oficial.
+
+7. ALCANCE. La experiencia principal es el juego de escritorio CAMPUS EN JUEGO
+   en Godot, enfocado en Ingeniería de Sistemas e Ingeniería Informática.
+   Coordinar las necesidades de datos mediante documentos del proyecto;
+   las reglas académicas y el backend tienen otro responsable.
+
+8. CORRECCIÓN DE DISEÑO DEL 29/10/2026. Conservar la composición del menú
+   principal que el usuario aprobó; sus botones deben mantener proporciones
+   coherentes entre sí. Los ajustes de compactación se centran en el flujo
+   interior. Los fondos por mención son ambientales, animados y desenfocados,
+   con baja presencia visual: código/HTML en Software, configuración de routers
+   y switches en Telemática, y motivos propios en las otras menciones. No
+   dibujar ventanas, paneles de aplicación ni rótulos detrás de los controles.
+   Las tarjetas de contenido deben ser opacas y las acciones agruparse según
+   su función, sin mezclar una ficha seleccionada con listas ajenas.

@@ -38,7 +38,7 @@ func _check(condition: bool, message: String) -> void:
 
 
 func _settle() -> void:
-	for index in range(5):
+	for index in range(12):
 		await process_frame
 
 
@@ -181,12 +181,12 @@ func _layout_scenarios() -> void:
 			for destination in ["resumen", "materias", "tramites", "historial", "auxiliatura", "graduacion", "malla"]:
 				game._show_campus_section(destination)
 				await _settle()
-				var scroll = game.find_child("PageScroll", true, false)
-				_check(scroll != null, "Página tiene área desplazable: " + destination)
+				var scroll = game.find_child("PageViewport", true, false)
+				_check(scroll != null, "Página tiene navegación por botones: " + destination)
 				if scroll != null:
-					_check(scroll.get_global_rect().end.y <= dimensions.y + 1, "Scroll conserva límite vertical: " + destination)
+					_check(scroll.get_global_rect().end.y <= dimensions.y + 1, "El contenido paginado conserva el límite vertical: " + destination)
 				var nav = game.find_child("CampusNavigation", true, false)
-				_check(nav.get_global_rect().end.x <= dimensions.x + 1, "Navegación se adapta al ancho: " + destination)
+				_check((nav != null and nav.get_global_rect().end.x <= dimensions.x + 1) or (nav == null and destination == "malla"), "Navegación compacta o vista amplia del grafo: " + destination)
 				var page = game.find_child("PageContent", true, false)
 				_check(page.size.x <= scroll.size.x + 1, "No hay desborde horizontal: " + destination)
 			game._show_mentions("sistemas")
@@ -199,7 +199,7 @@ func _layout_scenarios() -> void:
 			game._show_course_preview(str(game.simulation.curriculum()[0]))
 			await _settle()
 			var demo = game.find_child("ModelParameter", true, false)
-			_check(demo.size.x > 100, "El deslizador de estudio tiene ancho utilizable")
+			_check(demo.size.x > 100 and demo.get_child_count() == 2, "La demostración tiene botones explícitos para su parámetro")
 			var parent = demo.get_parent()
 			_check(demo.position.y < parent.size.y and parent.size.y < 500, "La demo no colapsa a miles de píxeles")
 			game._show_campus_section("malla")

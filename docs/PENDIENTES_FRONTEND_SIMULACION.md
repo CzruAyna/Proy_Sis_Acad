@@ -1,6 +1,6 @@
 # Integración gráfica de CAMPUS EN JUEGO
 
-Actualizado: 25 de octubre de 2026. Las tareas temporales del contrato original se consumieron e implementaron. Este archivo conserva el punto de coordinación con la sesión del motor.
+Actualizado: 29 de octubre de 2026. Las tareas temporales del contrato original se consumieron e implementaron. Este archivo conserva el punto de coordinación con la sesión del motor. Leer primero `REGLAS_USUARIO.txt` y, para datos institucionales, `docs/PARA_BACKEND_DATOS_Y_FUENTES.txt`.
 
 ## Estado implementado
 
@@ -15,8 +15,8 @@ Actualizado: 25 de octubre de 2026. Las tareas temporales del contrato original 
 | Historial | Intentos y resultados por semestre cursado, con el plan de origen. Se conservan las reprobaciones y las materias de otros planes. |
 | Auxiliatura | Elegibilidad explicada, postulación, expediente, competencia, puesto y resultado, asignación de docente/paralelo y trabajo con plan firmado, aula, apoyo e informe. |
 | Graduación | Egreso separado de modalidad, defensa, diploma y título. Excelencia usa la elegibilidad del motor; tesis y proyecto mantienen la evaluación de defensa. |
-| Estudio | Columnas adaptables, respuestas con ajuste de líneas, deslizador visible y modelos que responden al parámetro. Repasar no altera notas ni historial. |
-| Accesibilidad | Contenido con desplazamiento, navegación y Atrás fuera del área desplazable, foco de navegación, texto 80–120%, fuente legible y malla sin movimiento cuando se reduce la animación. |
+| Estudio | Columnas adaptables, respuestas con ajuste de líneas y modelos controlados con botones Disminuir/Aumentar. Repasar no altera notas ni historial. |
+| Accesibilidad | Páginas completas mediante botones, sin rueda, deslizadores ni barras. Selectores con búsqueda y páginas. Contenedores acotados, identidad de partida, texto 80–120% con botones y malla con encuadre legible. |
 | Exploración | F10 queda como consola opcional. `/desbloquear todo` conserva su funcionamiento sin aprobar ni borrar resultados. Las gestiones ordinarias ya tienen acceso gráfico. |
 
 ## Límite entre presentación y motor

@@ -95,12 +95,16 @@ const ASSISTANT_CASES := [
 
 var current_profile: Dictionary = {}
 const CampusUI = preload("res://scripts/student_campus.gd")
+const PagedView = preload("res://scripts/paged_view.gd")
+const Ambient = preload("res://scripts/mention_ambient.gd")
+var _ambient: TextureRect
+var _options_page := 0
 var campus_ui: RefCounted
 var _campus_section := "resumen"
 var _save_feedback := ""
 var _save_failed := false
 var simulation: RefCounted
-var simulation_console: AcceptDialog
+var simulation_console: Control
 var save_store := SimulationSaveStore.new()
 var global_profile: Dictionary = {"achievements": [], "completed_programs": [], "completed_subjects": []}
 var active_slot := 0
@@ -154,14 +158,8 @@ func _draw() -> void:
 		_current_theme = NEUTRAL_THEME
 	var bg: Color = _current_theme.get("bg", PAPER)
 	draw_rect(Rect2(Vector2.ZERO, size), bg)
-	var grid: Color = _current_theme.get("grid", Color("#292e34"))
-	if not _home_art:
-		for y in range(42, int(size.y), 44):
-			draw_line(Vector2(0, y), Vector2(size.x, y), Color(grid, 0.15), 1.0)
 	if _home_art:
 		_draw_home_science()
-	elif not _visual_program_id.is_empty():
-		NeonVisuals.background(self, size, _current_theme, bool(settings.get("low_performance", false)))
 
 
 func _draw_home_cosmos() -> void:
@@ -803,6 +801,7 @@ func _use_neutral_theme() -> void:
 	_visual_program_id = ""
 	_visual_mention_id = ""
 	_current_theme = NEUTRAL_THEME.duplicate()
+	_sync_ambient()
 	RenderingServer.set_default_clear_color(NEUTRAL_THEME["bg"])
 	queue_redraw()
 
@@ -817,6 +816,7 @@ func _use_menu_theme() -> void:
 		"eclipse": _current_theme["accent"] = Color("#43eaff")
 		"pulsar": _current_theme["accent"] = Color("#91a9ff")
 		_: _current_theme["accent"] = Color("#ff67d8")
+	_sync_ambient()
 	RenderingServer.set_default_clear_color(NEON_THEME["bg"])
 	queue_redraw()
 
@@ -831,7 +831,9 @@ func _input(event: InputEvent) -> void:
 		_show_simulation_console()
 		get_viewport().set_input_as_handled()
 		return
-	if is_instance_valid(simulation_console) and simulation_console.visible:
+	if is_instance_valid(simulation_console) and simulation_console.visible and event.is_action_pressed("ui_cancel"):
+		_close_simulation_console()
+		get_viewport().set_input_as_handled()
 		return
 	if _transitioning:
 		return
@@ -971,8 +973,9 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		_home_art = false
 		set_process(false)
 	_active_back = back
+	_sync_ambient()
 	for child in get_children():
-		if child == _transition_overlay:
+		if child == _transition_overlay or child == _ambient:
 			continue
 		remove_child(child)
 		child.queue_free()
@@ -980,36 +983,47 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	margin.name = "PageMargin"
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(margin)
-	for edge in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + edge, 24)
+	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios"]
+	var maximum_width := 1100.0 if graph_workspace else 880.0
+	var resize_page := func() -> void:
+		var side := maxi(24, int((size.x - maximum_width) * 0.5))
+		margin.add_theme_constant_override("margin_left", side)
+		margin.add_theme_constant_override("margin_right", side)
+	resized.connect(resize_page)
+	margin.tree_exiting.connect(func() -> void:
+		if resized.is_connected(resize_page):
+			resized.disconnect(resize_page))
+	resize_page.call()
 	for edge in ["top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + edge, 18)
+		margin.add_theme_constant_override("margin_" + edge, 16)
 	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 10)
+	layout.add_theme_constant_override("separation", 8)
 	margin.add_child(layout)
-	if not title.is_empty():
-		layout.add_child(_label(title, 26, _current_theme.get("text", INK)))
-	if not subtitle.is_empty():
-		layout.add_child(_label(subtitle, 14, _current_theme.get("sub", INK)))
 	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
+		var program_name := "Sistemas" if current_profile["program_id"] == "sistemas" else "Informática"
+		var identity := _label("PARTIDA %d · %s · %s · Periodo %d" % [active_slot, str(current_profile.get("player_name", "Estudiante")).left(40), program_name, int(simulation.state["term"])], 13, _current_theme.get("neon", Color.WHITE))
+		identity.name = "PlayerIdentity"
+		identity.tooltip_text = str(current_profile.get("player_name", "")) + " · " + str(current_profile.get("mention_name", ""))
+		layout.add_child(identity)
+	if not title.is_empty():
+		layout.add_child(_label(title, 24, _current_theme.get("text", INK)))
+	if not subtitle.is_empty() and not graph_workspace:
+		layout.add_child(_label(subtitle, 13, _current_theme.get("sub", INK)))
+	if not current_profile.is_empty() and simulation != null and not menu_backdrop and not graph_workspace:
 		_add_campus_navigation(layout)
-	var scroll := ScrollContainer.new()
-	scroll.name = "PageScroll"
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.follow_focus = true
-	layout.add_child(scroll)
-	var content := VBoxContainer.new()
-	content.name = "PageContent"
-	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 14)
-	scroll.add_child(content)
+	var pager := PagedView.new()
+	layout.add_child(pager)
+	pager.configure(self)
+	var content: VBoxContainer = pager.content
 	if back.is_valid():
 		var footer := HBoxContainer.new()
 		layout.add_child(footer)
 		var action := Callable(self, "_transition_to").bind(back) if menu_backdrop else back
-		var button := _add_button(footer, "← Atrás", action, false, 42)
+		var back_label := "Guardar y salir" if back == Callable(self, "_return_to_menu") else "← Atrás"
+		var button := _add_button(footer, back_label, action, false, 42)
 		button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		if not current_profile.is_empty() and simulation != null:
+			footer.add_child(_label("Simulación educativa", 12, _current_theme.get("sub", INK)))
 		if not _save_feedback.is_empty() and not current_profile.is_empty():
 			footer.add_child(_label(_save_feedback, 13, _current_theme.get("sub", INK)))
 	if bool(settings["animations"]):
@@ -1044,7 +1058,8 @@ func _add_campus_navigation(parent: Control) -> void:
 	var sections := [["resumen", "Mi campus"], ["materias", "Materias"], ["malla", "Malla"], ["tramites", "Trámites"], ["historial", "Historial"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]
 	for section in sections:
 		var button := _add_button(navigation, section[1], _show_campus_section.bind(section[0]), _campus_section == section[0], 38)
-		button.custom_minimum_size.x = 104
+		button.custom_minimum_size.x = maxf(100, ThemeDB.fallback_font.get_string_size(section[1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * float(settings["font_scale"]))).x + 42)
+		button.autowrap_mode = TextServer.AUTOWRAP_OFF
 		button.add_theme_font_size_override("font_size", int(14 * float(settings["font_scale"])))
 		if _campus_section == section[0]:
 			_focus_control.call_deferred(weakref(button))
@@ -1101,9 +1116,9 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 	button.add_theme_constant_override("icon_max_width", 24)
 	button.add_theme_constant_override("h_separation", 12)
 	button.custom_minimum_size = Vector2(0, height)
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	button.custom_minimum_size.x = 168
+	button.custom_minimum_size.x = clampf(ThemeDB.fallback_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(18 * float(settings["font_scale"]))).x + 36, 112, 300)
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", int(round(18 * float(settings["font_scale"]))))
 	if accent:
@@ -1272,41 +1287,25 @@ func _style_select(field: Control) -> void:
 	field.add_theme_stylebox_override("focus", _input_style(true))
 	field.add_theme_color_override("font_color", _current_theme.get("text", Color("#edf8ff")))
 	field.add_theme_color_override("font_hover_color", _current_theme.get("core", Color.WHITE))
-	if field is OptionButton:
+	if field.has_method("configure"):
 		field.add_theme_stylebox_override("hover", _button_style(false, "hover"))
 		field.add_theme_stylebox_override("pressed", _button_style(false, "pressed"))
-		field.get_popup().add_theme_stylebox_override("panel", _input_style(false))
-		field.get_popup().add_theme_color_override("font_color", _current_theme.get("text", Color.WHITE))
-	elif field is TextEdit:
-		field.add_theme_color_override("caret_color", _current_theme.get("neon", Color("#39bcff")))
-		field.add_theme_color_override("selection_color", Color(_current_theme.get("accent", Color("#338aff")), 0.5))
-
-
-func _style_slider(slider: HSlider) -> void:
-	var glow: Color = _current_theme.get("neon", Color("#39bcff"))
-	var track := StyleBoxFlat.new()
-	track.bg_color = Color(glow, 0.16)
-	track.set_corner_radius_all(3)
-	track.content_margin_top = 3
-	track.content_margin_bottom = 3
-	var fill := track.duplicate() as StyleBoxFlat
-	fill.bg_color = glow
-	fill.shadow_color = Color(glow, 0.5)
-	fill.shadow_size = 6
-	slider.add_theme_stylebox_override("slider", track)
-	slider.add_theme_stylebox_override("grabber_area", fill)
-	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
+		field.configure(self)
+		field.tooltip_text = "Elegir mediante botones o buscar una opción"
 
 
 func _apply_career_theme(program_id: String, mention_id: String = "") -> void:
 	_visual_program_id = program_id
 	_visual_mention_id = mention_id
 	_current_theme = NeonVisuals.career(program_id, mention_id)
+	_sync_ambient()
 	RenderingServer.set_default_clear_color(_current_theme["bg"])
 	queue_redraw()
 
 
 func _animate_button(button: Button, hovering: bool) -> void:
+	if not _menu_backdrop_active:
+		return
 	if not bool(settings["animations"]) or not is_instance_valid(button) or button.disabled:
 		return
 	button.pivot_offset = button.size / 2.0
@@ -1328,7 +1327,7 @@ func _add_compact_list(parent: Control) -> VBoxContainer:
 func _show_main() -> void:
 	_active_back = Callable()
 	for child in get_children():
-		if child == _transition_overlay:
+		if child == _transition_overlay or child == _ambient:
 			continue
 		remove_child(child)
 		child.queue_free()
@@ -1338,20 +1337,16 @@ func _show_main() -> void:
 	_home_quote_index = randi_range(0, HOME_QUOTES.size() - 1)
 	_home_quote_time = 0.0
 	_activate_menu_backdrop()
-	var menu_scroll := ScrollContainer.new()
-	menu_scroll.position = Vector2(24, 24)
-	menu_scroll.size = Vector2(minf(420.0, size.x - 48.0), size.y - 48.0)
-	menu_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	menu_scroll.follow_focus = true
-	stage.add_child(menu_scroll)
-	stage.resized.connect(func() -> void: menu_scroll.size = Vector2(minf(420.0, stage.size.x - 48.0), stage.size.y - 48.0))
 	var menu_panel := PanelContainer.new()
-	menu_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	menu_panel.position = Vector2(24, 24)
+	menu_panel.size = Vector2(minf(420.0, size.x - 48.0), size.y - 48.0)
 	menu_panel.add_theme_stylebox_override("panel", _home_panel_style())
-	menu_scroll.add_child(menu_panel)
-	var menu := VBoxContainer.new()
-	menu.add_theme_constant_override("separation", 10)
-	menu_panel.add_child(menu)
+	stage.add_child(menu_panel)
+	stage.resized.connect(func() -> void: menu_panel.size = Vector2(minf(420.0, stage.size.x - 48.0), stage.size.y - 48.0))
+	var menu_pages := PagedView.new()
+	menu_panel.add_child(menu_pages)
+	menu_pages.configure(self)
+	var menu: VBoxContainer = menu_pages.content
 	var eyebrow := _label("SISTEMAS · INFORMÁTICA · TU RECORRIDO", 12, Color("#8ff5ff"))
 	menu.add_child(eyebrow)
 	var title := _label(HOME_NAME, 32, Color("#f4fdff"))
@@ -1379,6 +1374,11 @@ func _show_main() -> void:
 	var exit_button := _add_button(menu, "Salir", Callable(self, "_exit_game"), false, 43)
 	exit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	exit_button.custom_minimum_size.x = 0
+	# Keep the approved home composition: one consistent vertical menu.
+	for action in menu.get_children():
+		if action is Button:
+			action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			action.custom_minimum_size.x = 0
 	_home_quote_label = _label("", 14, Color("#d1d4d2"), true)
 	_home_quote_label.custom_minimum_size = Vector2(0, 58)
 	_home_quote_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -1474,28 +1474,49 @@ func _complete_menu_transition(effect: Control) -> void:
 
 func _show_options() -> void:
 	_use_neutral_theme()
-	var content := _make_page("Opciones", "Ajustes visuales para este equipo.", Callable(self, "_show_main"), true)
-	var options_grid := _adaptive_grid(content, 320.0, 2)
-	_add_button(options_grid, "Pantalla completa: " + ("Sí" if settings["fullscreen"] else "No"), _toggle_fullscreen, false, 42)
-	_add_button(options_grid, "Animaciones: " + ("Activadas" if settings["animations"] else "Reducidas"), _toggle_animations, false, 42)
-	_add_button(options_grid, "Suavizado: " + ("Activado" if settings["antialiasing"] else "Desactivado"), _toggle_antialiasing, false, 42)
-	_add_button(options_grid, "Bajo consumo: " + ("Sí" if settings["low_performance"] else "No"), _toggle_low_performance, false, 42)
-	content.add_child(_label("Bajo consumo reduce partículas y detalles, y limita la animación a 30 FPS.", 13, Color("#9db6c8"), true))
-	var scale_label := _label("Tamaño del texto: %d%%" % int(round(float(settings["font_scale"]) * 100.0)), 17)
-	content.add_child(scale_label)
-	var slider := HSlider.new()
-	slider.name = "TextScale"
-	slider.min_value = 0.8
-	slider.max_value = 1.2
-	slider.step = 0.05
-	slider.value = settings["font_scale"]
-	slider.custom_minimum_size.y = 28
-	slider.value_changed.connect(_change_font_scale.bind(scale_label))
-	slider.drag_ended.connect(_rebuild_options)
-	_style_slider(slider)
-	content.add_child(slider)
-	content.add_child(_label("Las preferencias se guardan en este equipo.", 14, Color("#9db6c8"), true))
-	_add_menu_button(content, "Ver logros globales", _show_global_achievements.bind(Callable(self, "_show_options")), false, 42)
+	var content := _make_page("Opciones del juego", "Elige cómo ver y recorrer el juego. Los cambios se guardan en este equipo.", Callable(self, "_show_main"), true)
+	_menu_backdrop_active = false
+	_home_art = false
+	set_process(false)
+	_apply_career_theme("sistemas")
+	var grid := _adaptive_grid(content, 330.0, 2)
+	var choices := [
+		["DisplayOption", "Pantalla", "Pantalla completa aprovecha el monitor. Ventana permite trabajar junto a otras aplicaciones.", "Usar ventana" if settings["fullscreen"] else "Usar pantalla completa", _toggle_fullscreen, "Pantalla completa" if settings["fullscreen"] else "En ventana"],
+		["MotionOption", "Movimiento y efectos", "Reduce las animaciones si prefieres una experiencia tranquila. Las acciones y resultados siguen disponibles.", "Reducir movimiento" if settings["animations"] else "Activar animaciones", _toggle_animations, "Animaciones activas" if settings["animations"] else "Movimiento reducido"],
+		["SmoothingOption", "Bordes y líneas", "El suavizado reduce los bordes dentados en grafos y dibujos. Puede exigir más trabajo a la tarjeta gráfica.", "Desactivar suavizado" if settings["antialiasing"] else "Activar suavizado", _toggle_antialiasing, "Suavizado activado" if settings["antialiasing"] else "Suavizado desactivado"],
+		["PerformanceOption", "Rendimiento", "Bajo consumo reduce partículas y halos y limita la animación a 30 FPS. Útil en equipos con menos recursos.", "Usar calidad normal" if settings["low_performance"] else "Activar bajo consumo", _toggle_low_performance, "Bajo consumo" if settings["low_performance"] else "Calidad normal"]
+	]
+	for item in choices:
+		var card := _card(grid)
+		card.name = item[0]
+		card.add_child(_label(item[1], 21))
+		card.add_child(_label(item[2], 14, _current_theme["sub"]))
+		card.add_child(_label("Actual: " + item[5], 14, _current_theme.get("neon", _current_theme["accent"])))
+		_add_button(card, item[3], item[4], true, 40)
+	var text_card := _card(content, true)
+	text_card.name = "TextScaleChoices"
+	text_card.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	text_card.get_parent().custom_minimum_size.x = 620
+	text_card.add_child(_label("Tamaño de las letras", 21))
+	text_card.add_child(_label("Ajusta todo el texto de la interfaz. Las páginas se reorganizan para conservar los controles accesibles.", 14, _current_theme["sub"]))
+	var sample := _label("Así leerás los textos · %d%%" % int(float(settings["font_scale"]) * 100), 18)
+	sample.name = "TextScalePreview"
+	text_card.add_child(sample)
+	var sizes := HFlowContainer.new()
+	sizes.add_theme_constant_override("h_separation", 10)
+	text_card.add_child(sizes)
+	for value in [0.8, 1.0, 1.2]:
+		var button := _add_button(sizes, "%d%%" % int(value * 100), _set_font_scale.bind(value), is_equal_approx(float(settings["font_scale"]), value), 40)
+		button.name = "TextScale%d" % int(value * 100)
+	var pager = find_child("PageNavigator", true, false)
+	pager.page_index = _options_page
+	pager.page_changed.connect(func(index: int, _count: int) -> void: _options_page = index)
+
+
+func _set_font_scale(value: float) -> void:
+	settings["font_scale"] = clampf(value, 0.8, 1.2)
+	_save_settings()
+	_show_options()
 
 
 func _toggle_fullscreen() -> void:
@@ -1526,25 +1547,6 @@ func _toggle_low_performance() -> void:
 	_apply_image_settings()
 	_save_settings()
 	_show_options()
-
-
-func _change_font_scale(value: float, scale_label: Label) -> void:
-	settings["font_scale"] = value
-	scale_label.text = "Tamaño del texto: %d%%" % int(round(value * 100.0))
-	_save_settings()
-	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		_rebuild_options(false)
-
-
-func _rebuild_options(_changed: bool) -> void:
-	_refresh_options.call_deferred()
-
-
-func _refresh_options() -> void:
-	_show_options()
-	var slider := find_child("TextScale", true, false)
-	if slider != null:
-		_focus_control.call_deferred(weakref(slider))
 
 
 func _show_modes() -> void:
@@ -1829,9 +1831,9 @@ func _show_exam() -> void:
 	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
 	var demo := StudyDemo.new()
 	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme)
-	_style_slider(demo.slider)
 	lesson.add_child(demo)
 	var exam := VBoxContainer.new()
+	exam.set_meta("page_atomic", true)
 	exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(exam)
 	exam.add_child(_label(str(current_question["q"]), 19, accent, true))
@@ -1976,36 +1978,35 @@ func _show_simulation_console() -> void:
 	if is_instance_valid(simulation_console):
 		_close_simulation_console()
 		return
-	simulation_console = AcceptDialog.new()
-	simulation_console.title = "Consola de exploración · F10"
-	simulation_console.min_size = Vector2i(760, 500)
-	var box := VBoxContainer.new()
-	simulation_console.add_child(box)
-	var output := RichTextLabel.new()
-	output.custom_minimum_size = Vector2(700, 360)
-	output.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	output.text = SimulationCommands.describe(simulation) + "\n\nEscribe /ayuda para consultar las acciones."
-	box.add_child(output)
+	var page := _make_page("Consola de exploración · F10", "Gestión opcional por comandos. La navegación habitual está en los botones del campus.", _close_simulation_console)
+	simulation_console = page
 	var field := LineEdit.new()
 	field.placeholder_text = "Comando de gestión o /ayuda"
 	_style_input(field)
-	box.add_child(field)
+	page.add_child(field)
+	var output := VBoxContainer.new()
+	output.name = "ConsoleOutput"
+	page.add_child(output)
+	_fill_console_output(output, SimulationCommands.describe(simulation))
 	field.text_submitted.connect(_submit_simulation_command.bind(field, output))
-	simulation_console.confirmed.connect(_close_simulation_console)
-	simulation_console.canceled.connect(_close_simulation_console)
-	add_child(simulation_console)
-	simulation_console.popup_centered_ratio(0.85)
+	_add_button(page, "Ejecutar comando", func() -> void: _submit_simulation_command(field.text, field, output), true, 40)
 	field.grab_focus()
 
 
+func _fill_console_output(output: VBoxContainer, text: String) -> void:
+	for child in output.get_children():
+		output.remove_child(child)
+		child.queue_free()
+	for line in text.split("\n", false):
+		output.add_child(_label(line, 14))
+
+
 func _close_simulation_console() -> void:
-	if is_instance_valid(simulation_console):
-		simulation_console.queue_free()
 	simulation_console = null
 	_show_solo_hub()
 
 
-func _submit_simulation_command(text: String, field: LineEdit, output: RichTextLabel) -> void:
+func _submit_simulation_command(text: String, field: LineEdit, output: VBoxContainer) -> void:
 	var result: Dictionary = SimulationCommands.execute(simulation, text)
 	_save_profile()
 	field.clear()
@@ -2016,7 +2017,7 @@ func _submit_simulation_command(text: String, field: LineEdit, output: RichTextL
 	if simulation.state["graduated"]:
 		var program := Catalog.program_by_id(str(current_profile["program_id"]))
 		_record_completed_career(str(current_profile["program_id"]), str(program.get("title", "Carrera")))
-	output.text = str(result["message"]) + "\n\n" + SimulationCommands.describe(simulation)
+	_fill_console_output(output, str(result["message"]) + "\n\n" + SimulationCommands.describe(simulation))
 
 
 func _show_simulation_activity(kind: String, id: String) -> void:
@@ -2127,3 +2128,18 @@ func _achievement_card(parent: Control, item: Dictionary) -> void:
 	card.add_child(_label(("✦ " if item["unlocked"] else "◇ ") + str(item["title"]), 18, _current_theme.get("accent", GREEN) if item["unlocked"] else _current_theme.get("text", INK)))
 	card.add_child(_label(str(item["description"]), 15, _current_theme.get("sub", INK)))
 	card.add_child(_label("Desbloqueado" if item["unlocked"] else "Pendiente", 14, _current_theme.get("sub", INK)))
+
+
+func _sync_ambient() -> void:
+	var enabled := not _home_art and not _visual_program_id.is_empty()
+	if not is_instance_valid(_ambient):
+		if not enabled:
+			return
+		_ambient = Ambient.new()
+		add_child(_ambient)
+		move_child(_ambient, 0)
+	_ambient.visible = enabled
+	if enabled:
+		_ambient.configure(_current_theme, bool(settings["animations"]), bool(settings.get("low_performance", false)))
+	else:
+		_ambient.set_process(false)

@@ -30,7 +30,7 @@ func _initialize() -> void:
 
 
 func _capture(name: String) -> void:
-	for index in range(4):
+	for index in range(12):
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var output := root.get_texture().get_image()
@@ -91,8 +91,8 @@ func _run() -> void:
 	game.settings["font_scale"] = 1.0
 	game._show_global_achievements()
 	await _capture("13-catalogo-logros")
-	var achievements_scroll: ScrollContainer = game.find_child("PageScroll", true, false)
-	achievements_scroll.scroll_vertical = int(achievements_scroll.get_v_scroll_bar().max_value)
+	var achievements_pages = game.find_child("PageNavigator", true, false)
+	achievements_pages.change_page(achievements_pages.page_offsets.size() - 1)
 	await _capture("14-logros-ocultos")
 	game.queue_free()
 	await process_frame

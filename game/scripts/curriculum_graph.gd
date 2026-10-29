@@ -15,6 +15,12 @@ var font_scale := 1.0
 var animations_enabled := true
 var low_performance := false
 var personal_states: Dictionary = {}
+var carry_subjects: Array[Dictionary] = []
+var display_height := 360.0
+var _auto_fit := true
+var _drag_offset := Vector2.ZERO
+var _drag_start := Vector2.ZERO
+var _drag_moved := false
 var program_id := ""
 var mention_id := ""
 var graph_theme: Dictionary = {}
@@ -44,6 +50,8 @@ func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
 	clip_contents = true
 	set_process(animations_enabled)
+	resized.connect(_fit_after_resize)
+	_add_view_buttons()
 
 
 func _process(delta: float) -> void:
@@ -89,7 +97,21 @@ func _build_semester() -> void:
 		queue_redraw()
 		return
 	var semester: Dictionary = semesters[semester_index]
-	var subjects: Array = semester.get("subjects", [])
+	var subjects: Array = semester.get("subjects", []).duplicate(true)
+	var present := {}
+	var required := {}
+	for subject in subjects:
+		present[str(subject["sigla"])] = true
+		for requirement in subject.get("prereq", []):
+			required[str(requirement)] = true
+	for carried in carry_subjects:
+		if int(carried.get("semester", 1)) < semester_index + 1 and not present.has(str(carried["sigla"])) and not required.has(str(carried["sigla"])):
+			var extra := carried.duplicate(true)
+			extra["retained"] = true
+			subjects.append(extra)
+	var needs_admission := false
+	for subject in subjects:
+		needs_admission = needs_admission or subject.get("prereq", []).has("INGRESO")
 	var prerequisites: Array = []
 	var seen := {}
 	for subject in subjects:
@@ -100,12 +122,12 @@ func _build_semester() -> void:
 				if not source.is_empty():
 					seen[prerequisite] = true
 					prerequisites.append(source)
-	var total_nodes := subjects.size() + prerequisites.size() + (1 if semester_index == 0 else 0)
+	var total_nodes := subjects.size() + prerequisites.size() + (1 if needs_admission else 0)
 	var area_height := maxf(420.0, 120.0 + float(total_nodes) * 32.0) * maxf(font_scale, 1.0)
 	_graph_height = area_height
-	custom_minimum_size = Vector2(0, area_height)
+	custom_minimum_size = Vector2(0, display_height)
 	var index_by_sigla := {}
-	if semester_index == 0:
+	if needs_admission:
 		var root := {
 			"sigla": "INGRESO",
 			"name": "Vía de ingreso",
@@ -135,7 +157,7 @@ func _build_semester() -> void:
 	for index in range(subjects.size()):
 		var item: Dictionary = subjects[index].duplicate(true)
 		item["source"] = false
-		item["semester"] = semester_index + 1
+		item["semester"] = int(item.get("semester", semester_index + 1))
 		item["pos"] = _grid_position(index, subjects.size(), false, area_height)
 		item["color"] = PALETTE[posmod(semester_index, PALETTE.size())]
 		var target_index := visible_nodes.size()
@@ -146,7 +168,14 @@ func _build_semester() -> void:
 				edges.append(Vector2i(source_index, target_index))
 			elif semester_index == 0 and str(requirement) == "INGRESO":
 				edges.append(Vector2i(0, target_index))
+	for node in visible_nodes:
+		for carried in carry_subjects:
+			if node["sigla"] == carried["sigla"]:
+				node["retained"] = true
+				node["semester"] = int(carried.get("semester", 1))
 	_layout_nodes()
+	_auto_fit = true
+	fit_view.call_deferred(false)
 	queue_redraw()
 
 
@@ -232,10 +261,15 @@ func _draw_sphere(index: int) -> void:
 		draw_string(ThemeDB.fallback_font, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), graph_theme["text"])
 	var status := str(personal_states.get(item.get("sigla", ""), ""))
 	if not status.is_empty():
+		if item.get("retained", false):
+			draw_arc(center, radius + 6, 0, TAU, 48, Color("#ffd36a"), 2, true)
+			var retained_label := "RECURSAR · S%d" % int(item.get("semester", 1))
+			draw_string_outline(ThemeDB.fallback_font, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), 3, Color(0, 0, 0, 0.9))
+			draw_string(ThemeDB.fallback_font, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), Color("#ffd36a"))
 		var indicator := glow
 		if status == "Aprobada":
 			indicator = Color("#61ffc4")
-		elif status.contains("Reprobada") or status.contains("recursar"):
+		elif status.contains("Reprobada") or status.to_lower().contains("recurs"):
 			indicator = Color("#ffd36a")
 		elif status == "Bloqueada":
 			indicator = Color("#a0a7bb")
@@ -322,26 +356,29 @@ func _gui_input(event: InputEvent) -> void:
 			zoom_at_center(0.85)
 			accept_event()
 	elif event is InputEventMouseButton:
-		if event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
-			_set_zoom(view_zoom * (1.12 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 0.89), event.position)
-			accept_event()
-		elif event.button_index == MOUSE_BUTTON_LEFT:
+		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				grab_focus()
 				_dragging = _node_at(event.position)
 				_panning = _dragging < 0
+				_drag_start = event.position
+				_drag_moved = false
 				if _dragging >= 0:
 					selected = _dragging
-					subject_selected.emit(str(visible_nodes[selected].get("sigla", "")), visible_nodes[selected].duplicate(true))
+					_drag_offset = (event.position - view_offset) / view_zoom - Vector2(visible_nodes[selected]["pos"])
 			else:
+				if _dragging >= 0 and not _drag_moved:
+					subject_selected.emit(str(visible_nodes[selected]["sigla"]), visible_nodes[selected].duplicate(true))
 				_dragging = -1
 				_panning = false
 			queue_redraw()
 			accept_event()
 	elif event is InputEventMouseMotion:
 		if _dragging >= 0:
-			_move_node(_dragging, (event.position - view_offset) / view_zoom)
+			_drag_moved = _drag_moved or event.position.distance_to(_drag_start) > 4
+			_move_node(_dragging, (event.position - view_offset) / view_zoom - _drag_offset)
 		elif _panning:
+			_auto_fit = false
 			view_offset += event.relative
 		else:
 			hovered = _node_at(event.position)
@@ -439,7 +476,7 @@ func _connection_references() -> void:
 
 func _set_height(value: float) -> void:
 	_graph_height = value
-	custom_minimum_size.y = value
+	custom_minimum_size.y = display_height
 
 
 func _group_layout(groups: Array[Dictionary]) -> void:
@@ -535,8 +572,20 @@ func _try_position(index: int, point: Vector2) -> bool:
 func _move_node(index: int, point: Vector2) -> bool:
 	if reference_layout or index < 0 or index >= visible_nodes.size() or not point.is_finite():
 		return false
-	if not _try_position(index, _inside(point)):
-		return false
+	var start: Vector2 = visible_nodes[index]["pos"]
+	var destination := _inside(point)
+	if not _try_position(index, destination):
+		var low := 0.0
+		var high := 1.0
+		for attempt in range(9):
+			var weight := (low + high) * 0.5
+			if _try_position(index, start.lerp(destination, weight)):
+				low = weight
+			else:
+				high = weight
+		if low < 0.001:
+			_try_position(index, start)
+			return false
 	manual_positions[_layout_key(str(visible_nodes[index]["sigla"]))] = visible_nodes[index]["pos"] / Vector2(graph_width, _graph_height)
 	layout_changed.emit()
 	queue_redraw()
@@ -567,7 +616,8 @@ func zoom_at_center(factor: float) -> void:
 
 func _set_zoom(value: float, anchor: Vector2) -> void:
 	var world := (anchor - view_offset) / view_zoom
-	view_zoom = clampf(value, 0.65, 1.65)
+	_auto_fit = false
+	view_zoom = clampf(value, 0.35, 1.65)
 	view_offset = anchor - world * view_zoom
 	queue_redraw()
 
@@ -605,3 +655,61 @@ func _route_edges() -> bool:
 		return false
 	edge_paths = paths
 	return true
+
+
+func set_display_height(value: float) -> void:
+	var height := clampf(value, 170, 600)
+	if not is_equal_approx(display_height, height):
+		display_height = height
+		custom_minimum_size.y = height
+		fit_view.call_deferred(false)
+
+
+func _fit_after_resize() -> void:
+	if _auto_fit:
+		fit_view.call_deferred(false)
+
+
+func fit_view(overview: bool = true) -> void:
+	if size.x < 10 or size.y < 10:
+		return
+	view_zoom = clampf(minf((size.x - 36) / maxf(graph_width, 1), (size.y - 46) / maxf(_graph_height, 1)), 0.35, 1.0)
+	view_offset = (size - Vector2(graph_width, _graph_height) * view_zoom) * 0.5
+	if not overview and view_zoom < 0.78:
+		view_zoom = 0.78
+		view_offset = Vector2((size.x - graph_width * view_zoom) * 0.5, 22)
+		for node in visible_nodes:
+			if node.get("retained", false):
+				view_offset.y = clampf(size.y * 0.5 - Vector2(node["pos"]).y * view_zoom, minf(22, size.y - _graph_height * view_zoom - 22), 22)
+				break
+	_auto_fit = true
+	queue_redraw()
+
+
+func pan_view(direction: Vector2) -> void:
+	_auto_fit = false
+	view_offset += direction * 65
+	queue_redraw()
+
+
+func _add_view_buttons() -> void:
+	var tools := HBoxContainer.new()
+	tools.name = "GraphPanControls"
+	tools.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	tools.offset_left = -184
+	tools.offset_right = -8
+	tools.offset_top = 8
+	add_child(tools)
+	var commands := [["←", Vector2.RIGHT, "Ver el entorno de la izquierda"], ["→", Vector2.LEFT, "Ver el entorno de la derecha"], ["↑", Vector2.DOWN, "Ver el entorno superior"], ["↓", Vector2.UP, "Ver el entorno inferior"]]
+	for command in commands:
+		var button := Button.new()
+		button.text = command[0]
+		button.tooltip_text = command[2]
+		button.custom_minimum_size = Vector2(38, 34)
+		for state in ["normal", "hover"]:
+			var style := Neon.button(graph_theme, state == "hover", state, low_performance)
+			style.content_margin_left = 6
+			style.content_margin_right = 6
+			button.add_theme_stylebox_override(state, style)
+		button.pressed.connect(pan_view.bind(command[1]))
+		tools.add_child(button)
