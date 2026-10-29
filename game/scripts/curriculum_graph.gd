@@ -38,6 +38,7 @@ var view_zoom := 1.0
 var view_offset := Vector2.ZERO
 var _dragging := -1
 var _panning := false
+var move_branch := false
 var _graph_height := 420.0
 var edge_paths: Array[PackedVector2Array] = []
 var reference_layout := false
@@ -298,6 +299,7 @@ func _radius(index: int) -> float:
 	var source := bool(visible_nodes[index].get("source", false))
 	var depth := 0.94 + 0.10 * float(visible_nodes[index]["pos"].y) / maxf(_graph_height, 1)
 	var degree := 0
+	depth = clampf(depth, 0.94, 1.04)
 	for edge in edges:
 		if edge.x == index:
 			degree += 1
@@ -376,7 +378,11 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		if _dragging >= 0:
 			_drag_moved = _drag_moved or event.position.distance_to(_drag_start) > 4
-			_move_node(_dragging, (event.position - view_offset) / view_zoom - _drag_offset)
+			var destination: Vector2 = (event.position - view_offset) / view_zoom - _drag_offset
+			if move_branch:
+				_move_branch(_dragging, destination)
+			else:
+				_move_node(_dragging, destination)
 		elif _panning:
 			_auto_fit = false
 			view_offset += event.relative
@@ -531,12 +537,20 @@ func _layout_nodes() -> void:
 	_default_positions.clear()
 	for node in visible_nodes:
 		_default_positions.append(node["pos"])
-	# Legacy or resized manual positions are never trusted without validation.
 	if not reference_layout:
+		var restored: Array[Vector2] = []
 		for index in range(visible_nodes.size()):
 			var key := _layout_key(str(visible_nodes[index]["sigla"]))
-			if manual_positions.has(key):
-				_try_position(index, _inside(manual_positions[key] * Vector2(graph_width, _graph_height)))
+			var point: Vector2 = manual_positions.get(key, _default_positions[index] / Vector2(graph_width, _graph_height)) * Vector2(graph_width, _graph_height)
+			restored.append(point)
+			visible_nodes[index]["pos"] = point
+		if not _route_edges():
+			for index in range(visible_nodes.size()):
+				visible_nodes[index]["pos"] = _default_positions[index]
+			_route_edges()
+			for index in range(visible_nodes.size()):
+				if restored[index].is_finite():
+					_try_position(index, restored[index])
 
 
 func _spread_nodes() -> void:
@@ -573,7 +587,7 @@ func _move_node(index: int, point: Vector2) -> bool:
 	if reference_layout or index < 0 or index >= visible_nodes.size() or not point.is_finite():
 		return false
 	var start: Vector2 = visible_nodes[index]["pos"]
-	var destination := _inside(point)
+	var destination := point
 	if not _try_position(index, destination):
 		var low := 0.0
 		var high := 1.0
@@ -628,6 +642,12 @@ func _edge_points(edge: Vector2i, _bend: float = 0.0, _animated: bool = false) -
 
 
 func _route_edges() -> bool:
+	if _route_horizontal():
+		return true
+	return _route_directional()
+
+
+func _route_horizontal() -> bool:
 	var paths: Array[PackedVector2Array] = []
 	for edge in edges:
 		var siblings: Array[int] = []
@@ -657,6 +677,104 @@ func _route_edges() -> bool:
 	return true
 
 
+func _route_directional() -> bool:
+	var paths: Array[PackedVector2Array] = []
+	for edge in edges:
+		var siblings: Array[int] = []
+		var center := Vector2.ZERO
+		for index in range(edges.size()):
+			if edges[index].x == edge.x:
+				siblings.append(index)
+				center += Vector2(visible_nodes[edges[index].y]["pos"])
+		center /= float(siblings.size())
+		var axis := (center - Vector2(visible_nodes[edge.x]["pos"])).normalized()
+		if axis.is_zero_approx():
+			return false
+		var normal := axis.orthogonal()
+		siblings.sort_custom(func(a: int, b: int) -> bool: return Vector2(visible_nodes[edges[a].y]["pos"]).dot(normal) < Vector2(visible_nodes[edges[b].y]["pos"]).dot(normal))
+		var rank := siblings.find(edges.find(edge))
+		var port := lerpf(-0.9, 0.9, float(rank) / float(siblings.size() - 1)) if siblings.size() > 1 else 0.0
+		var start: Vector2 = visible_nodes[edge.x]["pos"] + (axis * sqrt(1.0 - port * port) + normal * port) * (_radius(edge.x) + 3)
+		var finish: Vector2 = visible_nodes[edge.y]["pos"] - axis * (_radius(edge.y) + 5)
+		var distance := (finish - start).dot(axis)
+		if distance < 38:
+			return false
+		var handle := minf(120, distance * 0.38)
+		var control_a := start + axis * handle
+		var control_b := finish - axis * handle
+		var points := PackedVector2Array()
+		for sample in range(33):
+			var t := float(sample) / 32
+			var u := 1 - t
+			points.append(start * u * u * u + control_a * 3 * u * u * t + control_b * 3 * u * t * t + finish * t * t * t)
+		paths.append(points)
+	if not Routing.valid(visible_nodes, edges, paths, _radii()):
+		return false
+	edge_paths = paths
+	return true
+
+
+func _branch(index: int) -> Array[int]:
+	var members: Array[int] = [index]
+	var cursor := 0
+	while cursor < members.size():
+		for edge in edges:
+			var neighbor := edge.y if edge.x == members[cursor] else (edge.x if edge.y == members[cursor] else -1)
+			if neighbor >= 0 and not members.has(neighbor):
+				members.append(neighbor)
+		cursor += 1
+	return members
+
+
+func _move_branch(index: int, point: Vector2) -> bool:
+	if index < 0 or index >= visible_nodes.size() or not point.is_finite():
+		return false
+	var members := _branch(index)
+	var delta := point - Vector2(visible_nodes[index]["pos"])
+	var positions: Array[Vector2] = []
+	for member in members:
+		positions.append(visible_nodes[member]["pos"])
+		visible_nodes[member]["pos"] += delta
+	if not _route_edges():
+		for rank in range(members.size()):
+			visible_nodes[members[rank]]["pos"] = positions[rank]
+		return false
+	_remember_layout()
+	return true
+
+
+func rotate_branch(angle: float) -> bool:
+	if visible_nodes.is_empty():
+		return false
+	var members := _branch(selected if selected >= 0 else 0)
+	var center := Vector2.ZERO
+	for member in members:
+		center += Vector2(visible_nodes[member]["pos"])
+	center /= float(members.size())
+	var positions: Array[Vector2] = []
+	for member in members:
+		positions.append(visible_nodes[member]["pos"])
+		visible_nodes[member]["pos"] = center + (Vector2(visible_nodes[member]["pos"]) - center).rotated(angle)
+	if not _route_edges():
+		for rank in range(members.size()):
+			visible_nodes[members[rank]]["pos"] = positions[rank]
+		return false
+	_remember_layout()
+	return true
+
+
+func _remember_layout() -> void:
+	for node in visible_nodes:
+		manual_positions[_layout_key(str(node["sigla"]))] = Vector2(node["pos"]) / Vector2(graph_width, _graph_height)
+	layout_changed.emit()
+	queue_redraw()
+
+
+func _toggle_branch(button: Button) -> void:
+	move_branch = not move_branch
+	button.text = "Mover: rama" if move_branch else "Mover: esfera"
+
+
 func set_display_height(value: float) -> void:
 	var height := clampf(value, 170, 600)
 	if not is_equal_approx(display_height, height):
@@ -682,6 +800,13 @@ func fit_view(overview: bool = true) -> void:
 			if node.get("retained", false):
 				view_offset.y = clampf(size.y * 0.5 - Vector2(node["pos"]).y * view_zoom, minf(22, size.y - _graph_height * view_zoom - 22), 22)
 				break
+	if overview and not visible_nodes.is_empty():
+		var bounds := Rect2(visible_nodes[0]["pos"], Vector2.ZERO)
+		for node in visible_nodes:
+			bounds = bounds.expand(node["pos"])
+		bounds = bounds.grow(100 * maxf(font_scale, 1))
+		view_zoom = clampf(minf((size.x - 30) / bounds.size.x, (size.y - 70) / bounds.size.y), 0.08, 1.0)
+		view_offset = size * 0.5 - bounds.get_center() * view_zoom + Vector2(0, 18)
 	_auto_fit = true
 	queue_redraw()
 
@@ -693,13 +818,27 @@ func pan_view(direction: Vector2) -> void:
 
 
 func _add_view_buttons() -> void:
-	var tools := HBoxContainer.new()
+	var tools := HFlowContainer.new()
 	tools.name = "GraphPanControls"
 	tools.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	tools.offset_left = -184
+	tools.offset_left = -350
 	tools.offset_right = -8
 	tools.offset_top = 8
 	add_child(tools)
+	var mode := Button.new()
+	mode.text = "Mover: esfera"
+	mode.name = "GraphMoveMode"
+	mode.tooltip_text = "Cambia entre mover una esfera o toda su rama conectada"
+	mode.custom_minimum_size = Vector2(116, 34)
+	mode.pressed.connect(_toggle_branch.bind(mode))
+	tools.add_child(mode)
+	var rotate := Button.new()
+	rotate.text = "↻"
+	rotate.name = "GraphRotateBranch"
+	rotate.tooltip_text = "Girar 30° la rama seleccionada sin perder sus conexiones"
+	rotate.custom_minimum_size = Vector2(38, 34)
+	rotate.pressed.connect(rotate_branch.bind(PI / 6))
+	tools.add_child(rotate)
 	var commands := [["←", Vector2.RIGHT, "Ver el entorno de la izquierda"], ["→", Vector2.LEFT, "Ver el entorno de la derecha"], ["↑", Vector2.DOWN, "Ver el entorno superior"], ["↓", Vector2.UP, "Ver el entorno inferior"]]
 	for command in commands:
 		var button := Button.new()
@@ -713,3 +852,10 @@ func _add_view_buttons() -> void:
 			button.add_theme_stylebox_override(state, style)
 		button.pressed.connect(pan_view.bind(command[1]))
 		tools.add_child(button)
+	for button in [mode, rotate]:
+		button.add_theme_font_size_override("font_size", int(14 * font_scale))
+		for state in ["normal", "hover", "pressed", "focus"]:
+			var style := Neon.button(graph_theme, state != "normal", state, low_performance)
+			style.content_margin_left = 6
+			style.content_margin_right = 6
+			button.add_theme_stylebox_override(state, style)

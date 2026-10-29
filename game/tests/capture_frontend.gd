@@ -94,6 +94,22 @@ func _run() -> void:
 	var achievements_pages = game.find_child("PageNavigator", true, false)
 	achievements_pages.change_page(achievements_pages.page_offsets.size() - 1)
 	await _capture("14-logros-ocultos")
+	game.current_profile = {}
+	game.simulation = null
+	game._show_career_story()
+	game.career_story_ui.player_name = "Alex"
+	game.career_story_ui.show_setup()
+	await _capture("15-historia-configuracion")
+	game.career_story_ui.create_story(2)
+	await _capture("16-historia-capitulo")
+	game.career_story_ui.show_graph()
+	await _capture("17-historia-grafo")
+	var story_graph = game.find_child("StoryCurriculumGraph", true, false)
+	story_graph.rotate_branch(PI / 3)
+	story_graph.fit_view()
+	await _capture("18-historia-grafo-girado")
+	game.career_story_ui.show_summary()
+	await _capture("19-historia-desenlace")
 	game.queue_free()
 	await process_frame
 	quit(0)

@@ -34,6 +34,18 @@ game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --expor
 - **Identidad visual:** Sistemas azul e Informática roja; fondos oscuros temáticos para las cinco menciones, grafos, ecuaciones y controles con resplandor neón. Detalle en `docs/DISENO_VISUAL_CAMPUS.md`.
 - **Sin audio.** Solo local.
 
+## Historia demostrativa
+
+En el menú, **Historia de una carrera** permite generar un recorrido ficticio
+con nombre, carrera, mención y enfoque. Incluye resultados aleatorios,
+recuperación de materias, auxiliatura y titulación, con capítulos, grafos y
+modelos didácticos. No cambia partidas ni logros. El nombre personaliza el
+relato y no predice rendimiento. Detalles y análisis de mejoras en
+`docs/MODULO_HISTORIA_CARRERA.md`.
+
+Los grafos permiten **Mover: esfera/rama**, giro de rama con **↻**, cámara,
+zoom y encuadre de toda la distribución, conservando la protección de aristas.
+
 ## Estructura
 
 ```text

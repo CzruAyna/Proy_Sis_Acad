@@ -7,6 +7,7 @@ const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
 const SimulationProcedures = preload("res://scripts/simulation_procedures.gd")
 const SimulationSaveStore = preload("res://scripts/simulation_save_store.gd")
+const CareerStoryUI = preload("res://scripts/career_story_ui.gd")
 const SAVE_DIR := "user://partidas"
 const SAVE_COUNT := 3
 const GLOBAL_PROFILE_PATH := "user://perfil_global.json"
@@ -100,6 +101,7 @@ const Ambient = preload("res://scripts/mention_ambient.gd")
 var _ambient: TextureRect
 var _options_page := 0
 var campus_ui: RefCounted
+var career_story_ui: RefCounted
 var _campus_section := "resumen"
 var _save_feedback := ""
 var _save_failed := false
@@ -983,7 +985,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	margin.name = "PageMargin"
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(margin)
-	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios"]
+	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios", "Grafo de la historia"]
 	var maximum_width := 1100.0 if graph_workspace else 880.0
 	var resize_page := func() -> void:
 		var side := maxi(24, int((size.x - maximum_width) * 0.5))
@@ -1363,6 +1365,7 @@ func _show_main() -> void:
 		_add_menu_button(menu, "Continuar mi recorrido", _open_slot.bind(recent, "solo"), true, 48)
 	var play_button := _add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 46)
 	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 42)
+	_add_menu_button(menu, "Historia de una carrera", _show_career_story, false, 43).name = "CareerStoryEntry"
 	play_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	play_button.custom_minimum_size.x = 0
 	var options_button := _add_menu_button(menu, "Opciones", _show_options, false, 43)
@@ -1410,6 +1413,12 @@ func _home_panel_style() -> StyleBoxFlat:
 	style.shadow_size = 18
 	style.shadow_offset = Vector2.ZERO
 	return style
+
+
+func _show_career_story() -> void:
+	if career_story_ui == null:
+		career_story_ui = CareerStoryUI.new(self)
+	career_story_ui.show_setup()
 
 
 func _activate_menu_backdrop() -> void:

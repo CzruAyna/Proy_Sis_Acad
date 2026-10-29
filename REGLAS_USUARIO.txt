@@ -44,3 +44,9 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
    dibujar ventanas, paneles de aplicación ni rótulos detrás de los controles.
    Las tarjetas de contenido deben ser opacas y las acciones agruparse según
    su función, sin mezclar una ficha seleccionada con listas ajenas.
+
+9. HISTORIA DEMOSTRATIVA Y MOVIMIENTO, indicada el 29/10/2026.
+   Ampliar la libertad de movimiento de los grafos. Crear un módulo separado
+   que simule aleatoriamente el recorrido completo de una carrera, con nombre,
+   historia, excelencia posible, aplazos, procesos, grafos y temas explorados.
+   Usar la idea de suerte y variación sin incluir mecánicas de gacha.

@@ -80,6 +80,14 @@ func _run() -> void:
 	graph.reset_layout()
 	_check(graph.manual_positions.is_empty() and graph.view_offset == Vector2.ZERO and graph.view_zoom == 1, "Restablecer recupera el encuadre y la distribución")
 	_check(graph.visible_nodes[1]["pos"].is_equal_approx(original), "Restablecer recupera la posición inicial")
+	_check(graph.rotate_branch(PI / 3), "Gira una rama manteniendo las conexiones")
+	_check(graph._move_branch(0, Vector2(graph.visible_nodes[0]["pos"]) + Vector2(650, 350)), "Traslada una rama completa fuera del área inicial")
+	var moved: Vector2 = graph.visible_nodes[1]["pos"]
+	graph.move_semester(1)
+	graph.move_semester(-1)
+	_check(Vector2(graph.visible_nodes[1]["pos"]).is_equal_approx(moved), "Conserva conjuntamente las posiciones giradas y trasladadas al volver")
+	graph.reset_layout()
+	_check(Vector2(graph.visible_nodes[1]["pos"]).is_equal_approx(original), "Restablecer también recupera una rama girada")
 	_check(graph.clip_contents and not graph.is_processing(), "El zoom no desborda y la reducción de movimiento se respeta")
 	graph.queue_free()
 	await process_frame

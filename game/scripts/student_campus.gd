@@ -699,7 +699,7 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	reset.custom_minimum_size.x = 136
 	for button in [previous, next, zoom_out, zoom_in, fit, reset]:
 		button.size_flags_horizontal = Control.SIZE_FILL
-	_text(workspace, "Mueve esferas o el fondo. Usa −/+ y las flechas de la vista. Ámbar: materia pendiente de recursar. Los cruces se bloquean.", 13, true)
+	_text(workspace, "Mueve esferas, ramas completas o el fondo. ↻ gira la rama seleccionada; −/+ cambia el zoom. Ámbar: recursar. Se protegen las conexiones.", 13, true)
 	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	graph.name = "ExpandedCurriculumGraph"
 	workspace.add_child(graph)
