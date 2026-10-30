@@ -14,6 +14,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Simulación individual](SIMULACION_ESTUDIANTE.md) | Reglas y estados del recorrido individual en Godot. |
 | [Diseño visual](DISENO_VISUAL_CAMPUS.md) | Identidad, grafos, navegación y comportamiento visual acordados. |
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
+| [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Avances por fecha, commits de referencia y cambios todavía sin commit. |
 
 ## Especificación y coordinación
 
@@ -26,6 +27,8 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Pendientes de frontend y simulación](PENDIENTES_FRONTEND_SIMULACION.md) | Coordinación y asuntos pendientes para el responsable de interfaz y motor. |
 | [Datos y fuentes para backend](PARA_BACKEND_DATOS_Y_FUENTES.txt) | Fuentes originales que faltan y aspectos institucionales por verificar. |
 | [Roadmap](ROADMAP.md) | Fases previstas en el documento de planificación. |
+| [Guía de documentación](GUIA_DOCUMENTACION.md) | Criterios para documentar decisiones, cambios, comprobaciones y pendientes. |
+| [Código libre y licencia](LICENCIA_CODIGO_LIBRE.md) | GPLv3 o posterior para el código original, derechos de terceros y revisiones pendientes. |
 
 Las reglas permanentes del usuario y el procedimiento obligatorio para agentes
 están en [`../REGLAS_USUARIO.txt`](../REGLAS_USUARIO.txt) y

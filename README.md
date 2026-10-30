@@ -54,7 +54,26 @@ sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 - [Reglas de la simulación individual](docs/SIMULACION_ESTUDIANTE.md)
 - [Identidad visual y navegación](docs/DISENO_VISUAL_CAMPUS.md)
 - [Información institucional y fuentes pendientes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
+- [Guía de documentación](docs/GUIA_DOCUMENTACION.md)
+- [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md)
+- [Licencia y libertades del código](docs/LICENCIA_CODIGO_LIBRE.md)
 
 Antes de modificar el proyecto, cualquier agente debe leer `AGENTS.md` y el
 registro completo `REGLAS_USUARIO.txt`. La información institucional pendiente
 de verificación no debe presentarse como normativa oficial.
+
+## Licencia
+
+Copyright (C) 2026 José Gabriel Cruz Choque.
+
+El código original y la documentación técnica propia de CAMPUS EN JUEGO se
+distribuyen bajo la **GNU General Public License, versión 3 o cualquier versión
+posterior** (`GPL-3.0-or-later`). Se permite usar, estudiar, modificar y
+redistribuir el proyecto. Al redistribuir versiones derivadas deben conservarse
+las condiciones de copyleft aplicables y facilitarse el código fuente
+correspondiente según la licencia. El software se ofrece sin garantía.
+
+El texto completo está en [LICENSE](LICENSE). Las dependencias, el motor y
+los recursos de terceros conservan sus licencias y avisos. El alcance, las
+fuentes oficiales y las verificaciones pendientes están en la
+[guía de licencia](docs/LICENCIA_CODIGO_LIBRE.md).

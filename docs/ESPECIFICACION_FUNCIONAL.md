@@ -1,5 +1,14 @@
 # ENUNCIADO MAESTRO v2.0 — Sistema de Gestión Académica Open Source
 
+> **Alcance histórico — revisión del 30/10/2026.** Este enunciado conserva la
+> especificación de la etapa del sistema académico web. Las instrucciones
+> vigentes para trabajar en el repositorio son [AGENTS.md](../AGENTS.md) y
+> [REGLAS_USUARIO.txt](../REGLAS_USUARIO.txt). El producto principal es el
+> juego Godot; sus reglas se describen en
+> [SIMULACION_ESTUDIANTE.md](SIMULACION_ESTUDIANTE.md). La denominación
+> «fuente única» del texto original corresponde a aquella etapa y no
+> sustituye las reglas permanentes actuales.
+
 > Documento de especificación funcional y técnica. Es la fuente única de verdad del proyecto.
 > El desarrollo es 100% LOCAL, SIN Docker. El código no lleva comentarios.
 > Los tests referencian los IDs de reglas de negocio (R1–R13) documentados en docs/REGLAS_NEGOCIO.md.

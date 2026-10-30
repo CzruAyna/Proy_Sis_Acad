@@ -50,3 +50,34 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
    que simule aleatoriamente el recorrido completo de una carrera, con nombre,
    historia, excelencia posible, aplazos, procesos, grafos y temas explorados.
    Usar la idea de suerte y variación sin incluir mecánicas de gacha.
+
+10. DOCUMENTACIÓN MANTENIBLE, indicada el 30/10/2026.
+    La documentación técnica del repositorio se escribe en Markdown y se
+    enlaza desde README.md o docs/README.md. Explicar cambios, motivos,
+    archivos afectados, comprobaciones y pendientes con evidencia concreta.
+    Separar el estado vigente de los análisis históricos. La memoria LaTeX
+    solicitada aparte permanece fuera del repositorio y no sustituye estas
+    guías. Mantener un registro por fecha y commits, sin inventar avances,
+    tiempos de trabajo, resultados de pruebas ni decisiones del autor.
+
+11. CÓDIGO LIBRE, indicada el 30/10/2026.
+    El código original y la documentación propia deben conservar libertades
+    de uso, estudio, modificación y redistribución, con copyleft. La licencia
+    vigente y su alcance se documentan en LICENSE y
+    docs/LICENCIA_CODIGO_LIBRE.md. No introducir licencias privativas ni
+    restricciones adicionales que anulen esas libertades. Conservar los
+    avisos y licencias de terceros; no atribuir derechos sobre documentos,
+    imágenes o datos institucionales sin comprobar su procedencia.
+
+12. CIERRE CON SUMMARY, indicada el 30/10/2026.
+    Dar siempre en la respuesta final un título del summary breve y concreto.
+    Explicar qué se modificó y por qué, qué comprobaciones se realizaron y qué
+    quedó sin verificar. No presentar una prueba propuesta como ejecutada.
+    Antes de cerrar cambios, releer completo este registro y revisar el diff.
+
+13. NUEVAS REGLAS Y COORDINACIÓN, indicada el 30/10/2026.
+    Incorporar nuevas instrucciones expresas de forma acumulativa, sin borrar
+    ni relajar las anteriores. Distinguir una regla del usuario de una decisión
+    técnica de implementación. Registrar en docs/ los pendientes y el área
+    responsable; no modificar backend o reglas académicas para resolver
+    documentación o presentación.

@@ -28,3 +28,20 @@ en Markdown y se enlaza desde `README.md` o `docs/README.md` cuando corresponda.
 No incluir en los archivos del proyecto instrucciones para subir, publicar o
 empujar cambios a GitHub o GitHub Desktop. Esas indicaciones se entregan solo
 por el chat cuando el usuario las solicite.
+
+## Documentación y código libre
+
+Aplicar la [guía de documentación](docs/GUIA_DOCUMENTACION.md) al crear o
+actualizar guías, bitácoras y documentos de coordinación. Conservar la
+distinción entre estado actual, historial comprobable y pendientes.
+
+El código original y la documentación propia se ofrecen bajo
+`GPL-3.0-or-later`, según `LICENSE` y
+[`docs/LICENCIA_CODIGO_LIBRE.md`](docs/LICENCIA_CODIGO_LIBRE.md). No sustituir
+las licencias de terceros ni agregar restricciones privativas al código
+original. Revisar la procedencia y condiciones de los recursos incorporados.
+
+Toda respuesta final debe comenzar con el título del summary del trabajo y
+explicar cambios, motivo, comprobaciones realizadas y asuntos sin verificar.
+El título se entrega por el chat; no implica crear un commit ni realizar una
+operación remota.
