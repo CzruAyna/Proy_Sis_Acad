@@ -1,40 +1,60 @@
-# Sistema de Gestión Académica
+# CAMPUS EN JUEGO
 
-Monorepo para un sistema de gestión académica universitaria. El proyecto prioriza la libertad del estudiante para organizar su horario, el control de cupos, las reglas de avance curricular y la generación de documentos institucionales.
+Juego de escritorio educativo desarrollado con Godot. La experiencia principal
+permite explorar carreras de Ingeniería, cursar materias, resolver actividades,
+gestionar trámites simulados y avanzar por auxiliatura y graduación. El progreso
+de las partidas y los logros se guardan localmente en el equipo.
 
-El desarrollo se realiza de forma local, sin Docker. El núcleo académico ya cuenta con modelos para carreras, planes de estudio, materias, prerrequisitos y periodos; estos datos se administran desde Django y se consultan desde la interfaz mediante la API.
+Este repositorio también conserva una API académica en Django y una interfaz
+web en Next.js. Son componentes separados del juego Godot: la partida de
+escritorio no necesita PostgreSQL ni se conecta a la API.
 
-## Tecnologías previstas
+## Inicio rápido
 
-| Componente | Tecnología |
-|---|---|
-| API | Django 5, Django REST Framework y SimpleJWT |
-| Base de datos | PostgreSQL 16 |
-| Interfaz | Next.js 14, React y TypeScript |
-| Estilos | Tailwind CSS |
-| Documentos | LaTeX con `latexmk` (fase posterior) |
+Para ejecutar el juego desde el proyecto se necesita Godot 4.7.2:
 
-## Estructura
-
-```text
-backend/          API Django y módulos de dominio
-frontend/         Aplicación Next.js
-docs/             Especificación, reglas y modelo de datos
-latex-templates/  Plantillas institucionales (fase posterior)
+```powershell
+godot --path game
 ```
 
-## Núcleo académico
+Para generar la versión de Windows, hay que tener instaladas las plantillas de
+exportación de la misma versión de Godot y usar el preset `Windows Desktop`:
 
-El catálogo conecta carreras con sus planes de estudio y materias. Las materias pueden declarar prerrequisitos o corequisitos; el sistema evita relaciones duplicadas, autorreferencias y ciclos en la malla. Los periodos académicos incluyen semestres ordinarios, anuales, verano, invierno y mesas. La oferta académica permite administrar aulas, docentes habilitados, paralelos y sesiones semanales, y publica los paralelos abiertos desde la API.
+```powershell
+godot --headless --path game --export-release "Windows Desktop" "game/build/CAMPUS EN JUEGO.exe"
+```
 
-La API publica las consultas de carreras, mallas, materias, periodos y paralelos abiertos. La portada consume estos endpoints y presenta planes, materias agrupadas por semestre, requisitos y oferta semanal de paralelos, con cupos actuales. Las inscripciones autenticadas permiten que cada estudiante reserve un asiento, pase al siguiente paralelo cuando el elegido se llena y retire su propia inscripción.
+La exportación crea el ejecutable y su archivo `.pck`. Ambos deben permanecer
+juntos para iniciar el juego. `game/build/` es una carpeta local ignorada por
+Git, por lo que los binarios generados no forman parte del código fuente.
 
-La portada incluye un acceso para estudiantes que permite consultar sus inscripciones, inscribirse en paralelos disponibles y retirarse de una materia.
+Los requisitos detallados para el juego, Django y Next.js están en
+[`docs/DESARROLLO_LOCAL.md`](docs/DESARROLLO_LOCAL.md).
 
-El panel docente permite cargar calificaciones de sus paralelos y cerrar actas completas. Una vez cerradas, las notas quedan bloqueadas; las correcciones administrativas requieren motivo y referencia de trámite y se conservan en auditoría.
+## Estructura del repositorio
 
-El contenido original del proyecto se ofrece bajo la [Licencia de Uso Libre SGA 1.0](LICENSE). Los componentes de terceros mantienen sus propias condiciones.
+```text
+AGENTS.md             Instrucciones permanentes para agentes del proyecto
+REGLAS_USUARIO.txt    Reglas acumuladas expresadas por el usuario
+backend/              API académica Django y PostgreSQL
+frontend/             Interfaz web Next.js
+game/                 Juego de escritorio Godot, sus datos y pruebas
+docs/                 Arquitectura, reglas, diseño y coordinación
+.env.example          Plantilla local de configuración
+```
 
-## Documentación del proyecto
+El código de Godot es el producto principal. La API y el sitio web mantienen
+sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 
-La especificación funcional está en [`docs/ESPECIFICACION_FUNCIONAL.md`](docs/ESPECIFICACION_FUNCIONAL.md). Las reglas están resumidas en [`docs/REGLAS_NEGOCIO.md`](docs/REGLAS_NEGOCIO.md), las entidades en [`docs/MODELO_DATOS.md`](docs/MODELO_DATOS.md) y las fases previstas en [`docs/ROADMAP.md`](docs/ROADMAP.md).
+## Documentación
+
+- [Índice de documentación](docs/README.md)
+- [Arquitectura y componentes](docs/ARQUITECTURA.md)
+- [Desarrollo y compilación local](docs/DESARROLLO_LOCAL.md)
+- [Reglas de la simulación individual](docs/SIMULACION_ESTUDIANTE.md)
+- [Identidad visual y navegación](docs/DISENO_VISUAL_CAMPUS.md)
+- [Información institucional y fuentes pendientes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
+
+Antes de modificar el proyecto, cualquier agente debe leer `AGENTS.md` y el
+registro completo `REGLAS_USUARIO.txt`. La información institucional pendiente
+de verificación no debe presentarse como normativa oficial.

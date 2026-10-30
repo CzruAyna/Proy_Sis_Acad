@@ -1,24 +1,28 @@
 # CAMPUS EN JUEGO
 
-Juego de escritorio para Windows hecho con Godot 4.7 (GDScript). Simula el recorrido individual de un estudiante por la carrera: materias, trámites, auxiliatura y graduación.
+Juego de escritorio para Windows hecho con Godot 4.7.2 (GDScript). Simula el recorrido individual de un estudiante por la carrera: materias, trámites, auxiliatura y graduación.
 
 El sistema académico Django/Next.js de este repositorio queda separado y no se modifica por este juego.
 
 ## Ejecutar
 
+Desde la raíz del repositorio:
+
 ```powershell
-game\.tools\Godot_v4.7.2-stable_win64_console.exe --path game
+godot --path game
 ```
 
 Versión exportada: `game/build/CAMPUS EN JUEGO.exe`.
 
 ## Exportar
 
+También desde la raíz del repositorio:
+
 ```powershell
-$env:APPDATA = "game\.tools\editor-profile\Roaming"
-$env:LOCALAPPDATA = "game\.tools\editor-profile\Local"
-game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --export-release "Windows Desktop" "build/CAMPUS EN JUEGO.exe"
+godot --headless --path game --export-release "Windows Desktop" "game/build/CAMPUS EN JUEGO.exe"
 ```
+
+Requisitos y pasos completos en [`../docs/DESARROLLO_LOCAL.md`](../docs/DESARROLLO_LOCAL.md).
 
 ## Estado
 
@@ -30,7 +34,7 @@ game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --expor
 - **Campus gráfico:** navegación común entre materias, malla, trámites, historial, auxiliatura y graduación. La matrícula, los documentos, las solicitudes y las defensas se realizan con botones y formularios.
 - **Exploración:** F10 conserva una consola opcional; `/desbloquear todo` habilita las materias sin aprobarlas automáticamente. No hace falta utilizar comandos para el recorrido normal.
 - **Guardado:** tres espacios individuales, archivo temporal y respaldo `.bak`; se migran las materias conocidas de partidas antiguas sin inventar sus notas. Los archivos multijugador anteriores se conservan sin cargarlos como modo jugable.
-- **Interfaz:** contenido desplazable con navegación y regreso visibles, columnas adaptables, texto 80–120%, repaso libre, malla con estados y teclado, y modelos interactivos de estudio.
+- **Interfaz:** contenido paginado con botones de navegación y regreso, sin rueda, barras de desplazamiento ni deslizadores; incluye columnas adaptables, texto 80–120%, repaso libre, malla con estados y teclado, y modelos interactivos de estudio.
 - **Identidad visual:** Sistemas azul e Informática roja; fondos oscuros temáticos para las cinco menciones, grafos, ecuaciones y controles con resplandor neón. Detalle en `docs/DISENO_VISUAL_CAMPUS.md`.
 - **Sin audio.** Solo local.
 
@@ -75,8 +79,10 @@ Las reglas están en `docs/SIMULACION_ESTUDIANTE.md`. La integración gráfica y
 
 ## Verificar la interfaz
 
+Desde la raíz y con Godot disponible en `PATH`:
+
 ```powershell
-game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --script res://tests/test_frontend_campus.gd
+godot --headless --path game --script res://tests/test_frontend_campus.gd
 ```
 
 La prueba usa partidas ficticias y no lee ni escribe las partidas del jugador. `tests/capture_frontend.gd` genera capturas con el renderizador real, también con datos aislados, en `game/.test-artifacts/frontend/`. Necesita un entorno gráfico; no se ejecuta con `--headless`.

@@ -12,3 +12,19 @@ para el responsable correspondiente.
 Para trabajo de backend o de datos institucionales, leer también
 `docs/PARA_BACKEND_DATOS_Y_FUENTES.txt` y registrar qué fuentes originales,
 documentos e imágenes necesita aportar el usuario y qué falta verificar.
+
+## Recordatorio obligatorio al cerrar cambios
+
+Antes de finalizar cualquier tarea que modifique archivos, volver a leer
+completo `REGLAS_USUARIO.txt` y revisar el diff contra todas sus reglas. Esto
+se aplica a cualquier tipo de trabajo, incluidos `feat`, `fix`, `refactor`,
+`docs`, `chore`, `ci` y cambios similares. Si una regla no se pudo cumplir,
+explicarlo y dejar el pendiente para el responsable indicado en `docs/`.
+
+La respuesta final debe indicar qué se modificó, qué comprobaciones se
+realizaron y qué quedó sin verificar. La documentación del proyecto se escribe
+en Markdown y se enlaza desde `README.md` o `docs/README.md` cuando corresponda.
+
+No incluir en los archivos del proyecto instrucciones para subir, publicar o
+empujar cambios a GitHub o GitHub Desktop. Esas indicaciones se entregan solo
+por el chat cuando el usuario las solicite.
