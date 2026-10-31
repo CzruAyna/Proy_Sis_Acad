@@ -9,6 +9,8 @@ const SimulationCommands = preload("res://scripts/simulation_commands.gd")
 const SimulationProcedures = preload("res://scripts/simulation_procedures.gd")
 const SimulationSaveStore = preload("res://scripts/simulation_save_store.gd")
 const CareerStoryUI = preload("res://scripts/career_story_ui.gd")
+const ExplorationUI = preload("res://scripts/campus_exploration_ui.gd")
+const GAME_LOGO = preload("res://assets/branding/sis_inf_logo.png")
 const SAVE_DIR := "user://partidas"
 const SAVE_COUNT := 3
 const GLOBAL_PROFILE_PATH := "user://perfil_global.json"
@@ -19,7 +21,7 @@ const GREEN := Color("#526b57")
 const GOLD := Color("#b77a43")
 const NEUTRAL_THEME := {"bg": Color("#101216"), "panel": Color("#1b1f25"), "accent": Color("#56636d"), "text": Color("#ece9e2"), "sub": Color("#a2a8ad"), "grid": Color("#30353b")}
 const NEON_THEME := {"bg": Color("#050713"), "panel": Color("#0b1322"), "accent": Color("#42eaff"), "text": Color("#e9fbff"), "sub": Color("#adc4d5"), "grid": Color("#18324a")}
-const HOME_NAME := "CAMPUS EN JUEGO"
+const HOME_NAME := "SIS-INF"
 const HOME_CURVE_DURATION := 5.5
 const HOME_VISIBLE_FORMULAS := 24
 const HOME_FORMULAS := [
@@ -103,6 +105,7 @@ var _ambient: TextureRect
 var _options_page := 0
 var campus_ui: RefCounted
 var career_story_ui: RefCounted
+var exploration_ui: RefCounted
 var _campus_section := "resumen"
 var _save_feedback := ""
 var _save_failed := false
@@ -145,6 +148,7 @@ var _pixel_disc_texture: ImageTexture
 
 
 func _ready() -> void:
+	get_tree().auto_accept_quit = false
 	random.randomize()
 	_load_settings()
 	_load_global_profile()
@@ -152,6 +156,7 @@ func _ready() -> void:
 	_use_menu_theme()
 	get_window().min_size = Vector2i(900, 640)
 	_apply_image_settings()
+	DisplayServer.set_icon(GAME_LOGO.get_image())
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings["fullscreen"] else DisplayServer.WINDOW_MODE_WINDOWED)
 	_show_main()
 	queue_redraw()
@@ -840,6 +845,8 @@ func _use_menu_theme() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
+	elif what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_exit_game()
 
 
 func _input(event: InputEvent) -> void:
@@ -1008,7 +1015,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	margin.name = "PageMargin"
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(margin)
-	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios", "Grafo de la historia"]
+	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios", "Grafo de la historia", "Explorar FNI", "Mapa del campus", "Plano aportado"]
 	var maximum_width := 1100.0 if graph_workspace else 880.0
 	var resize_page := func() -> void:
 		var side := maxi(24, int((size.x - maximum_width) * 0.5))
@@ -1068,6 +1075,9 @@ func _show_campus_section(section: String) -> void:
 		_show_solo_slots()
 		return
 	_campus_section = section
+	if section == "exploracion":
+		_show_exploration()
+		return
 	if section == "malla":
 		_show_curriculum_graph(str(current_profile["program_id"]), true)
 	else:
@@ -1080,7 +1090,7 @@ func _add_campus_navigation(parent: Control) -> void:
 	navigation.add_theme_constant_override("h_separation", 6)
 	navigation.add_theme_constant_override("v_separation", 6)
 	parent.add_child(navigation)
-	var sections := [["resumen", "Mi campus"], ["materias", "Materias"], ["malla", "Malla"], ["tramites", "Trámites"], ["historial", "Historial"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]
+	var sections := [["resumen", "Mi campus"], ["exploracion", "Explorar FNI"], ["materias", "Materias"], ["malla", "Malla"], ["tramites", "Trámites"], ["historial", "Historial"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]
 	for section in sections:
 		var button := _add_button(navigation, section[1], _show_campus_section.bind(section[0]), _campus_section == section[0], 38)
 		button.custom_minimum_size.x = maxf(100, NeonVisuals.PIXEL_FONT.get_string_size(section[1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * float(settings["font_scale"]))).x + 42)
@@ -1290,9 +1300,21 @@ func _show_main() -> void:
 	var menu: VBoxContainer = menu_pages.content
 	var eyebrow := _label("SISTEMAS · INFORMÁTICA · TU RECORRIDO", 12, Color("#8ff5ff"))
 	menu.add_child(eyebrow)
+	var branding := HBoxContainer.new()
+	branding.add_theme_constant_override("separation", 16)
+	menu.add_child(branding)
+	var logo := TextureRect.new()
+	logo.name = "SisInfLogo"
+	logo.texture = GAME_LOGO
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.custom_minimum_size = Vector2(64, 64)
+	logo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	branding.add_child(logo)
 	var title := _label(HOME_NAME, 32, Color("#f4fdff"))
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	menu.add_child(title)
+	branding.add_child(title)
 	menu.add_child(_label("Explora tu carrera, elige tus materias y vive las decisiones del campus.", 15, Color("#c6d0d4")))
 	var menu_gap := Control.new()
 	menu_gap.custom_minimum_size.y = 5
@@ -1304,6 +1326,7 @@ func _show_main() -> void:
 		_add_menu_button(menu, "Continuar mi recorrido", _open_slot.bind(recent, "solo"), true, 48)
 	var play_button := _add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 46)
 	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 42)
+	_add_menu_button(menu, "Explorar la facultad", _show_exploration, false, 43).name = "ExplorationEntry"
 	_add_menu_button(menu, "Historia de una carrera", _show_career_story, false, 43).name = "CareerStoryEntry"
 	play_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	play_button.custom_minimum_size.x = 0
@@ -1345,6 +1368,12 @@ func _home_panel_style() -> PixelStyle:
 	style.content_margin_top = 17
 	style.content_margin_bottom = 17
 	return style
+
+
+func _show_exploration() -> void:
+	if exploration_ui == null:
+		exploration_ui = ExplorationUI.new(self)
+	exploration_ui.open()
 
 
 func _show_career_story() -> void:
@@ -1877,6 +1906,8 @@ func _read_save(slot: int, mode: String) -> Dictionary:
 
 func _save_profile() -> void:
 	_save_failed = false
+	if exploration_ui != null:
+		exploration_ui.capture()
 	if current_profile.is_empty() or active_slot < 1 or active_slot > SAVE_COUNT:
 		return
 	current_profile["updated_at"] = Time.get_datetime_string_from_system()

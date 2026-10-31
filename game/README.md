@@ -1,4 +1,4 @@
-# CAMPUS EN JUEGO
+# SIS-INF
 
 Juego de escritorio para Windows hecho con Godot 4.7.2 (GDScript). Simula el recorrido individual de un estudiante por la carrera: materias, trámites, auxiliatura y graduación.
 
@@ -12,14 +12,14 @@ Desde la raíz del repositorio:
 godot --path game
 ```
 
-Versión exportada: `game/build/CAMPUS EN JUEGO.exe`.
+Versión exportada: `game/build/SIS-INF.exe`.
 
 ## Exportar
 
 También desde la raíz del repositorio:
 
 ```powershell
-godot --headless --path game --export-release "Windows Desktop" "game/build/CAMPUS EN JUEGO.exe"
+godot --headless --path game --export-release "Windows Desktop" "build/SIS-INF.exe"
 ```
 
 Requisitos y pasos completos en [`../docs/DESARROLLO_LOCAL.md`](../docs/DESARROLLO_LOCAL.md).
@@ -37,6 +37,19 @@ Requisitos y pasos completos en [`../docs/DESARROLLO_LOCAL.md`](../docs/DESARROL
 - **Interfaz:** contenido paginado con botones de navegación y regreso, sin rueda, barras de desplazamiento ni deslizadores; incluye columnas adaptables, texto 80–120%, repaso libre, malla con estados y teclado, y modelos interactivos de estudio.
 - **Identidad visual:** Sistemas azul e Informática roja; fondos oscuros temáticos para las cinco menciones, grafos, ecuaciones y controles con resplandor neón. Detalle en `docs/DISENO_VISUAL_CAMPUS.md`.
 - **Sin audio.** Solo local.
+
+## Exploración espacial
+
+**Explorar la facultad** abre el campus pixel art con nombre obligatorio.
+WASD o flechas mueven al personaje; Shift permite correr; E interactúa con
+puertas y tableros. P abre progreso y M el mapa. Desde una partida también
+se accede con **Explorar FNI** y **Caminar por la FNI**; posición y visitas
+se guardan junto con el perfil. La visita libre dura la sesión.
+
+El plano y el logo fueron aportados por el usuario. Los interiores son
+recreaciones y quedan pendientes de referencias reales. Los controles,
+recordatorios de decoración, fuentes y pendientes se detallan en
+[Exploración FNI](../docs/EXPLORACION_FNI.md).
 
 ## Historia demostrativa
 

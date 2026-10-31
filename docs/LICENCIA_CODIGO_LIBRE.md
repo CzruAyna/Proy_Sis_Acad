@@ -67,6 +67,13 @@ derechos que el autor no tenga sobre ese material.
 
 ## Revisiones pendientes
 
+El 30/10/2026 se incorporaron el logo `images (3).jfif` (convertido a PNG)
+y el plano `AULAS-FNI.jpg` por encargo expreso del usuario para SIS-INF.
+Su procedencia inmediata, hashes, preparación y derechos pendientes se
+registran en [Exploración FNI](EXPLORACION_FNI.md). Son recursos de terceros:
+no se atribuyen al autor del código ni se relicencian bajo GPL. Falta confirmar
+autor, entidad emisora y condiciones de redistribución pública.
+
 | Área responsable | Pendiente | Evidencia o material necesario | Criterio de cierre |
 |---|---|---|---|
 | Documentación y autor | Completar la procedencia de recursos originales y aportados. | Identificación del autor y del origen de cada recurso que se incorpore. | Recursos clasificados como propios o de terceros con condiciones registradas. |

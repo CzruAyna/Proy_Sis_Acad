@@ -1,5 +1,13 @@
 # Integración gráfica de CAMPUS EN JUEGO
 
+Actualización del 30/10/2026: el nombre actual es **SIS-INF** y se añadió
+[Exploración FNI](EXPLORACION_FNI.md). El estado espacial se mantiene separado
+de la simulación académica. Frontend/arte debe completar interiores con fotos
+autorizadas; backend/datos debe verificar aulas, accesos y la relación entre
+oficinas o aulas y actividades. El mapa de la sede del centro no se recibió.
+La guía enlazada registra la procedencia y los derechos pendientes del plano
+y del logo, las decisiones de adaptación y los criterios para cerrar tareas.
+
 Actualizado: 29 de octubre de 2026. Las tareas temporales del contrato original se consumieron e implementaron. Este archivo conserva el punto de coordinación con la sesión del motor. Leer primero `REGLAS_USUARIO.txt` y, para datos institucionales, `docs/PARA_BACKEND_DATOS_Y_FUENTES.txt`.
 
 ## Estado implementado

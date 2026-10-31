@@ -323,3 +323,62 @@ Se amplió la regla 12 de `REGLAS_USUARIO.txt` y se armonizaron `AGENTS.md` y
 [Guía de documentación](GUIA_DOCUMENTACION.md). El título se entrega por chat;
 no implica crear un commit. La revisión corresponde a documentación y no
 modifica el comportamiento del juego.
+
+## 30 de octubre: SIS-INF y exploración espacial de la FNI
+
+**Estado:** cambios de esta entrega sin commit creado.
+
+Por solicitud del usuario, el juego pasa a llamarse **SIS-INF** y usa el
+emblema aportado en portada e iconos. El JPEG se convirtió a PNG de las mismas
+dimensiones, sin redibujarlo. La ruta anterior de partidas en Windows se
+conserva mediante configuración explícita; cerrar la ventana ejecuta el
+guardado del perfil y mantiene la partida abierta si el guardado falla.
+
+Se añadió un módulo con personaje, WASD/flechas, carrera con Shift, colisiones,
+cámara, interacción con E, mapa y menús de progreso. La adaptación del plano
+aportado contiene 40 bloques y 65 espacios interiores. Se accede como visita
+libre con nombre obligatorio o desde una partida. El estado espacial se guarda
+separado del expediente académico; explorar no concede aprobaciones ni logros.
+
+Los archivos nuevos son `campus_map.gd`, `campus_world.gd`,
+`campus_exploration_ui.gd`, `campus_overview.gd` y el importador del logo.
+`game.gd`, `student_campus.gd`, la configuración y los índices conectan el
+módulo con los recorridos existentes. Se actualizaron las expectativas de
+pruebas sobre el número de accesos: el campus tiene ocho áreas y el inicio
+ocho acciones cuando existe una partida reciente.
+
+Se ejecutaron ocho suites, con **6.305 comprobaciones y cero fallos finales**:
+
+| Suite | Comprobaciones |
+|---|---:|
+| `test_exploration.gd` | 503 |
+| `test_exploration_navigation.gd` | 892 |
+| `test_compact_navigation.gd` | 2.335 |
+| `test_frontend_campus.gd` | 194 |
+| `test_pixel_ui.gd` | 669 |
+| `test_ambient_layout.gd` | 59 |
+| `test_game_integration.gd` | 21 |
+| `test_student_simulation.gd` | 1.632 |
+
+Las pruebas de exploración verifican accesibilidad de todas las puertas desde
+el ingreso, movimiento, interiores, visitas y guardado/recarga con perfiles
+ficticios. Se corrigieron accesos demasiado próximos entre bloques y una
+solicitud de foco diferida sobre un mundo ya retirado. La integración final no
+emite ese error. También se corrigió una declaración duplicada del manejador
+de notificaciones detectada durante compilación, conservando el manejador de
+redimensionado existente.
+
+Se generaron diez capturas reales en `game/.test-artifacts/exploration/` y se
+inspeccionaron inicio, ingreso, Sistemas, interior y ventana compacta al 120%.
+El controlador gráfico recurrió a ANGLE. Se exportaron `SIS-INF.exe` y
+`SIS-INF.pck`; el arranque aislado headless terminó con salida 0 y sin errores
+de scripts. La prueba de arranque no equivale a una partida manual completa.
+
+El funcionamiento, recordatorios de decoración y fuentes están en
+[Exploración FNI](EXPLORACION_FNI.md), enlazado desde los índices. Los interiores,
+puertas y la conexión del recuadro de Básicas son recreaciones/adaptaciones.
+Faltan fotos autorizadas y validación espacial; también procedencia, vigencia y
+condiciones de redistribución del plano y el logo. No se recibió el plano de
+la sede del centro. Esos pendientes corresponden a usuario, frontend/arte y
+backend/datos según la tabla de la guía. Quedan sin probar otras GPU,
+plataformas y una sesión de usabilidad con estudiantes.

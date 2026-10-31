@@ -90,7 +90,7 @@ func _run() -> void:
 	game._show_new_solo()
 	_check(game.find_child("StudentName", true, false).text == "Estudiante de prueba", "Volver de menciones conserva el borrador")
 	game._create_solo_save("sistemas", "gestion_sistemas")
-	_check(game.find_child("CampusNavigation", true, false).get_child_count() == 7, "Siete áreas de navegación común")
+	_check(game.find_child("CampusNavigation", true, false).get_child_count() == 8, "Ocho áreas de navegación común, incluida exploración")
 	game._show_campus_section("materias")
 	_check(game.find_child("SubjectResults", true, false).get_child_count() == 5, "Búsqueda vacía muestra las cinco materias inscritas")
 	var search = game.find_child("SubjectSearch", true, false)

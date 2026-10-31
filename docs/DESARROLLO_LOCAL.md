@@ -31,10 +31,10 @@ En Godot, instalar las plantillas correspondientes a la versión 4.7.2 desde el
 administrador de plantillas de exportación. Luego, desde la raíz:
 
 ```powershell
-godot --headless --path game --export-release "Windows Desktop" "game/build/CAMPUS EN JUEGO.exe"
+godot --headless --path game --export-release "Windows Desktop" "build/SIS-INF.exe"
 ```
 
-El resultado consta de `CAMPUS EN JUEGO.exe` y `CAMPUS EN JUEGO.pck` dentro de
+El resultado consta de `SIS-INF.exe` y `SIS-INF.pck` dentro de
 `game/build/`. Mantener ambos archivos juntos. La carpeta de exportación está
 ignorada por Git y no sustituye al código fuente del proyecto.
 
@@ -43,6 +43,10 @@ ignorada por Git y no sustituye al código fuente del proyecto.
 El juego guarda las partidas, preferencias y logros en el directorio local de
 usuario de Godot (`user://`). No almacena estos datos en PostgreSQL. Las
 partidas personales no están dentro del repositorio.
+
+El nombre visible actual es SIS-INF. En Windows se mantiene la ruta de datos
+anterior mediante la configuración explícita del proyecto, para conservar
+partidas y preferencias. Detalle en [Exploración FNI](EXPLORACION_FNI.md).
 
 ## API Django y PostgreSQL
 

@@ -97,3 +97,15 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     ambientes por mención, esferas con profundidad y navegación sin rueda.
     La elección de recursos, tamaños y técnicas es una decisión de frontend;
     no cambia las reglas académicas ni los datos del motor.
+
+15. NOMBRE Y LOGO, indicada el 30/10/2026.
+    El nombre vigente del juego es SIS-INF. Usar como logo la imagen aportada
+    por el usuario, images (3).jfif, conservando su procedencia y distinguiendo
+    los derechos del emblema de la licencia del código propio.
+
+16. EXPLORACIÓN ESPACIAL, indicada el 30/10/2026.
+    Añadir un módulo explorativo pixel art basado en el plano AULAS-FNI.jpg
+    aportado por el usuario: personaje con WASD, desplazamiento por el mapa,
+    entrada en aulas y menús para consultar progreso y funciones de la partida.
+    Documentar el funcionamiento y recordatorios de ambientación. El plano
+    de la facultad del centro se aportará después; no inventar esa sede.

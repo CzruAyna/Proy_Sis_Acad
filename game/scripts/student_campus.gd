@@ -175,6 +175,7 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 	_text(map_card, "Elige tu recorrido", 21)
 	_text(map_card, "Consulta lo habilitado y sus requisitos. Materias de distintos semestres pueden convivir en tu periodo.", 15, true)
 	var map_actions := _actions(map_card)
+	_button(map_actions, "Caminar por la FNI", ui._show_exploration)
 	_button(map_actions, "Explorar mi malla", _go.bind("malla"))
 	_button(map_actions, "Ver auxiliaturas", _go.bind("auxiliatura"))
 	var row := _actions(page)

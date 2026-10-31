@@ -15,6 +15,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Diseño visual](DISENO_VISUAL_CAMPUS.md) | Identidad, grafos, navegación y comportamiento visual acordados. |
 | [Tareas de frontend](ALCANCE_FRONTEND.md) | Qué puede asumir interfaz, ejemplos de encargos y coordinación con motor/backend. |
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
+| [Exploración FNI](EXPLORACION_FNI.md) | Campus pixel art de SIS-INF, personaje, controles, aulas, guardado y recordatorios de ambientación. |
 | [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Avances por fecha, commits de referencia y cambios todavía sin commit. |
 
 ## Especificación y coordinación

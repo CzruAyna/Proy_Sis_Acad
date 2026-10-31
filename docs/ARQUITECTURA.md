@@ -42,6 +42,7 @@ interfaz invente resultados.
 | `game/scripts/game.gd` | Entrada de la escena, pantallas generales, navegación, opciones, tema, guardado y coordinación con los módulos de campus y simulación. |
 | `game/scripts/student_simulation.gd` | Modelo de la partida. Controla elegibilidad, inscripción, inicio/cierre de periodo, respuestas, resultados, trámites, auxiliatura, graduación y `snapshot()`. |
 | `game/scripts/student_campus.gd` | Construye las vistas de campus, materias, historial, trámites, auxiliatura, graduación y detalle del grafo a partir del modelo. Envía acciones al controlador. |
+| `game/scripts/campus_map.gd`, `campus_world.gd`, `campus_exploration_ui.gd`, `campus_overview.gd` | Mapa de exploración FNI, movimiento con colisiones, interiores, menús y estado espacial separado del expediente académico. Véase [Exploración FNI](EXPLORACION_FNI.md). |
 | `game/scripts/simulation_procedures.gd` | Define los pasos simulados de cada trámite. |
 | `game/scripts/simulation_commands.gd` | Analiza comandos de la consola opcional y delega las acciones al modelo. |
 | `game/scripts/simulation_save_store.gd` | Lee, guarda y elimina espacios de partida; encapsula los archivos y respaldos locales. |

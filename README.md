@@ -1,4 +1,4 @@
-# CAMPUS EN JUEGO
+# SIS-INF
 
 Juego de escritorio educativo desarrollado con Godot. La experiencia principal
 permite explorar carreras de Ingeniería, cursar materias, resolver actividades,
@@ -21,7 +21,7 @@ Para generar la versión de Windows, hay que tener instaladas las plantillas de
 exportación de la misma versión de Godot y usar el preset `Windows Desktop`:
 
 ```powershell
-godot --headless --path game --export-release "Windows Desktop" "game/build/CAMPUS EN JUEGO.exe"
+godot --headless --path game --export-release "Windows Desktop" "build/SIS-INF.exe"
 ```
 
 La exportación crea el ejecutable y su archivo `.pck`. Ambos deben permanecer
@@ -53,6 +53,7 @@ sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 - [Desarrollo y compilación local](docs/DESARROLLO_LOCAL.md)
 - [Reglas de la simulación individual](docs/SIMULACION_ESTUDIANTE.md)
 - [Identidad visual y navegación](docs/DISENO_VISUAL_CAMPUS.md)
+- [Exploración FNI: personaje, mapa y aulas](docs/EXPLORACION_FNI.md)
 - [Información institucional y fuentes pendientes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
 - [Guía de documentación](docs/GUIA_DOCUMENTACION.md)
 - [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md)
@@ -66,7 +67,7 @@ de verificación no debe presentarse como normativa oficial.
 
 Copyright (C) 2026 José Gabriel Cruz Choque.
 
-El código original y la documentación técnica propia de CAMPUS EN JUEGO se
+El código original y la documentación técnica propia de SIS-INF se
 distribuyen bajo la **GNU General Public License, versión 3 o cualquier versión
 posterior** (`GPL-3.0-or-later`). Se permite usar, estudiar, modificar y
 redistribuir el proyecto. Al redistribuir versiones derivadas deben conservarse
