@@ -32,6 +32,8 @@ var _textures: Dictionary = {}
 var _last_context := ""
 var _outside := Map.SPAWN
 var _tree_positions: Array[Vector2] = []
+var _interior_key := ""
+var _interior_walls: Array[Rect2] = []
 
 
 func _ready() -> void:
@@ -73,16 +75,21 @@ func restore(saved: Dictionary) -> void:
 			if id is String and not visited.has(id) and _valid_visit(id):
 				visited.append(id)
 	var building := Map.building(str(saved.get("room_id", "")))
-	if not building.is_empty() and building["rooms"].has(str(saved.get("room_name", ""))):
+	var stored_room := str(saved.get("room_name", ""))
+	if not building.is_empty() and stored_room == Map.LEGACY_ROOMS.get(building["id"], "__none__"):
+		stored_room = "" # Old whole-block interiors now resume in their corridor.
+	if not building.is_empty() and (building["rooms"].has(stored_room) or (stored_room.is_empty() and building["rooms"].size() > 1)):
 		_outside = building["door"]
 		room_id = building["id"]
-		room_name = str(saved["room_name"])
-		player = Vector2(240, 278)
+		room_name = stored_room
+		player = Map.hall_spawn(room_id) if room_name.is_empty() else Vector2(240, 278)
 	camera = player
 
 
 func _valid_visit(id: String) -> bool:
 	for building in buildings:
+		if Map.LEGACY_ROOMS.has(building["id"]) and id == str(building["id"]) + "/" + str(Map.LEGACY_ROOMS[building["id"]]):
+			return true
 		for room in building["rooms"]:
 			if id == str(building["id"]) + "/" + str(room):
 				return true
@@ -166,10 +173,14 @@ func _can_stand(point: Vector2) -> bool:
 			if Rect2(building["rect"]).grow(PLAYER_RADIUS).has_point(point):
 				return false
 	else:
-		if not Rect2(22, 30, 436, 270).grow(-PLAYER_RADIUS).has_point(point):
+		var bounds := Rect2(Vector2(22, 30), Map.hall_size(room_id) - Vector2(44, 50)) if room_name.is_empty() else Rect2(22, 30, 436, 270)
+		if not bounds.grow(-PLAYER_RADIUS).has_point(point):
 			return false
-		var building := Map.building(room_id)
-		for obstacle in Map.room_obstacles(str(building.get("kind", "classroom"))):
+		var key := room_id + "/" + room_name
+		if key != _interior_key:
+			_interior_key = key
+			_interior_walls = Map.interior_obstacles(room_id, room_name)
+		for obstacle in _interior_walls:
 			if obstacle.grow(PLAYER_RADIUS).has_point(point):
 				return false
 	return true
@@ -188,8 +199,13 @@ func nearby_building() -> Dictionary:
 
 func interaction_text() -> String:
 	if not room_id.is_empty():
+		if room_name.is_empty():
+			if player.distance_to(Map.hall_exit(room_id)) < 36:
+				return "E · Salir al campus · Camina por el pasillo para elegir aula"
+			var space := nearby_room()
+			return "E · Entrar a " + str(space["name"]) if not space.is_empty() else "Pasillo · Acércate a una puerta iluminada y pulsa E"
 		if player.distance_to(Vector2(240, 286)) < 36:
-			return "E · Salir al campus"
+			return "E · Volver al pasillo" if Map.building(room_id)["rooms"].size() > 1 else "E · Salir al campus"
 		if player.y < 92:
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
@@ -201,14 +217,62 @@ func interact() -> void:
 	if paused:
 		return
 	if not room_id.is_empty():
-		if player.distance_to(Vector2(240, 286)) < 36:
-			leave_room()
+		if room_name.is_empty():
+			if player.distance_to(Map.hall_exit(room_id)) < 36:
+				leave_room()
+			else:
+				var space := nearby_room()
+				if not space.is_empty():
+					enter_room(room_id, str(space["name"]))
+		elif player.distance_to(Vector2(240, 286)) < 36:
+			if Map.building(room_id)["rooms"].size() > 1:
+				return_to_hall()
+			else:
+				leave_room()
 		elif player.y < 92:
 			activity_requested.emit(Map.building(room_id), room_name)
 	else:
 		var building := nearby_building()
 		if not building.is_empty():
-			enter_room(str(building["id"]), str(building["rooms"][0]))
+			enter_building(str(building["id"]))
+
+
+func nearby_room() -> Dictionary:
+	for space in Map.hall_rooms(room_id):
+		if player.distance_to(space["door"]) < 30:
+			return space
+	return {}
+
+
+func enter_building(id: String) -> bool:
+	var building := Map.building(id)
+	if building.is_empty():
+		return false
+	if building["rooms"].size() == 1:
+		return enter_room(id, str(building["rooms"][0]))
+	_outside = building["door"]
+	room_id = id
+	room_name = ""
+	player = Map.hall_spawn(id)
+	camera = player
+	_held.clear()
+	progress_changed.emit(snapshot())
+	context_changed.emit(interaction_text())
+	queue_redraw()
+	return true
+
+
+func return_to_hall() -> void:
+	var previous_room := room_name
+	if not enter_building(room_id):
+		return
+	for space in Map.hall_rooms(room_id):
+		if space["name"] == previous_room:
+			player = space["door"]
+			camera = player
+	progress_changed.emit(snapshot())
+	context_changed.emit(interaction_text())
+	queue_redraw()
 
 
 func enter_room(id: String, selected_room: String) -> bool:
@@ -244,7 +308,7 @@ func leave_room() -> void:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#0c1720"))
 	zoom = maxf(2, floorf(minf(size.x / 420.0, size.y / 220.0)))
-	var world_size := Map.SIZE if room_id.is_empty() else Map.ROOM_SIZE
+	var world_size := Map.SIZE if room_id.is_empty() else (Map.hall_size(room_id) if room_name.is_empty() else Map.ROOM_SIZE)
 	var extent := size / zoom
 	var origin := camera - extent * 0.5
 	origin.x = clampf(origin.x, minf(0, (world_size.x - extent.x) * 0.5), maxf(0, world_size.x - extent.x))
@@ -252,6 +316,8 @@ func _draw() -> void:
 	draw_set_transform((-origin * zoom).round(), 0, Vector2.ONE * zoom)
 	if room_id.is_empty():
 		_draw_campus(Rect2(origin, extent))
+	elif room_name.is_empty():
+		_draw_hall()
 	else:
 		_draw_room()
 	_draw_player()
@@ -305,14 +371,23 @@ func _draw_building(building: Dictionary) -> void:
 	if str(building["id"]).begins_with("sis_") or building["id"] == "admin_sis":
 		color = Color("#345e7f")
 	draw_rect(Rect2(rect.position + Vector2(8, 14), rect.size), Color("#42524c"))
-	draw_rect(Rect2(rect.position + Vector2(0, 8), rect.size), Color("#c5b596"))
+	draw_rect(Rect2(rect.position + Vector2(0, 18), rect.size), Color("#c5b596"))
 	draw_rect(rect, color.darkened(0.3))
 	draw_rect(rect.grow(-4), color)
 	for y in range(int(rect.position.y + 8), int(rect.end.y - 4), 8):
 		draw_line(Vector2(rect.position.x + 4, y), Vector2(rect.end.x - 4, y), color.lightened(0.12), 1)
 	draw_rect(Rect2(rect.position + Vector2(8, 5), Vector2(rect.size.x - 16, 3)), color.lightened(0.3))
 	for x in range(int(rect.position.x + 10), int(rect.end.x - 8), 24):
-		draw_rect(Rect2(x, rect.end.y + 3, 10, 5), Color("#28494e"))
+		draw_rect(Rect2(x - 2, rect.end.y + 3, 14, 10), Color("#888d7b"))
+		draw_rect(Rect2(x, rect.end.y + 4, 10, 7), Color("#28494e"))
+		draw_rect(Rect2(x + 4, rect.end.y + 4, 2, 7), Color("#a1b1a2"))
+	if building["rooms"].size() > 1:
+		# Separate roof bays and a long glazed front read as a multi-room block.
+		var bays := mini(building["rooms"].size(), 5)
+		for bay in range(1, bays):
+			var x := snappedf(rect.position.x + rect.size.x * bay / bays, 2)
+			draw_rect(Rect2(x, rect.position.y + 6, 2, rect.size.y - 12), color.darkened(0.25))
+		_sign(rect.position + Vector2(4, 16), "%d AMBIENTES" % building["rooms"].size(), 8)
 	var door: Vector2 = building["door"]
 	draw_rect(Rect2(door - Vector2(10, 18), Vector2(20, 17)), Color("#223a40"))
 	draw_rect(Rect2(door - Vector2(6, 15), Vector2(12, 14)), Color("#6ddab9"))
@@ -332,6 +407,7 @@ func _tree(point: Vector2) -> void:
 
 func _draw_room() -> void:
 	var building := Map.building(room_id)
+	var kind := Map.room_kind(room_id, room_name)
 	draw_rect(Rect2(Vector2.ZERO, Map.ROOM_SIZE), Color("#182732"))
 	draw_rect(Rect2(16, 24, 448, 284), Color("#c1b796"))
 	for x in range(24, 458, 16):
@@ -343,18 +419,71 @@ func _draw_room() -> void:
 	for x in [28, 444]:
 		for y in [64, 112, 160, 208]:
 			draw_rect(Rect2(x, y, 8, 28), Color("#59898f"))
-	for desk in Map.room_obstacles(str(building["kind"])):
+	for desk in Map.room_obstacles("lab" if kind == "computer_lab" else kind):
 		draw_rect(Rect2(desk.position + Vector2(2, 4), desk.size), Color("#6d6858"))
 		draw_rect(desk, Color("#8b6b4f"))
 		draw_rect(Rect2(desk.position + Vector2(2, 2), Vector2(desk.size.x - 4, 3)), Color("#c79b67"))
-		if building["kind"] == "lab":
+		if kind == "computer_lab":
 			draw_rect(Rect2(desk.position + Vector2(12, -8), Vector2(16, 12)), Color("#263f51"))
 			draw_rect(Rect2(desk.position + Vector2(14, -6), Vector2(12, 7)), Color("#75b3bc"))
-		elif building["kind"] == "classroom":
+			draw_rect(Rect2(desk.position + Vector2(11, 6), Vector2(18, 4)), Color("#bbc6bc"))
+			draw_rect(Rect2(desk.position + Vector2(32, 5), Vector2(3, 4)), Color("#324353"))
+		elif kind == "lab":
+			draw_rect(Rect2(desk.position + Vector2(9, -4), Vector2(7, 9)), Color("#adc8c1"))
+			draw_rect(Rect2(desk.position + Vector2(24, -8), Vector2(3, 12)), Color("#728b91"))
+			draw_rect(Rect2(desk.position + Vector2(20, 4), Vector2(12, 3)), Color("#c9dac9"))
+		elif kind == "classroom":
 			draw_rect(Rect2(desk.position + Vector2(6, 4), Vector2(10, 8)), Color("#e2dbc0"))
+	for x in [112, 352]:
+		draw_rect(Rect2(x, 38, 36, 3), Color("#eff0c8"))
+	if kind == "computer_lab":
+		# Network cabinet, projector and cable trunking are illustrative furnishings.
+		draw_rect(Rect2(424, 38, 20, 30), Color("#233642"))
+		for y in range(42, 65, 6):
+			draw_rect(Rect2(428, y, 12, 3), Color("#4f6873"))
+			draw_rect(Rect2(429, y, 2, 2), Color("#72d8b7"))
+		draw_rect(Rect2(230, 66, 20, 8), Color("#dbe0d5"))
+		draw_rect(Rect2(30, 40, 2, 240), Color("#8a9688"))
 	_sign(Vector2(32, 80), "E: ACTIVIDADES / AULAS", 10)
 	draw_rect(Rect2(222, 292, 36, 16), Color("#6ddab9"))
-	_sign(Vector2(226, 290), "SALIR", 10)
+	_sign(Vector2(220, 290), "PASILLO" if building["rooms"].size() > 1 else "SALIR", 10)
+
+
+func _draw_hall() -> void:
+	var extent := Map.hall_size(room_id)
+	draw_rect(Rect2(Vector2.ZERO, extent), Color("#15212b"))
+	draw_rect(Rect2(20, 28, 680, extent.y - 44), Color("#a1a394"))
+	for y in range(36, int(extent.y - 24), 16):
+		for x in range(28, 694, 16):
+			draw_rect(Rect2(x, y, 15, 15), Color("#adb0a0") if (x + y) % 32 == 0 else Color("#989f96"))
+	draw_rect(Rect2(22, 24, 676, 16), Color("#666c69"))
+	var heading := str(Map.building(room_id)["name"]) + " · PASILLO"
+	var heading_width := Neon.PIXEL_FONT.get_string_size(heading, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+	_sign(Vector2(360 - heading_width * 0.5, 22), heading, 11)
+	for space in Map.hall_rooms(room_id):
+		var rect: Rect2 = space["rect"]
+		draw_rect(Rect2(rect.position + Vector2(2, 4), rect.size), Color("#6e7368"))
+		draw_rect(rect, Color("#777b70"))
+		draw_rect(rect.grow(-5), Color("#c0b99b"))
+		var caption := str(space["name"])
+		var caption_width := Neon.PIXEL_FONT.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+		var caption_x := rect.end.x - caption_width - 18 if rect.position.x < 360 else rect.position.x + 12
+		_sign(Vector2(caption_x, rect.position.y + 20), caption, 11)
+		for column in range(4):
+			var p := rect.position + Vector2(24 + column * 52, 42)
+			draw_rect(Rect2(p, Vector2(30, 13)), Color("#92765a"))
+			draw_rect(Rect2(p + Vector2(7, -6), Vector2(16, 10)), Color("#46666e") if Map.room_kind(room_id, str(space["name"])) == "computer_lab" else Color("#ddd5b7"))
+		var door: Vector2 = space["door"]
+		var left := door.x < 360
+		var frame := Vector2(298 if left else 416, door.y - 13)
+		draw_rect(Rect2(frame, Vector2(6, 26)), Color("#64bda7"))
+		draw_rect(Rect2(frame + Vector2(0, 2), Vector2(6, 21)), Color("#315b61"))
+		if player.distance_to(door) < 30:
+			draw_rect(Rect2(frame - Vector2(2, 2), Vector2(10, 30)), Color("#fff0ac"), false, 2)
+	for y in range(72, int(extent.y - 40), 92):
+		draw_rect(Rect2(351, y, 18, 3), Color("#eeedcb"))
+	draw_rect(Rect2(340, extent.y - 26, 40, 8), Color("#6ddab9"))
+	_sign(Vector2(342, extent.y - 30), "SALIDA", 9)
 
 
 func _sign(point: Vector2, text: String, font_size: int) -> void:

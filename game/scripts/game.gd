@@ -3,6 +3,7 @@ extends Control
 const Catalog = preload("res://scripts/catalog.gd")
 const NeonVisuals = preload("res://scripts/neon_visuals.gd")
 const PixelStyle = preload("res://scripts/pixel_style_box.gd")
+const BrokenPanel = preload("res://scripts/broken_pixel_panel.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
@@ -1277,6 +1278,7 @@ func _add_compact_list(parent: Control) -> VBoxContainer:
 
 func _show_main() -> void:
 	_active_back = Callable()
+	_home_quote_label = null
 	for child in get_children():
 		if child == _transition_overlay or child == _ambient:
 			continue
@@ -1285,88 +1287,62 @@ func _show_main() -> void:
 	var stage := Control.new()
 	stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(stage)
-	_home_quote_index = randi_range(0, HOME_QUOTES.size() - 1)
-	_home_quote_time = 0.0
 	_activate_menu_backdrop()
 	var menu_panel := PanelContainer.new()
-	menu_panel.position = Vector2(24, 24)
-	menu_panel.size = Vector2(minf(420.0, size.x - 48.0), size.y - 48.0)
+	menu_panel.name = "MainMenuPanel"
 	menu_panel.add_theme_stylebox_override("panel", _home_panel_style())
 	stage.add_child(menu_panel)
-	stage.resized.connect(func() -> void: menu_panel.size = Vector2(minf(420.0, stage.size.x - 48.0), stage.size.y - 48.0))
-	var menu_pages := PagedView.new()
-	menu_panel.add_child(menu_pages)
-	menu_pages.configure(self)
-	var menu: VBoxContainer = menu_pages.content
-	var eyebrow := _label("SISTEMAS · INFORMÁTICA · TU RECORRIDO", 12, Color("#8ff5ff"))
-	menu.add_child(eyebrow)
+	var menu := VBoxContainer.new()
+	menu.name = "PageContent"
+	menu.add_theme_constant_override("separation", 6)
+	menu_panel.add_child(menu)
+	menu.add_child(_label("SISTEMAS · INFORMÁTICA", 12, Color("#8ff5ff")))
 	var branding := HBoxContainer.new()
-	branding.add_theme_constant_override("separation", 16)
+	branding.add_theme_constant_override("separation", 14)
 	menu.add_child(branding)
 	var logo := TextureRect.new()
 	logo.name = "SisInfLogo"
 	logo.texture = GAME_LOGO
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.custom_minimum_size = Vector2(64, 64)
+	logo.custom_minimum_size = Vector2(48, 48)
 	logo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	branding.add_child(logo)
-	var title := _label(HOME_NAME, 32, Color("#f4fdff"))
+	var title := _label(HOME_NAME, 30, Color("#f4fdff"))
 	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	branding.add_child(title)
-	menu.add_child(_label("Explora tu carrera, elige tus materias y vive las decisiones del campus.", 15, Color("#c6d0d4")))
-	var menu_gap := Control.new()
-	menu_gap.custom_minimum_size.y = 5
-	menu.add_child(menu_gap)
+	menu.add_child(_label("Tu carrera, tu campus, tu recorrido.", 13, Color("#c6d0d4")))
 	var recent := _recent_slot()
 	if recent > 0:
 		var saved := _read_save(recent, "solo")
-		menu.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")), 14, Color("#c6d0d4")))
-		_add_menu_button(menu, "Continuar mi recorrido", _open_slot.bind(recent, "solo"), true, 48)
-	var play_button := _add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 46)
-	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 42)
-	_add_menu_button(menu, "Explorar la facultad", _show_exploration, false, 43).name = "ExplorationEntry"
-	_add_menu_button(menu, "Historia de una carrera", _show_career_story, false, 43).name = "CareerStoryEntry"
-	play_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	play_button.custom_minimum_size.x = 0
-	var options_button := _add_menu_button(menu, "Opciones", _show_options, false, 43)
-	options_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	options_button.custom_minimum_size.x = 0
-	var achievements_button := _add_menu_button(menu, "Logros globales", _show_global_achievements.bind(Callable(self, "_show_main")), false, 43)
-	achievements_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	achievements_button.custom_minimum_size.x = 0
-	var exit_button := _add_button(menu, "Salir", Callable(self, "_exit_game"), false, 43)
-	exit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	exit_button.custom_minimum_size.x = 0
-	# Keep the approved home composition: one consistent vertical menu.
+		menu.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")), 12, Color("#c6d0d4")))
+		_add_menu_button(menu, "Continuar mi recorrido", _open_slot.bind(recent, "solo"), true, 34)
+	_add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 34)
+	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 34)
+	_add_menu_button(menu, "Explorar la facultad", _show_exploration, false, 34).name = "ExplorationEntry"
+	_add_menu_button(menu, "Historia de una carrera", _show_career_story, false, 34).name = "CareerStoryEntry"
+	_add_menu_button(menu, "Opciones", _show_options, false, 34)
+	_add_menu_button(menu, "Logros globales", _show_global_achievements.bind(Callable(self, "_show_main")), false, 34)
+	_add_button(menu, "Salir", Callable(self, "_exit_game"), false, 34)
 	for action in menu.get_children():
 		if action is Button:
 			action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			action.custom_minimum_size.x = 0
-	_home_quote_label = _label("", 14, Color("#d1d4d2"), true)
-	_home_quote_label.custom_minimum_size = Vector2(0, 58)
-	_home_quote_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	var quote_panel := PanelContainer.new()
-	quote_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	quote_panel.offset_left = -370
-	quote_panel.offset_top = -180
-	quote_panel.offset_right = -24
-	quote_panel.offset_bottom = -22
-	quote_panel.custom_minimum_size = Vector2(346, 90)
-	quote_panel.add_theme_stylebox_override("panel", _home_panel_style())
-	quote_panel.add_child(_home_quote_label)
-	stage.add_child(quote_panel)
-	_update_home_quote()
+			action.autowrap_mode = TextServer.AUTOWRAP_OFF
+			action.add_theme_font_size_override("font_size", int(round(14 * float(settings["font_scale"]))))
+	var fit_menu := func() -> void:
+		var width := minf(440 + maxf(0, float(settings["font_scale"]) - 1) * 200, maxf(0, stage.size.x - 64))
+		menu_panel.size.x = width
+		menu_panel.size.y = menu_panel.get_combined_minimum_size().y
+		menu_panel.position = Vector2(40, maxf(28, floorf((stage.size.y - menu_panel.size.y) * 0.5)))
+	stage.resized.connect(fit_menu)
+	menu.minimum_size_changed.connect(func() -> void: fit_menu.call_deferred())
+	fit_menu.call_deferred()
 
 
-func _home_panel_style() -> PixelStyle:
-	var style := NeonVisuals.panel(_current_theme, true, bool(settings.get("low_performance", false)))
-	style.bg_color = Color("#07101b")
-	style.content_margin_left = 20
-	style.content_margin_right = 20
-	style.content_margin_top = 17
-	style.content_margin_bottom = 17
+func _home_panel_style() -> BrokenPanel:
+	var style := BrokenPanel.new()
+	style.edge_color = _current_theme.get("accent", Color("#42eaff"))
 	return style
 
 

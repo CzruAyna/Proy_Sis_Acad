@@ -1,6 +1,6 @@
 # Identidad visual del juego
 
-Actualizado el 30 de octubre de 2026.
+Actualizado el 31 de octubre de 2026.
 
 El juego mantiene fondos oscuros y utiliza una identidad de color continua desde la selección de carrera hasta el campus, materias, malla, trámites, historial, auxiliatura, estudio, graduación y logros de la partida.
 
@@ -26,7 +26,8 @@ Los motivos se dibujan como una capa ambiental desenfocada detrás de tarjetas o
 ### Estilo pixel art vigente
 
 El cambio solicitado el 30/10 aplica pixel art a los controles del juego,
-conservando la composición del inicio y los recorridos interiores. No cambia
+conservando los recorridos interiores. La revisión del inicio del 31/10 se
+describe abajo. No cambia
 las reglas académicas ni los archivos de guardado.
 
 - `pixel_style_box.gd` dibuja marcos escalonados, sombras desplazadas y relieve
@@ -90,7 +91,7 @@ Al cambiar de periodo, la consulta inicial se actualiza al nivel de las materias
 La regla permanente está en `REGLAS_USUARIO.txt`; `AGENTS.md` obliga a leerla antes de trabajar. No se utilizan deslizadores, barras de desplazamiento ni listas desplegables que requieran rueda.
 
 - Las páginas comunes se centran y limitan a 880 unidades de ancho. La malla dispone de hasta 1100, con espacio propio para explorar.
-- El inicio conserva su composición aprobada y usa el mismo ancho para todas sus acciones. La compactación se concentra en las pantallas interiores. El campus agrupa las acciones de malla y auxiliatura, evita un bloque adicional y ofrece un único acceso de guardar/salir.
+- Desde el 31/10 el inicio reúne todas las acciones en un solo contenedor de altura contenida, sin páginas. `broken_pixel_panel.gd` dibuja una abertura negra con bordes fragmentados y píxeles sueltos; no usa el marco ordinario de las tarjetas. Logo y cosmos se conservan, sin un segundo panel de citas. Las acciones tienen el mismo ancho y tipografía compacta; se comprueban con partida reciente y letras al 120%. El campus agrupa las acciones de malla y auxiliatura y ofrece un único acceso de guardar/salir.
 - Los botones comunes ajustan su ancho al texto, hasta 300 unidades; las opciones de selección y los menús pequeños tienen sus propios límites.
 - `paged_view.gd` organiza tarjetas y filas completas en páginas y mantiene visibles los botones anterior/siguiente y Atrás. La navegación de página se oculta cuando no hace falta. Los formularios permanecen en el árbol para conservar lo escrito al cambiar de página.
 - `choice_picker.gd` reemplaza las listas desplegables largas por búsqueda y grupos de cuatro opciones con botones de página.

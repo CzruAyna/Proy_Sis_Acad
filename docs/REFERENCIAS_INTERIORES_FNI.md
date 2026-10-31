@@ -1,0 +1,47 @@
+# Referencias para los edificios e interiores de la FNI
+
+Consulta: 31 de octubre de 2026. Área: frontend y datos de ambientación.
+
+## Evidencia utilizada
+
+| ID | Fuente | Qué permite representar | Límites |
+|---|---|---|---|
+| FNI-PLANO-01 | `game/assets/reference/fni_plan.jpg`, copia del `AULAS-FNI.jpg` aportado por el usuario. | Bloques Sistemas A–E y administración, agrupación de edificios y rótulos de aulas de otras áreas. | No muestra plantas interiores, mobiliario ni puertas exactas. Fecha, entidad emisora y reproducción siguen pendientes. |
+| FNI-COMPUTACION-01 | [Computación, sitio de Sistemas e Informática](https://www.sisinf.fni.uto.edu.bo/computacion/). | Publica los nombres LSIA-1, LSIA-4, LSIB-1, LSIB-2 y LSIB-4. Describe puestos informáticos con monitores, asientos y conexión de red. | La introducción habla de cuatro instalaciones y el listado nombra cinco; no se adopta ese total como inventario vigente. No demuestra la planta ni la posición de cada sala. |
+| FNI-REDES-01 | [Redes Informáticas, sitio de la carrera](https://www.sisinf.fni.uto.edu.bo/redes-informaticas/). | Sirve como referencia temática para equipos y prácticas de conectividad. | No se asigna ese laboratorio a un aula concreta del mapa. Algunas descripciones mezclan tipos de dispositivos y requieren revisión antes de usarlas como contenido didáctico. |
+| FNI-DATACENTER-01 | [Data Center, sitio de la carrera](https://www.sisinf.fni.uto.edu.bo/data-center/). | Describe armarios de red, servidores, canalizaciones y acondicionamiento. Inspira detalles originales de equipamiento. | No prueba su ubicación dentro de A o B ni acceso libre del alumnado. No se representan niveles de certificación, inventario vigente o temperaturas como datos confirmados. |
+
+Se buscaron fotografías interiores. Las imágenes enlazadas desde esas páginas
+no pudieron visualizarse con la herramienta de consulta; algunas corresponden
+a retratos de responsables. No se afirma haber inspeccionado fotografías de
+las aulas ni se incorporan imágenes remotas al juego.
+
+## Aplicación al juego
+
+Los nombres LSIA y LSIB se agrupan en Sistemas A y B por su nomenclatura y el
+encargo del usuario. Esa correspondencia necesita confirmación institucional.
+Los pasillos, posición de puertas, dimensiones, orden de salas y mobiliario
+son una **recreación jugable**, no un levantamiento arquitectónico.
+
+El bloque A tiene dos ambientes identificados por esos nombres; el B tiene
+tres. No se inventan LSIA-2/3 ni LSIB-3 para llenar una numeración. Los otros
+bloques con varias aulas conservan los rótulos del plano y reciben un corredor.
+Los puestos, pizarras, luminarias y armarios dibujados son ilustraciones
+originales; su cantidad no representa capacidad o inventario real.
+
+Las páginas se consultan como referencias públicas, sin fecha de actualización
+confirmada. Su presencia en el juego no demuestra vigencia ni aporta una
+licencia de reproducción de fotografías. El código y los dibujos propios
+conservan `GPL-3.0-or-later`; no cambia la titularidad de recursos de terceros.
+
+## Pendientes para el usuario y backend/datos
+
+| Responsable | Material necesario | Criterio de cierre |
+|---|---|---|
+| Usuario y backend/datos | Planta de Sistemas A/B, número de niveles, listado de aulas y laboratorios, accesos y fecha de referencia. | Validación de correspondencia entre bloque, nombre, planta y puerta. |
+| Usuario y frontend/arte | Fotos propias o autorizadas de fachadas, pasillos, ventanas, aulas y equipos, identificadas por lugar y fecha. | Comparación de las recreaciones con material que pueda utilizarse. |
+| Backend/datos | Revisión de la diferencia entre el total de instalaciones y el listado de Computación, y de las descripciones de Redes. | Inventario versionado y contenido técnico revisado. |
+| Backend/datos | Aula, materia, paralelo y horario con sus fuentes. | Contrato que permita contextualizar actividades sin deducir notas ni inscripciones por entrar a una sala. |
+
+La solicitud general de originales y permisos continúa en
+[Datos y fuentes para backend](PARA_BACKEND_DATOS_Y_FUENTES.txt).

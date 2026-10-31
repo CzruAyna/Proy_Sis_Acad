@@ -109,3 +109,13 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     entrada en aulas y menús para consultar progreso y funciones de la partida.
     Documentar el funcionamiento y recordatorios de ambientación. El plano
     de la facultad del centro se aportará después; no inventar esa sede.
+
+17. EDIFICIOS Y MENÚ ÚNICO, indicada el 31/10/2026.
+    En Exploración, representar los bloques como edificios con varios ambientes
+    cuando corresponda, especialmente Sistemas A. Añadir detalles en pixel art
+    usando el plano aportado y referencias comprobables; distinguir la
+    distribución recreada de la real pendiente de confirmar. El menú principal
+    debe estar en un único contenedor compacto, con todas sus acciones visibles
+    sin cambiar de página. Su fondo será negro con borde irregular de píxeles
+    rotos y huecos. Esta precisión actualiza la composición del inicio prevista
+    en la regla 8; conservar las demás reglas de navegación y presentación.

@@ -1,6 +1,6 @@
 # SIS-INF: exploración de la FNI
 
-Actualizado: 30 de octubre de 2026. Estado: implementación local, sin commit
+Actualizado: 31 de octubre de 2026. Estado: implementación local, sin commit
 creado por esta entrega. El nombre anterior del juego era CAMPUS EN JUEGO.
 
 ## Uso actual
@@ -14,8 +14,25 @@ Incluye bloques de Sistemas, administración, Decanatura, Matemáticas,
 Geología, Química, Física, Minas, Mecánica, Civil, Metalurgia, laboratorios,
 comedor, canchas, caminos y áreas abiertas. Todas las entradas del catálogo
 son accesibles desde el ingreso. Las puertas iluminadas permiten pasar a un
-interior. El tablero del interior abre sus actividades y la selección de
-otros espacios del mismo bloque.
+interior. Los bloques con varios ambientes abren un pasillo transitable:
+acercarse a cada puerta y pulsar E permite elegir aula. El umbral del aula
+devuelve a su puerta en el pasillo; la salida del corredor lleva al campus.
+Los bloques de un solo ambiente conservan la entrada directa. El tablero del
+interior abre sus actividades y el directorio del bloque.
+
+Sistemas A incorpora LSIA-1 y LSIA-4; Sistemas B, LSIB-1, LSIB-2 y LSIB-4.
+Los nombres aparecen en el sitio de la carrera; su agrupación A/B se infiere
+de la nomenclatura y debe validarse, al igual que las plantas y los accesos.
+Los laboratorios se distinguen con monitores, teclados, canaletas y un armario;
+las aulas mantienen pupitres y las otras salas de prácticas tienen mesones.
+La cantidad de puestos dibujados no representa un inventario real.
+Las fuentes, contradicciones y material pendiente están en
+[Referencias de interiores](REFERENCIAS_INTERIORES_FNI.md).
+
+El inicio ofrece todas sus acciones en un único menú de altura contenida,
+sin paginación, con fondo negro y borde irregular de píxeles rotos. Conserva
+logo y cosmos; se retiró el recuadro separado de citas. La exploración dispone
+de un lienzo ancho y barra propia, sin repetir las pestañas académicas.
 
 La geometría es una adaptación para jugar, sin escala topográfica. Las
 entradas se sitúan en el frente inferior de los bloques como decisión de
@@ -83,6 +100,11 @@ ingreso. La visita libre se conserva solo durante la sesión y no concede logros
 Cerrar la ventana también ejecuta el guardado del perfil; si falla, la partida
 permanece abierta y se muestra el error.
 
+El formato espacial sigue en versión 1. Un `room_id` válido con `room_name`
+vacío identifica ahora el pasillo de un bloque con varias aulas. Se recupera
+en su entrada segura. Las antiguas salas genéricas `sis_a/SIS A` y
+`sis_b/SIS B` se retoman en ese pasillo y conservan sus visitas históricas.
+
 El título de ventana, portada, icono y exportación ahora usan SIS-INF. En
 Windows se conserva explícitamente la ruta anterior de datos de Godot,
 `Godot/app_userdata/CAMPUS EN JUEGO`, dentro de AppData. El nombre visible no
@@ -106,8 +128,8 @@ gráficos externos ni se modificaron Django, Next.js o las reglas académicas.
 
 ## Recordatorios de ambientación
 
-Los interiores actuales distinguen aula, laboratorio y espacio administrativo,
-pero son recreaciones genéricas. Estos recordatorios corresponden a frontend y
+Los interiores actuales distinguen aula, laboratorio informático, sala de
+prácticas y espacio administrativo, pero son recreaciones. Estos recordatorios corresponden a frontend y
 arte; no implican que se recibieron fotografías o se verificó el mobiliario.
 
 | Espacio | Decoración prevista | Material para completar |
@@ -166,6 +188,7 @@ Desde la raíz, con Godot 4.7.2:
 ```powershell
 godot --headless --path game --script res://tests/test_exploration.gd
 godot --headless --path game --script res://tests/test_exploration_navigation.gd
+godot --headless --path game --script res://tests/test_building_interiors.gd
 ```
 
 La primera prueba verifica movimiento, paredes, acceso desde el ingreso a
@@ -180,3 +203,27 @@ bloques de Sistemas, aula, mapa y progreso en
 `game/.test-artifacts/exploration/`. Requiere renderizador gráfico. Los
 resultados ejecutados de esta entrega se registran en la bitácora; estos
 comandos no constituyen por sí solos evidencia de ejecución.
+
+### Revisión del 31/10/2026
+
+Se ejecutaron **4.497 comprobaciones sin fallos**: 518 de exploración,
+470 de edificios/menú único, 900 de navegación de exploración, 2.335 de
+navegación compacta, 59 de composición/ambientes, 194 del frontend académico
+y 21 de integración. Los registros locales son
+`game/.test-artifacts/building-test_*.log`.
+
+La prueba de edificios recorre la superficie de colisión desde el pasillo
+hasta cada puerta, comprueba entrada y retorno a esa puerta, paredes, armario,
+recarga del corredor y conservación de visitas antiguas. El menú se verifica
+en 900×640, 1152×720 y 1600×900 con texto al 80%, 100% y 120%, una partida
+reciente y nombre largo: un contenedor, sin páginas y acciones visibles.
+
+`capture_building_details.gd` generó ocho capturas reales, inspeccionadas en
+`game/.test-artifacts/building-details/`: menú, versión compacta, exterior,
+pasillos A/B, laboratorio LSIA-1 y bloque con varias aulas. El renderizador
+utilizó ANGLE. Se exportó `game/build/SIS-INF.exe` con su `.pck` y el arranque
+aislado headless terminó con salida 0, sin errores de scripts.
+
+Quedan sin verificar las plantas reales, accesos, usos actuales de cada sala,
+fotografías autorizadas y pruebas con jugadores u otras configuraciones
+gráficas; los responsables y criterios están en la guía de referencias.

@@ -30,6 +30,14 @@ func _inspect(screen: String) -> void:
 	for class_type in ["Slider", "ScrollBar", "ScrollContainer", "OptionButton", "TextEdit", "RichTextLabel"]:
 		_check(game.find_children("*", class_type, true, false).is_empty(), screen + ": no contiene " + class_type)
 	var pager = game.find_child("PageNavigator", true, false)
+	if screen == "inicio":
+		_check(pager == null, "Inicio utiliza un solo menú sin paginación")
+		var panel: Control = game.find_child("MainMenuPanel", true, false)
+		_check(panel != null and Rect2(Vector2.ZERO, viewport.size).encloses(panel.get_global_rect()), "Inicio compacto dentro de la ventana")
+		for control in panel.find_children("*", "Control", true, false):
+			if control is Button or control is Label:
+				_check(panel.get_global_rect().encloses(control.get_global_rect()), "Inicio: acción o texto visible completo: " + str(control.get("text")))
+		return
 	_check(pager != null, screen + ": navegación explícita")
 	if pager == null:
 		return

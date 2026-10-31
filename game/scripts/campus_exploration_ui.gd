@@ -3,6 +3,7 @@ extends RefCounted
 const World = preload("res://scripts/campus_world.gd")
 const Map = preload("res://scripts/campus_map.gd")
 const Overview = preload("res://scripts/campus_overview.gd")
+const Neon = preload("res://scripts/neon_visuals.gd")
 
 var host: WeakRef
 var world_ref: WeakRef
@@ -67,6 +68,7 @@ func show_welcome(message: String = "") -> void:
 	name_field.text = guest_name
 	name_field.max_length = 60
 	name_field.custom_minimum_size.y = 42
+	_ui()._style_input(name_field)
 	card.add_child(name_field)
 	if not message.is_empty():
 		_text(card, message, 15)
@@ -134,6 +136,12 @@ func show_world() -> void:
 	world_ref = weakref(world)
 	_ui()._add_button(actions, "Interactuar [E]", world.interact, true, 36)
 	_ui()._add_button(actions, "Ayuda", show_help, false, 36)
+	for button in actions.get_children():
+		if button is Button:
+			var font_size := int(14 * float(_ui().settings["font_scale"]))
+			button.add_theme_font_size_override("font_size", font_size)
+			button.custom_minimum_size.x = maxf(120, Neon.PIXEL_FONT.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 32)
+			button.autowrap_mode = TextServer.AUTOWRAP_OFF
 	if not target_id.is_empty():
 		var destination := Map.building(target_id)
 		if not destination.is_empty():
@@ -143,7 +151,8 @@ func show_world() -> void:
 	hint.name = "ExplorationContext"
 	world.context_changed.connect(func(value: String) -> void:
 		hint.text = value
-		location.text = _name() + " · " + (world.room_name + " · interior recreado" if not world.room_id.is_empty() else "Ciudad universitaria FNI"))
+		var place := world.room_name if not world.room_name.is_empty() else str(Map.building(world.room_id).get("name", "")) + " · pasillo"
+		location.text = _name() + " · " + (place + " · recreación" if not world.room_id.is_empty() else "Ciudad universitaria FNI"))
 	world.progress_changed.connect(_update)
 	world.menu_requested.connect(show_progress)
 	world.map_requested.connect(show_map)
@@ -250,6 +259,8 @@ func show_room(building: Dictionary, room: String) -> void:
 	else:
 		_ui()._add_button(actions, "Ver visita y progreso", show_progress, true, 42)
 	_text(page, "Otros espacios de este bloque", 20)
+	if building["rooms"].size() > 1:
+		_ui()._add_button(page, "Recorrer pasillo del bloque", _choose_hall.bind(str(building["id"])), false, 40)
 	var rooms := _actions(page)
 	for name in building["rooms"]:
 		_ui()._add_button(rooms, str(name), _choose_room.bind(str(building["id"]), str(name)), str(name) == room, 40)
@@ -265,8 +276,17 @@ func _choose_room(id: String, room: String) -> void:
 	show_world()
 
 
+func _choose_hall(id: String) -> void:
+	var model := World.new()
+	model.restore(saved)
+	model.enter_building(id)
+	_update(model.snapshot())
+	model.free()
+	show_world()
+
+
 func show_help() -> void:
 	capture()
 	var page: VBoxContainer = _ui()._make_page("Controles de exploración", "Controles clásicos y menús por botones", show_world)
-	for line in ["WASD o flechas: moverte. Las diagonales mantienen la misma velocidad.", "Shift: correr. Las paredes, edificios y mesas bloquean el paso.", "E o Enter: entrar cerca de una puerta, salir o consultar el tablero del aula.", "P o Tab: pausar y consultar progreso, materias, grafo e historial.", "M: abrir el mapa, consultar el plano y señalar un destino.", "Escape: salir de esta vista. La exploración de una partida se guarda junto con su perfil.", "El aula tiene un tablero al fondo: acércate para ver actividades y otras aulas del bloque.", "Los controles por botones permanecen disponibles. El movimiento se detiene al cambiar de menú o perder el foco."]:
+	for line in ["WASD o flechas: moverte. Las diagonales mantienen la misma velocidad.", "Shift: correr. Las paredes, edificios y mesas bloquean el paso.", "E o Enter: entrar cerca de una puerta, salir o consultar el tablero del aula.", "Los bloques con varias aulas tienen un pasillo. Acércate a la puerta de cada ambiente y pulsa E. Desde el aula vuelves al pasillo; la salida del pasillo lleva al campus.", "P o Tab: pausar y consultar progreso, materias, grafo e historial.", "M: abrir el mapa, consultar el plano y señalar un destino.", "Escape: salir de esta vista. La exploración de una partida se guarda junto con su perfil.", "El aula tiene un tablero al fondo: acércate para ver actividades y otras aulas del bloque.", "Los controles por botones permanecen disponibles. El movimiento se detiene al cambiar de menú o perder el foco."]:
 		_text(page, line, 17)

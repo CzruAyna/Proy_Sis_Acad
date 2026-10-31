@@ -4,6 +4,11 @@ const ID := "fni_ciudad_v1"
 const SIZE := Vector2(2304, 1664)
 const SPAWN := Vector2(1280, 1536)
 const ROOM_SIZE := Vector2(480, 320)
+const HALL_SIZE := Vector2(720, 480)
+const COMPUTING_SOURCE := "https://www.sisinf.fni.uto.edu.bo/computacion/"
+# Published room names; positions below are deliberately a playable recreation.
+const SYSTEMS_ROOMS := {"sis_a": ["LSIA-1", "LSIA-4"], "sis_b": ["LSIB-1", "LSIB-2", "LSIB-4"]}
+const LEGACY_ROOMS := {"sis_a": "SIS A", "sis_b": "SIS B"}
 const ROWS := [
 	["metalurgia", "METALURGIA", 5, 16, 12, 7, "lab", ["MET-1"]],
 	["metalurgia2", "METALURGIA 2", 4, 28, 7, 7, "lab", ["Bloque Metalurgia 2"]],
@@ -60,7 +65,9 @@ static func buildings() -> Array[Dictionary]:
 		var rect := Rect2(Vector2(float(row[2]), float(row[3])) * SIZE / 100, Vector2(float(row[4]), float(row[5])) * SIZE / 100)
 		rect.position = rect.position.snapped(Vector2(8, 8))
 		rect.size = rect.size.snapped(Vector2(8, 8))
-		result.append({"id": row[0], "name": row[1], "rect": rect, "kind": row[6], "rooms": row[7].duplicate(),
+		var rooms: Array = SYSTEMS_ROOMS.get(row[0], row[7]).duplicate()
+		result.append({"id": row[0], "name": row[1], "rect": rect, "kind": row[6], "rooms": rooms,
+			"room_source": COMPUTING_SOURCE if SYSTEMS_ROOMS.has(row[0]) else "FNI-PLANO-01",
 			"door": Vector2(rect.get_center().x, rect.end.y + 14).snapped(Vector2(2, 2))})
 	return result
 
@@ -87,3 +94,48 @@ static func room_obstacles(kind: String) -> Array[Rect2]:
 	else:
 		result.append(Rect2(120, 116, 240, 32))
 	return result
+
+
+static func room_kind(id: String, room: String) -> String:
+	if SYSTEMS_ROOMS.has(id) and SYSTEMS_ROOMS[id].has(room):
+		return "computer_lab"
+	return str(building(id).get("kind", "classroom"))
+
+
+static func hall_rooms(id: String) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var block := building(id)
+	for index in range(block.get("rooms", []).size()):
+		var left := index % 2 == 0
+		var row := index / 2
+		var top := 52.0 + floorf(row) * 92
+		result.append({"name": block["rooms"][index],
+			"rect": Rect2(36 if left else 416, top, 268, 84),
+			"door": Vector2(318 if left else 402, top + 44)})
+	return result
+
+
+static func hall_size(id: String) -> Vector2:
+	var rows := ceili(float(building(id).get("rooms", []).size()) / 2)
+	return Vector2(HALL_SIZE.x, snappedf(clampf(144 + rows * 84, 240, HALL_SIZE.y), 16))
+
+
+static func hall_spawn(id: String) -> Vector2:
+	return Vector2(360, hall_size(id).y - 42)
+
+
+static func hall_exit(id: String) -> Vector2:
+	return Vector2(360, hall_size(id).y - 30)
+
+
+static func interior_obstacles(id: String, room: String) -> Array[Rect2]:
+	if room.is_empty():
+		var walls: Array[Rect2] = []
+		for space in hall_rooms(id):
+			walls.append(space["rect"])
+		return walls
+	var kind := room_kind(id, room)
+	var furniture := room_obstacles("lab" if kind == "computer_lab" else kind)
+	if kind == "computer_lab":
+		furniture.append(Rect2(424, 38, 20, 30))
+	return furniture

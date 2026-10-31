@@ -382,3 +382,36 @@ condiciones de redistribución del plano y el logo. No se recibió el plano de
 la sede del centro. Esos pendientes corresponden a usuario, frontend/arte y
 backend/datos según la tabla de la guía. Quedan sin probar otras GPU,
 plataformas y una sesión de usabilidad con estudiantes.
+
+## 31 de octubre: edificios con pasillos y menú único fragmentado
+
+**Estado:** cambios de esta entrega sin commit creado.
+
+Se sustituyó el salto directo al primer ambiente de los bloques con varias
+aulas por un pasillo transitable con puertas individuales. E permite entrar
+en una sala y regresar a su puerta; la salida del corredor devuelve al campus.
+Los bloques de un solo ambiente mantienen el acceso directo. Sistemas A/B
+incorporan nombres LSIA/LSIB publicados por la carrera, con agrupación por
+nomenclatura y distribución recreada pendientes de validación. Se distinguen
+los puestos informáticos, pupitres y otros mesones, y se añadió relieve en las
+fachadas. Las antiguas visitas genéricas A/B se conservan al recargar.
+
+Se redujo el menú principal a un único contenedor con todas las acciones
+visibles. Se retiraron paginación y recuadro separado de citas. El nuevo
+`broken_pixel_panel.gd` dibuja el fondo negro con huecos y píxeles desprendidos;
+logo y cosmos permanecen. La barra de Exploración y su lienzo utilizan el
+espacio disponible sin repetir las pestañas académicas.
+
+Los archivos principales son `campus_map.gd`, `campus_world.gd`,
+`campus_exploration_ui.gd`, `game.gd` y el nuevo marco. Se registró la regla 17
+y se documentaron las fuentes y sus límites en
+[Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md). No se añaden
+fotografías remotas, no se inventan salas intermedias de la numeración y no
+se modifican reglas académicas ni backend.
+
+Siete suites ejecutadas completaron **4.497 comprobaciones, cero fallos**.
+Se generaron y revisaron ocho capturas reales; se exportó Windows y su arranque
+aislado terminó con salida 0, sin errores de scripts. La matriz y los registros
+están en [Exploración FNI](EXPLORACION_FNI.md). El controlador recurrió a ANGLE.
+Faltan planos de plantas, accesos confirmados, fotos autorizadas y evaluación
+con jugadores u otros equipos; corresponden a usuario, frontend/arte y datos.
