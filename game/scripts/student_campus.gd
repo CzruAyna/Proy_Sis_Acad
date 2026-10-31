@@ -685,6 +685,7 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	if personal:
 		var current := _button(controls, "Mi periodo", _graph_current_view.bind(graph, snapshot))
 		current.custom_minimum_size.x = 110
+		current.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
 		current.autowrap_mode = TextServer.AUTOWRAP_OFF
 		current.tooltip_text = "Volver al nivel de las materias inscritas en tu periodo actual"
 	var zoom_out := _button(controls, "−", graph.zoom_at_center.bind(0.85))
@@ -699,6 +700,8 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	reset.custom_minimum_size.x = 136
 	for button in [previous, next, zoom_out, zoom_in, fit, reset]:
 		button.size_flags_horizontal = Control.SIZE_FILL
+		button.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
+		button.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_text(workspace, "Mueve esferas, ramas completas o el fondo. ↻ gira la rama seleccionada; −/+ cambia el zoom. Ámbar: recursar. Se protegen las conexiones.", 13, true)
 	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	graph.name = "ExpandedCurriculumGraph"

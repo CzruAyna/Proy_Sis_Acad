@@ -2,6 +2,7 @@ extends Control
 
 const Catalog = preload("res://scripts/catalog.gd")
 const NeonVisuals = preload("res://scripts/neon_visuals.gd")
+const PixelStyle = preload("res://scripts/pixel_style_box.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
@@ -140,6 +141,7 @@ var _home_sparks: Array[Dictionary] = []
 var _home_cosmic_event := "nebula"
 var _home_cosmic_center := Vector2(0.75, 0.5)
 var _home_cosmic_time := 0.0
+var _pixel_disc_texture: ImageTexture
 
 
 func _ready() -> void:
@@ -173,14 +175,14 @@ func _draw_home_cosmos() -> void:
 		for layer in range(8, 0, -1):
 			var layer_color := tint
 			layer_color.a = 0.018 + (8 - layer) * 0.004
-			draw_circle(cloud_center, radius * float(layer) / 5.0, layer_color)
+			_draw_pixel_disc(cloud_center, radius * float(layer) / 5.0, layer_color)
 	for star in _home_stars:
 		var position: Vector2 = star["position"] * size
 		var radius := float(star["radius"])
 		var pulse := 0.62 + 0.38 * sin(_home_cosmic_time * float(star["speed"]) + float(star["phase"]))
 		var star_color: Color = star["color"]
 		star_color.a *= pulse
-		draw_circle(position, radius, star_color)
+		_draw_pixel_disc(position, radius, star_color)
 		if radius > 1.65:
 			var sparkle := Color(star_color, star_color.a * 0.48)
 			draw_line(position - Vector2(3.0, 0.0), position + Vector2(3.0, 0.0), sparkle, 0.8)
@@ -194,14 +196,26 @@ func _draw_home_cosmos() -> void:
 		_: pass
 
 
+func _draw_pixel_disc(center: Vector2, radius: float, color: Color) -> void:
+	if _pixel_disc_texture == null:
+		var image := Image.create(48, 48, false, Image.FORMAT_RGBA8)
+		for y in range(48):
+			for x in range(48):
+				if Vector2(x + 0.5, y + 0.5).distance_to(Vector2(24, 24)) < 24:
+					image.set_pixel(x, y, Color.WHITE)
+		_pixel_disc_texture = ImageTexture.create_from_image(image)
+	var diameter := maxf(2, roundf(radius * 2))
+	draw_texture_rect(_pixel_disc_texture, Rect2((center - Vector2.ONE * diameter * 0.5).round(), Vector2.ONE * diameter), false, color)
+
+
 func _draw_home_black_hole(center: Vector2) -> void:
 	var rotation := _home_cosmic_time * 0.16
 	_draw_cosmic_ellipse(center, 118.0, 0.27, rotation, Color("#ff6d34", 0.24), 14.0)
 	_draw_cosmic_ellipse(center, 91.0, 0.32, -rotation * 1.35, Color("#ffba62", 0.68), 5.0)
 	_draw_cosmic_ellipse(center, 62.0, 0.39, rotation * 1.8, Color("#71dfff", 0.72), 3.0)
-	draw_circle(center, 44.0, Color("#8f45ff", 0.09))
-	draw_circle(center, 34.0, Color("#010107"))
-	draw_circle(center, 29.0, Color("#000004"))
+	_draw_pixel_disc(center, 44.0, Color("#8f45ff", 0.09))
+	_draw_pixel_disc(center, 34.0, Color("#010107"))
+	_draw_pixel_disc(center, 29.0, Color("#000004"))
 	draw_arc(center, 34.0, PI * 1.05, PI * 1.95, 52, Color("#fff0bf", 0.94), 2.0, true)
 
 
@@ -213,9 +227,9 @@ func _draw_home_sun(center: Vector2) -> void:
 		var glow := Color("#ff4a20", 0.016 + float(detail_layers - layer) * 0.002)
 		if layer < 5:
 			glow = Color("#ff9d26", 0.03 + float(5 - layer) * 0.012)
-		draw_circle(center, radius, glow)
-	draw_circle(center, 30.0 * pulse, Color("#ff7a19"))
-	draw_circle(center, 23.0 * pulse, Color("#ffe88a"))
+		_draw_pixel_disc(center, radius, glow)
+	_draw_pixel_disc(center, 30.0 * pulse, Color("#ff7a19"))
+	_draw_pixel_disc(center, 23.0 * pulse, Color("#ffe88a"))
 	var ray_count := 8 if bool(settings.get("low_performance", false)) else 12
 	for ray in range(ray_count):
 		var angle := TAU * float(ray) / float(ray_count) + _home_cosmic_time * 0.11
@@ -239,23 +253,23 @@ func _draw_home_sun(center: Vector2) -> void:
 
 func _draw_home_eclipse(center: Vector2) -> void:
 	for layer in range(10, 0, -1):
-		draw_circle(center, 32.0 + layer * 9.0, Color("#53d9ff", 0.018 + float(10 - layer) * 0.003))
-	draw_circle(center, 38.0, Color("#ffe996", 0.9))
+		_draw_pixel_disc(center, 32.0 + layer * 9.0, Color("#53d9ff", 0.018 + float(10 - layer) * 0.003))
+	_draw_pixel_disc(center, 38.0, Color("#ffe996", 0.9))
 	var moon_orbit := Vector2(cos(_home_cosmic_time * 0.52), sin(_home_cosmic_time * 0.52) * 0.22)
-	draw_circle(center + moon_orbit * 28.0, 34.0, Color("#030612"))
+	_draw_pixel_disc(center + moon_orbit * 28.0, 34.0, Color("#030612"))
 	draw_arc(center, 43.0, -0.38, PI + 0.38, 72, Color("#bdefff", 0.9), 2.0, true)
 
 
 func _draw_home_pulsar(center: Vector2) -> void:
 	var pulse := pow(maxf(0.0, sin(_home_cosmic_time * 2.3)), 7.0)
 	for layer in range(9, 0, -1):
-		draw_circle(center, 18.0 + layer * 9.0, Color("#5f75ff", 0.014 + pulse * 0.012))
+		_draw_pixel_disc(center, 18.0 + layer * 9.0, Color("#5f75ff", 0.014 + pulse * 0.012))
 	var angle := _home_cosmic_time * 0.42
 	for beam in [-1.0, 1.0]:
 		var direction: Vector2 = Vector2(cos(angle), sin(angle)) * beam
 		draw_line(center - direction * 190.0, center + direction * 190.0, Color("#8fc9ff", 0.05 + pulse * 0.36), 3.0 + pulse * 8.0, true)
-	draw_circle(center, 11.0, Color("#e9f5ff"))
-	draw_circle(center, 5.0, Color("#ffffff"))
+	_draw_pixel_disc(center, 11.0, Color("#e9f5ff"))
+	_draw_pixel_disc(center, 5.0, Color("#ffffff"))
 
 
 func _draw_cosmic_ellipse(center: Vector2, radius: float, flattening: float, rotation: float, color: Color, width: float) -> void:
@@ -311,7 +325,7 @@ func _draw_home_science() -> void:
 		spark_color.a *= 1.0 - life_ratio
 		var spark_position: Vector2 = spark["position"]
 		draw_line(spark_position, spark_position - Vector2(0.0, 5.0 + 8.0 * (1.0 - life_ratio)), spark_color, 1.5, true)
-		draw_circle(spark_position, 1.0 + (1.0 - life_ratio), spark_color)
+		_draw_pixel_disc(spark_position, 1.0 + (1.0 - life_ratio), spark_color)
 
 
 func _draw_home_axes(center: Vector2, axis_color: Color) -> void:
@@ -371,7 +385,7 @@ func _draw_home_flames(body: Dictionary, burn: float) -> void:
 		var height := burn * (4.0 + 8.0 * (0.5 + 0.5 * sin(phase)))
 		var tip := Vector2(x + sin(phase * 0.7) * height * 0.22, base - height)
 		draw_line(Vector2(x, base), tip, Color("#ff682b", 0.72 * burn), 1.6, true)
-		draw_circle(tip, 1.2 + burn, Color("#ffd46b", 0.68 * burn))
+		_draw_pixel_disc(tip, 1.2 + burn, Color("#ffd46b", 0.68 * burn))
 
 
 func _draw_home_trace(segments: Array[PackedVector2Array], color: Color) -> void:
@@ -848,17 +862,26 @@ func _input(event: InputEvent) -> void:
 
 
 func _setup_theme() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	system_font = SystemFont.new()
 	system_font.font_names = PackedStringArray(["Trebuchet MS", "Segoe UI", "Arial"])
-	system_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	system_font.antialiasing = TextServer.FONT_ANTIALIASING_NONE
 	system_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	formula_font = SystemFont.new()
 	formula_font.font_names = PackedStringArray(["Segoe Print", "Cambria Math", "STIX Two Math", "Segoe UI Symbol", "Arial"])
-	formula_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	formula_font.antialiasing = TextServer.FONT_ANTIALIASING_NONE
 	formula_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	var game_theme := Theme.new()
+	var pixel_font: FontFile = NeonVisuals.PIXEL_FONT
+	pixel_font.fallbacks = [ThemeDB.fallback_font]
 	game_theme.default_font = ThemeDB.fallback_font
 	game_theme.default_font_size = 18
+	game_theme.set_font("font", "Button", NeonVisuals.PIXEL_FONT)
+	game_theme.set_stylebox("panel", "PopupPanel", NeonVisuals.panel(NEON_THEME))
+	game_theme.set_stylebox("panel", "AcceptDialog", NeonVisuals.panel(NEON_THEME))
+	game_theme.set_stylebox("normal", "Button", NeonVisuals.button(NEON_THEME, false, "normal"))
+	game_theme.set_stylebox("hover", "Button", NeonVisuals.button(NEON_THEME, false, "hover"))
+	game_theme.set_stylebox("pressed", "Button", NeonVisuals.button(NEON_THEME, false, "pressed"))
 	theme = game_theme
 
 
@@ -1060,7 +1083,7 @@ func _add_campus_navigation(parent: Control) -> void:
 	var sections := [["resumen", "Mi campus"], ["materias", "Materias"], ["malla", "Malla"], ["tramites", "Trámites"], ["historial", "Historial"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]
 	for section in sections:
 		var button := _add_button(navigation, section[1], _show_campus_section.bind(section[0]), _campus_section == section[0], 38)
-		button.custom_minimum_size.x = maxf(100, ThemeDB.fallback_font.get_string_size(section[1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * float(settings["font_scale"]))).x + 42)
+		button.custom_minimum_size.x = maxf(100, NeonVisuals.PIXEL_FONT.get_string_size(section[1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * float(settings["font_scale"]))).x + 42)
 		button.autowrap_mode = TextServer.AUTOWRAP_OFF
 		button.add_theme_font_size_override("font_size", int(14 * float(settings["font_scale"])))
 		if _campus_section == section[0]:
@@ -1089,6 +1112,9 @@ func _focus_control(reference: WeakRef) -> void:
 func _label(text: String, font_size: int = 18, color: Color = INK, centered: bool = false) -> Label:
 	var label := Label.new()
 	label.text = text
+	if font_size >= 20:
+		label.add_theme_font_override("font", NeonVisuals.PIXEL_FONT)
+		label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if _current_theme.is_empty():
 		_current_theme = Catalog.THEME.get("sistemas", {})
 	var tcolor = color
@@ -1102,9 +1128,9 @@ func _label(text: String, font_size: int = 18, color: Color = INK, centered: boo
 		label.add_theme_constant_override("outline_size", 1)
 	if _current_theme.has("neon") and font_size >= 20:
 		label.add_theme_color_override("font_shadow_color", Color(_current_theme["neon"], 0.5))
-		label.add_theme_constant_override("shadow_outline_size", 3)
-		label.add_theme_constant_override("shadow_offset_x", 0)
-		label.add_theme_constant_override("shadow_offset_y", 0)
+		label.add_theme_constant_override("shadow_outline_size", 0)
+		label.add_theme_constant_override("shadow_offset_x", 2)
+		label.add_theme_constant_override("shadow_offset_y", 2)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if centered:
@@ -1115,12 +1141,13 @@ func _label(text: String, font_size: int = 18, color: Color = INK, centered: boo
 func _add_button(parent: Control, text: String, action: Callable, accent: bool = true, height: int = 56) -> Button:
 	var button := Button.new()
 	button.text = text
+	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	button.add_theme_constant_override("icon_max_width", 24)
 	button.add_theme_constant_override("h_separation", 12)
 	button.custom_minimum_size = Vector2(0, height)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	button.custom_minimum_size.x = clampf(ThemeDB.fallback_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(18 * float(settings["font_scale"]))).x + 36, 112, 300)
+	button.custom_minimum_size.x = clampf(NeonVisuals.PIXEL_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(18 * float(settings["font_scale"]))).x + 36, 112, 300)
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", int(round(18 * float(settings["font_scale"]))))
 	if accent:
@@ -1137,7 +1164,7 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 		button.add_theme_color_override("font_disabled_color", Color("#9c9688"))
 	if _current_theme.has("neon"):
 		button.add_theme_color_override("font_shadow_color", Color(_current_theme["neon"], 0.4))
-		button.add_theme_constant_override("shadow_outline_size", 2)
+		button.add_theme_constant_override("shadow_outline_size", 0)
 	button.add_theme_stylebox_override("normal", _button_style(accent, "normal"))
 	button.add_theme_stylebox_override("hover", _button_style(accent, "hover"))
 	button.add_theme_stylebox_override("pressed", _button_style(accent, "pressed"))
@@ -1158,72 +1185,15 @@ func _add_menu_button(parent: Control, text: String, action: Callable, accent: b
 	return _add_button(parent, text, Callable(self, "_transition_to").bind(action), accent, height)
 
 
-func _button_style(accent: bool, state: String) -> StyleBoxFlat:
-	if _current_theme.has("neon"):
-		return NeonVisuals.button(_current_theme, accent, state, bool(settings.get("low_performance", false)))
-	var style := StyleBoxFlat.new()
-	var accent_color = _current_theme.get("accent", GREEN)
-	if _menu_backdrop_active:
-		style.bg_color = Color(accent_color, 0.19 if accent else 0.12)
-		if state == "hover":
-			style.bg_color = Color(accent_color, 0.32)
-		elif state == "pressed":
-			style.bg_color = Color(accent_color, 0.46)
-		elif state == "disabled":
-			style.bg_color = Color(accent_color, 0.07)
-		style.border_color = Color(accent_color, 0.92 if state == "hover" else 0.64)
-		style.set_border_width_all(2 if accent else 1)
-		style.set_corner_radius_all(18)
-		style.content_margin_left = 15
-		style.content_margin_right = 15
-		style.content_margin_top = 5
-		style.content_margin_bottom = 5
-		style.shadow_color = Color(accent_color, 0.28 if state == "hover" else 0.12)
-		style.shadow_size = 9 if state == "hover" else 4
-		style.shadow_offset = Vector2.ZERO
-		return style
-	if accent:
-		style.bg_color = accent_color
-		if state == "hover":
-			style.bg_color = accent_color.lightened(0.15)
-		elif state == "pressed":
-			style.bg_color = accent_color.darkened(0.15)
-		elif state == "disabled":
-			style.bg_color = accent_color.darkened(0.4)
-		style.border_color = accent_color.darkened(0.3)
-	else:
-		style.bg_color = _current_theme.get("panel", Color("#eee8d8"))
-		if state == "hover":
-			style.bg_color = style.bg_color.lightened(0.08)
-		elif state == "pressed":
-			style.bg_color = style.bg_color.darkened(0.05)
-		elif state == "disabled":
-			style.bg_color = style.bg_color.darkened(0.1)
-		style.border_color = _current_theme.get("grid", Color("#8c927e"))
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(14)
-	style.content_margin_left = 16
-	style.content_margin_right = 16
-	style.content_margin_top = 6
-	style.content_margin_bottom = 6
-	style.shadow_color = Color(0, 0, 0, 0.25)
-	style.shadow_size = 2
-	style.shadow_offset = Vector2(2, 2)
-	return style
+func _button_style(accent: bool, state: String) -> PixelStyle:
+	return NeonVisuals.button(_current_theme, accent, state, bool(settings.get("low_performance", false)))
 
 
-func _focus_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
+func _focus_style() -> PixelStyle:
+	var style := PixelStyle.new()
 	style.draw_center = false
-	style.border_color = _current_theme.get("accent", GOLD)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(16)
-	style.shadow_color = Color(_current_theme.get("neon", _current_theme.get("accent", Color("#39bcff"))), 0.45)
-	style.shadow_size = 9
-	style.shadow_offset = Vector2(1, 1)
-	if _menu_backdrop_active:
-		style.shadow_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.42)
-		style.shadow_size = 7
+	style.border_color = _current_theme.get("core", Color.WHITE)
+	style.shadow_size = 0
 	return style
 
 
@@ -1238,39 +1208,15 @@ func _card(parent: Control, tinted: bool = false) -> VBoxContainer:
 	return box
 
 
-func _card_style(tinted: bool) -> StyleBoxFlat:
-	if _current_theme.has("neon"):
-		return NeonVisuals.panel(_current_theme, tinted, bool(settings.get("low_performance", false)))
-	var style := StyleBoxFlat.new()
-	if _current_theme.is_empty():
-		_current_theme = Catalog.THEME.get("sistemas", {})
-	style.bg_color = _current_theme.get("panel", Color("#fbf7ec"))
-	style.border_color = _current_theme.get("grid", Color("#d8cdb8"))
-	if _menu_backdrop_active:
-		style.bg_color = Color("#09111d", 0.82)
-		style.border_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.5)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(14)
-	style.content_margin_left = 16
-	style.content_margin_right = 16
-	style.content_margin_top = 12
-	style.content_margin_bottom = 12
-	style.shadow_color = Color(0, 0, 0, 0.25)
-	style.shadow_size = 2
-	style.shadow_offset = Vector2(2, 2)
-	if _menu_backdrop_active:
-		style.shadow_color = Color(_current_theme.get("accent", NEON_THEME["accent"]), 0.12)
-		style.shadow_size = 8
-	return style
+func _card_style(tinted: bool) -> PixelStyle:
+	return NeonVisuals.panel(_current_theme, tinted, bool(settings.get("low_performance", false)))
 
 
-func _input_style(focused: bool) -> StyleBoxFlat:
-	var theme_data := _current_theme if _current_theme.has("neon") else NeonVisuals.career("sistemas")
-	var style := NeonVisuals.panel(theme_data, focused, bool(settings.get("low_performance", false)))
-	style.bg_color = theme_data["bg"]
+func _input_style(focused: bool) -> PixelStyle:
+	var style := NeonVisuals.panel(_current_theme, focused, bool(settings.get("low_performance", false)))
+	style.bg_color = _current_theme.get("bg", Color("#050713"))
 	style.content_margin_top = 10
 	style.content_margin_bottom = 10
-	style.set_corner_radius_all(8)
 	return style
 
 
@@ -1305,16 +1251,9 @@ func _apply_career_theme(program_id: String, mention_id: String = "") -> void:
 	queue_redraw()
 
 
-func _animate_button(button: Button, hovering: bool) -> void:
-	if not _menu_backdrop_active:
-		return
-	if not bool(settings["animations"]) or not is_instance_valid(button) or button.disabled:
-		return
-	button.pivot_offset = button.size / 2.0
-	var tween := button.create_tween()
-	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(button, "scale", Vector2(1.015, 1.015) if hovering else Vector2.ONE, 0.12)
-	tween.parallel().tween_property(button, "rotation_degrees", 0.35 if hovering else 0.0, 0.12)
+func _animate_button(_button: Button, _hovering: bool) -> void:
+	# Hover/pressed frames provide feedback without blurring or rotating pixels.
+	pass
 
 
 func _add_compact_list(parent: Control) -> VBoxContainer:
@@ -1398,20 +1337,13 @@ func _show_main() -> void:
 	_update_home_quote()
 
 
-func _home_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#07101b", 0.94)
-	var accent: Color = _current_theme.get("accent", NEON_THEME["accent"])
-	style.border_color = Color(accent, 0.76)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(22)
+func _home_panel_style() -> PixelStyle:
+	var style := NeonVisuals.panel(_current_theme, true, bool(settings.get("low_performance", false)))
+	style.bg_color = Color("#07101b")
 	style.content_margin_left = 20
 	style.content_margin_right = 20
 	style.content_margin_top = 17
 	style.content_margin_bottom = 17
-	style.shadow_color = Color(accent, 0.18)
-	style.shadow_size = 18
-	style.shadow_offset = Vector2.ZERO
 	return style
 
 
@@ -1488,11 +1420,15 @@ func _show_options() -> void:
 	_home_art = false
 	set_process(false)
 	_apply_career_theme("sistemas")
+	# Options stays visually quiet even when motion is enabled elsewhere.
+	if is_instance_valid(_ambient):
+		_ambient.visible = false
+		_ambient.set_process(false)
 	var grid := _adaptive_grid(content, 330.0, 2)
 	var choices := [
 		["DisplayOption", "Pantalla", "Pantalla completa aprovecha el monitor. Ventana permite trabajar junto a otras aplicaciones.", "Usar ventana" if settings["fullscreen"] else "Usar pantalla completa", _toggle_fullscreen, "Pantalla completa" if settings["fullscreen"] else "En ventana"],
 		["MotionOption", "Movimiento y efectos", "Reduce las animaciones si prefieres una experiencia tranquila. Las acciones y resultados siguen disponibles.", "Reducir movimiento" if settings["animations"] else "Activar animaciones", _toggle_animations, "Animaciones activas" if settings["animations"] else "Movimiento reducido"],
-		["SmoothingOption", "Bordes y líneas", "El suavizado reduce los bordes dentados en grafos y dibujos. Puede exigir más trabajo a la tarjeta gráfica.", "Desactivar suavizado" if settings["antialiasing"] else "Activar suavizado", _toggle_antialiasing, "Suavizado activado" if settings["antialiasing"] else "Suavizado desactivado"],
+		["SmoothingOption", "Bordes y líneas", "Suaviza la geometría de algunos dibujos. Las texturas y letras pixel conservan sus píxeles definidos. Puede exigir más a la tarjeta gráfica.", "Desactivar suavizado" if settings["antialiasing"] else "Activar suavizado", _toggle_antialiasing, "Suavizado activado" if settings["antialiasing"] else "Suavizado desactivado"],
 		["PerformanceOption", "Rendimiento", "Bajo consumo reduce partículas y halos y limita la animación a 30 FPS. Útil en equipos con menos recursos.", "Usar calidad normal" if settings["low_performance"] else "Activar bajo consumo", _toggle_low_performance, "Bajo consumo" if settings["low_performance"] else "Calidad normal"]
 	]
 	for item in choices:

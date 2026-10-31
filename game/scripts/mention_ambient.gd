@@ -4,16 +4,18 @@ const BLUR := """shader_type canvas_item;
 render_mode unshaded;
 uniform float softness = 2.1;
 void fragment() {
+    // Quantized sampling gives the atmospheric blur a chunky pixel rhythm.
+    vec2 pixel_uv = (floor(UV * vec2(300.0, 170.0)) + 0.5) / vec2(300.0, 170.0);
     vec2 d = TEXTURE_PIXEL_SIZE * softness;
-    vec4 c = texture(TEXTURE, UV) * 0.20;
-    c += texture(TEXTURE, UV + vec2(d.x, 0.0)) * 0.12;
-    c += texture(TEXTURE, UV - vec2(d.x, 0.0)) * 0.12;
-    c += texture(TEXTURE, UV + vec2(0.0, d.y)) * 0.12;
-    c += texture(TEXTURE, UV - vec2(0.0, d.y)) * 0.12;
-    c += texture(TEXTURE, UV + d) * 0.08;
-    c += texture(TEXTURE, UV - d) * 0.08;
-    c += texture(TEXTURE, UV + vec2(d.x, -d.y)) * 0.08;
-    c += texture(TEXTURE, UV + vec2(-d.x, d.y)) * 0.08;
+    vec4 c = texture(TEXTURE, pixel_uv) * 0.20;
+    c += texture(TEXTURE, pixel_uv + vec2(d.x, 0.0)) * 0.12;
+    c += texture(TEXTURE, pixel_uv - vec2(d.x, 0.0)) * 0.12;
+    c += texture(TEXTURE, pixel_uv + vec2(0.0, d.y)) * 0.12;
+    c += texture(TEXTURE, pixel_uv - vec2(0.0, d.y)) * 0.12;
+    c += texture(TEXTURE, pixel_uv + d) * 0.08;
+    c += texture(TEXTURE, pixel_uv - d) * 0.08;
+    c += texture(TEXTURE, pixel_uv + vec2(d.x, -d.y)) * 0.08;
+    c += texture(TEXTURE, pixel_uv + vec2(-d.x, d.y)) * 0.08;
     float edge = smoothstep(0.0, 0.16, UV.x) * smoothstep(0.0, 0.16, 1.0 - UV.x);
     // Viewport textures contain premultiplied color. Convert before the
     // standard canvas blend so the atmospheric layer does not fade twice.
@@ -76,6 +78,7 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 0
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	stretch_mode = TextureRect.STRETCH_SCALE
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	surface = SubViewport.new()

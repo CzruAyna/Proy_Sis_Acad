@@ -49,6 +49,7 @@ static var _sphere_cache: Dictionary = {}
 
 func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip_contents = true
 	set_process(animations_enabled)
 	resized.connect(_fit_after_resize)
@@ -199,11 +200,11 @@ func _draw() -> void:
 		return
 	var glow: Color = graph_theme["neon"]
 	var frame := Neon.panel(graph_theme, false, low_performance)
-	frame.bg_color = Color(graph_theme["bg"], 0.78)
+	frame.bg_color = Color(graph_theme["bg"], 1.0)
 	draw_style_box(frame, Rect2(Vector2(3, 3), size - Vector2(6, 6)))
 	for column in range(40, int(size.x), 40):
 		for row in range(35, int(size.y), 40):
-			draw_circle(Vector2(column, row), 0.8, Color(glow, 0.13))
+			draw_rect(Rect2(Vector2(column, row), Vector2(2, 2)), Color(glow, 0.13))
 	if has_focus():
 		draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), Color(glow, 0.65), false, 1.0)
 	draw_set_transform(view_offset, 0, Vector2.ONE * view_zoom)
@@ -246,9 +247,9 @@ func _draw_sphere(index: int) -> void:
 	draw_colored_polygon(shadow, Color(0, 0, 0, 0.45))
 	Neon.ring(self, center, radius + 0.6, Color(glow, 0.65), low_performance)
 	draw_texture_rect(_sphere["texture"], Rect2(center - Vector2.ONE * radius, Vector2.ONE * radius * 2), false)
-	draw_arc(center, radius - 1.0, PI * 1.12, PI * 1.79, 32, Color(graph_theme["core"], 0.65), 1.3, true)
+	# The bitmap contains its own stepped specular highlight.
 	if active:
-		draw_arc(center, radius + 5, 0, TAU, 48, Color(graph_theme["core"], 0.95), 1.8, true)
+		Neon.ring(self, center, radius + 5, Color(graph_theme["core"], 0.95), low_performance)
 	var code := str(item.get("sigla", ""))
 	var code_size := int(13 * font_scale)
 	var code_width := ThemeDB.fallback_font.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size).x
@@ -263,7 +264,7 @@ func _draw_sphere(index: int) -> void:
 	var status := str(personal_states.get(item.get("sigla", ""), ""))
 	if not status.is_empty():
 		if item.get("retained", false):
-			draw_arc(center, radius + 6, 0, TAU, 48, Color("#ffd36a"), 2, true)
+			Neon.ring(self, center, radius + 6, Color("#ffd36a"), low_performance)
 			var retained_label := "RECURSAR · S%d" % int(item.get("semester", 1))
 			draw_string_outline(ThemeDB.fallback_font, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), 3, Color(0, 0, 0, 0.9))
 			draw_string(ThemeDB.fallback_font, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), Color("#ffd36a"))
@@ -316,8 +317,8 @@ func _sphere_resource(color: Color) -> Dictionary:
 	var halfway := (light + Vector3(0, 0, 1)).normalized()
 	for y in range(resolution):
 		for x in range(resolution):
-			var nx := (float(x) + 0.5) / float(resolution) * 2.0 - 1.0
-			var ny := (float(y) + 0.5) / float(resolution) * 2.0 - 1.0
+			var nx := (floorf(float(x) / 8.0) * 8.0 + 4.0) / float(resolution) * 2.0 - 1.0
+			var ny := (floorf(float(y) / 8.0) * 8.0 + 4.0) / float(resolution) * 2.0 - 1.0
 			var squared := nx * nx + ny * ny
 			if squared >= 1.0:
 				continue
@@ -326,7 +327,10 @@ func _sphere_resource(color: Color) -> Dictionary:
 			var diffuse := 0.09 + 0.74 * maxf(normal.dot(light), 0.0)
 			var specular := pow(maxf(normal.dot(halfway), 0.0), 48.0) * 0.88
 			var rim := pow(1.0 - z, 3.0) * 0.28
-			var alpha := clampf((1.0 - sqrt(squared)) * float(resolution) * 0.5, 0.0, 1.0)
+			diffuse = snappedf(diffuse, 0.13)
+			specular = snappedf(specular, 0.20)
+			rim = snappedf(rim, 0.12)
+			var alpha := 1.0
 			image.set_pixel(x, y, Color(clampf(color.r * (diffuse + rim) + specular, 0, 1), clampf(color.g * (diffuse + rim) + specular, 0, 1), clampf(color.b * (diffuse + rim) + specular, 0, 1), alpha))
 	var result := {"texture": ImageTexture.create_from_image(image), "image": image}
 	_sphere_cache[key] = result
@@ -821,7 +825,7 @@ func _add_view_buttons() -> void:
 	var tools := HFlowContainer.new()
 	tools.name = "GraphPanControls"
 	tools.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	tools.offset_left = -350
+	tools.offset_left = -410
 	tools.offset_right = -8
 	tools.offset_top = 8
 	add_child(tools)

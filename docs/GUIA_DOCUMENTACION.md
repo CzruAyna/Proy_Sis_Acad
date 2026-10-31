@@ -123,8 +123,14 @@ están registradas en `LICENCIA_CODIGO_LIBRE.md`.
 
 ## Cierre de una entrega
 
-La respuesta final debe comenzar con **Título del summary:** y un título breve
-que describa el cambio. Después debe explicar:
+La primera línea de la respuesta final debe ser el título breve del summary,
+con el formato obligatorio `tipo: descripción breve` o
+`tipo(ámbito): descripción breve`. Elegir el prefijo que corresponda al trabajo:
+`feat`, `fix`, `build`, `chore`, `ci`, `docs`, `style`, `refactor`, `perf`,
+`test`, `revert` u otro pertinente. No concatenar todos los tipos.
+Esto se aplica a cada entrega, también si solo cambia documentación o
+configuración. Por ejemplo: `docs: precisar el formato de los summaries`.
+Después debe explicar:
 
 1. Qué se modificó y para qué.
 2. Qué comprobaciones se ejecutaron y qué permiten concluir.

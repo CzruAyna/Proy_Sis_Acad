@@ -86,12 +86,11 @@ func _draw_system(bounds: Rect2, color: Color) -> void:
 	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(8, 18), "Capacidad disponible: %d%%" % int(factor * 100), HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
 
 
-func _box_style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
+func _box_style(color: Color) -> Neon.PixelStyle:
+	var style := Neon.panel(visual_theme)
 	style.bg_color = visual_theme.get("fill", Color("#124a9a"))
 	style.border_color = color
 	style.set_border_width_all(1)
 	style.shadow_color = Color(color, 0.4)
-	style.shadow_size = 8
-	style.set_corner_radius_all(6)
+	style.shadow_size = 4
 	return style

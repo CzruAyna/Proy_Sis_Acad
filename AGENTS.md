@@ -43,5 +43,10 @@ original. Revisar la procedencia y condiciones de los recursos incorporados.
 
 Toda respuesta final debe comenzar con el título del summary del trabajo y
 explicar cambios, motivo, comprobaciones realizadas y asuntos sin verificar.
+El título debe tener el formato `tipo: descripción breve` o
+`tipo(ámbito): descripción breve`, eligiendo el prefijo correspondiente:
+`feat`, `fix`, `build`, `chore`, `ci`, `docs`, `style`, `refactor`, `perf`,
+`test`, `revert` u otro pertinente. Es obligatorio para cada summary,
+incluidos trabajos solo de documentación o configuración. No concatenar tipos.
 El título se entrega por el chat; no implica crear un commit ni realizar una
 operación remota.

@@ -284,3 +284,42 @@ pendientes en [Código libre y licencia](LICENCIA_CODIGO_LIBRE.md).
 
 Las comprobaciones de cierre se registran en el resumen de esta entrega.
 No se atribuye un identificador de commit a cambios que todavía no lo tienen.
+
+## 30 de octubre: interfaces pixel art y alcance de frontend
+
+**Estado:** cambios de esta entrega todavía sin commit.
+
+Se aplicó el estilo pixel art solicitado a marcos, botones, títulos, iconos
+de menciones y esferas. Se conservaron la composición del inicio, azul para
+Sistemas, rojo para Informática, las páginas sin rueda y los estados del motor.
+Los textos largos mantienen una fuente de lectura. Los recursos originales
+incluyen una fuente de 119 glifos y cinco sprites, con generadores mantenidos
+en el repositorio.
+
+Los componentes principales son `pixel_style_box.gd`, `pixel_mention_sprite.gd`,
+`neon_visuals.gd`, `game.gd`, `curriculum_graph.gd`, `mention_art.gd` y
+`mention_ambient.gd`. Se extendieron los controles comunes a la historia
+demostrativa y a las ilustraciones de estudio. Se ajustaron herramientas del
+grafo y se dejó Opciones con fondo quieto.
+
+Se incorporó la instrucción acumulativa a `REGLAS_USUARIO.txt` y se publicó
+la guía [Tareas de frontend](ALCANCE_FRONTEND.md), con ejemplos de encargos y
+el límite de responsabilidad frente a motor/backend y datos institucionales.
+
+Se ejecutaron nueve suites: **10.898 comprobaciones, cero fallos**. Se generaron
+19 capturas con el renderizador real y se exportó Windows, cuyo arranque aislado
+terminó con salida 0 y sin errores de scripts. El detalle de casos,
+archivos de prueba y registros está en [Diseño visual](DISENO_VISUAL_CAMPUS.md).
+Quedan pendientes la evaluación con jugadores y otras configuraciones gráficas;
+la prueba local no demuestra compatibilidad con todos los equipos.
+
+### Precisión del formato de los summaries
+
+**Fecha:** 30 de octubre de 2026. **Estado:** cambio todavía sin commit.
+
+Se explicitó la instrucción del usuario de comenzar cada summary con el
+prefijo correspondiente al trabajo y dos puntos, admitiendo ámbito opcional.
+Se amplió la regla 12 de `REGLAS_USUARIO.txt` y se armonizaron `AGENTS.md` y
+[Guía de documentación](GUIA_DOCUMENTACION.md). El título se entrega por chat;
+no implica crear un commit. La revisión corresponde a documentación y no
+modifica el comportamiento del juego.

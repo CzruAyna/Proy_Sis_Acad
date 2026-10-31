@@ -13,6 +13,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Desarrollo local](DESARROLLO_LOCAL.md) | Requisitos, ejecución y exportación de Godot, API Django e interfaz Next.js. |
 | [Simulación individual](SIMULACION_ESTUDIANTE.md) | Reglas y estados del recorrido individual en Godot. |
 | [Diseño visual](DISENO_VISUAL_CAMPUS.md) | Identidad, grafos, navegación y comportamiento visual acordados. |
+| [Tareas de frontend](ALCANCE_FRONTEND.md) | Qué puede asumir interfaz, ejemplos de encargos y coordinación con motor/backend. |
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
 | [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Avances por fecha, commits de referencia y cambios todavía sin commit. |
 

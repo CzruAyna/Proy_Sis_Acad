@@ -49,6 +49,7 @@ func show_setup(message: String = "") -> void:
 	field.name = "StoryPlayerName"
 	field.placeholder_text = "Nombre o apodo obligatorio"
 	field.max_length = 60
+	_ui()._style_input(field)
 	field.text = player_name
 	field.custom_minimum_size = Vector2(0, 42)
 	card.add_child(field)

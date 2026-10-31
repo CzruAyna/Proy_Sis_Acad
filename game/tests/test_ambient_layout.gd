@@ -39,7 +39,7 @@ func _run() -> void:
 	for child in menu.get_children():
 		if child is Button:
 			widths.append(child.size.x)
-	_check(widths.size() == 6, "Inicio conserva las seis acciones cuando hay partida reciente")
+	_check(widths.size() == 7, "Inicio conserva siete acciones con partida reciente e historia demostrativa")
 	for width in widths:
 		_check(is_equal_approx(width, widths[0]), "Todos los botones del inicio tienen el mismo ancho")
 	var motifs := {}

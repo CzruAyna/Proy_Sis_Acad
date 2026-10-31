@@ -1,6 +1,6 @@
 # Identidad visual del juego
 
-Actualizado el 29 de octubre de 2026.
+Actualizado el 30 de octubre de 2026.
 
 El juego mantiene fondos oscuros y utiliza una identidad de color continua desde la selección de carrera hasta el campus, materias, malla, trámites, historial, auxiliatura, estudio, graduación y logros de la partida.
 
@@ -22,6 +22,39 @@ El juego mantiene fondos oscuros y utiliza una identidad de color continua desde
 Los motivos se dibujan como una capa ambiental desenfocada detrás de tarjetas opacas. No contienen marcos de aplicación, ventanas falsas ni rótulos al pie. Software muestra escritura de HTML y código; Telemática, comandos de configuración y puertos de red. Las otras menciones utilizan datos, procesos y optimización. Los textos ambientales son ilustraciones decorativas, no información institucional ni configuraciones operativas.
 
 ## Implementación
+
+### Estilo pixel art vigente
+
+El cambio solicitado el 30/10 aplica pixel art a los controles del juego,
+conservando la composición del inicio y los recorridos interiores. No cambia
+las reglas académicas ni los archivos de guardado.
+
+- `pixel_style_box.gd` dibuja marcos escalonados, sombras desplazadas y relieve
+  de botones. Hover, pulsación y foco tienen estados distintos; los controles
+  no rotan ni se escalan al pasar el ratón.
+- `assets/fonts/campus_pixel.fnt` y su atlas contienen 119 glifos originales,
+  con tildes, ñ y símbolos de navegación. `tools/generate_pixel_font.py` conserva
+  sus máscaras y permite regenerarlos con Python sin dependencias externas.
+  Títulos y acciones utilizan esa fuente. Los párrafos y campos conservan una
+  fuente de lectura; los símbolos adicionales tienen una fuente de respaldo.
+- Los sprites originales de las cinco menciones se generan en 32×24 píxeles
+  mediante `pixel_mention_sprite.gd`. Se muestran a escala entera y se reutilizan.
+- Las esferas mantienen volumen, luz y sombra mediante bloques de color y
+  muestreo vecino más próximo. No se cambia su geometría de interacción ni la
+  validación de conexiones. El cosmos del inicio utiliza discos de baja resolución.
+- El ambiente por mención conserva animación tenue y desenfoque, con muestreo
+  escalonado. Opciones tiene fondo quieto. Bajo consumo y movimiento reducido
+  mantienen sus controles existentes.
+
+La escala tipográfica admite los ajustes 80%, 100% y 120%. El filtrado cercano
+mantiene píxeles definidos, aunque un tamaño no entero o el escalado del sistema
+puede producir píxeles de diferente ancho. Se prioriza conservar el acceso al
+texto y las acciones en todas las páginas.
+
+Las fuentes, sprites y marcos añadidos son recursos propios bajo
+`GPL-3.0-or-later`; no se incorporan paquetes gráficos de terceros.
+
+### Componentes compartidos
 
 - `game/scripts/neon_visuals.gd` centraliza paletas, motivos y primitivas de luz para texto, trayectorias, líneas y anillos.
 - `game/scripts/mention_ambient.gd` dibuja los motivos en una superficie de 600×340 y aplica un filtro de desenfoque. Actualiza la animación a un máximo de diez veces por segundo. No captura el ratón y se oculta al volver al inicio.
@@ -70,6 +103,33 @@ La regla permanente está en `REGLAS_USUARIO.txt`; `AGENTS.md` obliga a leerla a
 Los 50 semestres actuales mantienen una esfera por materia. Para datos futuros que no permitan esa disposición, existe una vista por conexiones que repite referencias visuales identificadas de las materias, en espacios separados. Conserva todas las relaciones, sin ocultarlas ni cambiar los requisitos académicos.
 
 ## Verificación
+
+### Entrega pixel art del 30/10/2026
+
+Se ejecutaron nueve suites, con **10.898 comprobaciones y cero fallos**:
+634 de pixel art, 2.323 de navegación compacta, 194 del frontend, 123 de
+identidad visual, 58 de ambiente/composición, 1.239 de interacción del grafo,
+5.710 de separación de conexiones, 596 de navegación de historia y 21 de
+integración. Los registros locales son `game/.test-artifacts/pixel-test_*.log`.
+La prueba de composición se actualizó para incluir el acceso a Historia,
+incorporado antes de esta entrega; con partida reciente son siete acciones.
+
+`game/tests/test_pixel_ui.gd` verifica tildes y símbolos, escalado de texto,
+cinco sprites distintos, marcos compartidos en las siete áreas, opacidad,
+relieve de pulsación, volumen pixelado y conservación del estado académico.
+`game/tests/capture_pixel.gd` genera 19 capturas con perfiles ficticios, sin
+leer ni guardar partidas personales. Se inspeccionaron inicio, menciones,
+campus de ambas carreras, grafo, formulario, opciones y estudio, incluyendo
+900×640 con letras al 120%. Las capturas están en
+`game/.test-artifacts/pixel/`; el renderizador utilizó ANGLE por el controlador
+de vídeo del equipo.
+
+Se exportó Windows con la fuente y los recursos pixel y se comprobó su arranque
+aislado en modo headless, con salida 0 y sin errores de scripts. La evaluación con
+jugadores y el comportamiento en otras GPU, sistemas operativos y escalados
+de pantalla permanecen sin verificar; corresponden a frontend y empaquetado.
+
+### Comprobaciones e historial anteriores
 
 ```powershell
 .\game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --script res://tests/test_neon_visuals.gd

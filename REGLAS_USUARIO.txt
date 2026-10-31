@@ -71,6 +71,15 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
 
 12. CIERRE CON SUMMARY, indicada el 30/10/2026.
     Dar siempre en la respuesta final un título del summary breve y concreto.
+    Precisión expresa del 30/10/2026: el título debe comenzar con el prefijo
+    correspondiente al trabajo, seguido de dos puntos y una descripción:
+    tipo: descripción breve, o tipo(ámbito): descripción breve.
+    Tipos admitidos: feat, fix, build, chore, ci, docs, style, refactor, perf,
+    test, revert u otro tipo pertinente. Elegir el que describa el cambio real;
+    no concatenar todos los prefijos. Aplicar este formato a cada summary,
+    también en tareas que solo cambien documentación o configuración.
+    La primera línea de la respuesta final será ese título. Entregar el título
+    no implica crear un commit ni realizar operaciones remotas.
     Explicar qué se modificó y por qué, qué comprobaciones se realizaron y qué
     quedó sin verificar. No presentar una prueba propuesta como ejecutada.
     Antes de cerrar cambios, releer completo este registro y revisar el diff.
@@ -81,3 +90,10 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     técnica de implementación. Registrar en docs/ los pendientes y el área
     responsable; no modificar backend o reglas académicas para resolver
     documentación o presentación.
+
+14. ESTILO PIXEL ART, indicada el 30/10/2026.
+    Aplicar el estilo pixel art a las interfaces del juego. Conservar las
+    reglas anteriores de composición, legibilidad, colores por carrera,
+    ambientes por mención, esferas con profundidad y navegación sin rueda.
+    La elección de recursos, tamaños y técnicas es una decisión de frontend;
+    no cambia las reglas académicas ni los datos del motor.
