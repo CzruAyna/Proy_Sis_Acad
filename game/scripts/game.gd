@@ -4,6 +4,8 @@ const Catalog = preload("res://scripts/catalog.gd")
 const NeonVisuals = preload("res://scripts/neon_visuals.gd")
 const PixelStyle = preload("res://scripts/pixel_style_box.gd")
 const BrokenPanel = preload("res://scripts/broken_pixel_panel.gd")
+const CareerLogo = preload("res://scripts/procedural_career_logo.gd")
+const FractureAnimator = preload("res://scripts/fracture_animator.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
@@ -11,7 +13,7 @@ const SimulationProcedures = preload("res://scripts/simulation_procedures.gd")
 const SimulationSaveStore = preload("res://scripts/simulation_save_store.gd")
 const CareerStoryUI = preload("res://scripts/career_story_ui.gd")
 const ExplorationUI = preload("res://scripts/campus_exploration_ui.gd")
-const GAME_LOGO = preload("res://assets/branding/sis_inf_logo.png")
+const APP_ICON = preload("res://assets/branding/sis_inf_logo.png")
 const SAVE_DIR := "user://partidas"
 const SAVE_COUNT := 3
 const GLOBAL_PROFILE_PATH := "user://perfil_global.json"
@@ -24,7 +26,7 @@ const NEUTRAL_THEME := {"bg": Color("#101216"), "panel": Color("#1b1f25"), "acce
 const NEON_THEME := {"bg": Color("#050713"), "panel": Color("#0b1322"), "accent": Color("#42eaff"), "text": Color("#e9fbff"), "sub": Color("#adc4d5"), "grid": Color("#18324a")}
 const HOME_NAME := "SIS-INF"
 const HOME_CURVE_DURATION := 5.5
-const HOME_VISIBLE_FORMULAS := 24
+const HOME_VISIBLE_FORMULAS := 12
 const HOME_FORMULAS := [
 	{"text": "E = mc²", "subject": "physics"}, {"text": "a² + b² = c²", "subject": "math"},
 	{"text": "eⁱπ + 1 = 0", "subject": "math"}, {"text": "x = (−b ± √(b²−4ac))/2a", "subject": "math"},
@@ -55,14 +57,6 @@ const HOME_FORMULAS := [
 	{"text": "rate = k[A]ᵐ[B]ⁿ", "subject": "chemistry"}, {"text": "Q = mcΔT", "subject": "physics"},
 	{"text": "T(n) = T(n/2) + 1", "subject": "computing"}, {"text": "f(n) = O(n log n)", "subject": "computing"},
 	{"text": "SELECT * FROM datos", "subject": "computing"}, {"text": "∑ᵢ₌₀ⁿ xᵢ", "subject": "math"}
-]
-const HOME_QUOTES := [
-	{"text": "La naturaleza está escrita en lenguaje matemático.", "by": "Galileo Galilei · Il Saggiatore (1623)"},
-	{"text": "La imaginación es más importante que el conocimiento.", "by": "Albert Einstein · Saturday Evening Post (1929)"},
-	{"text": "El motor analítico teje patrones algebraicos como el telar teje flores.", "by": "Ada Lovelace · Nota A (1843)"},
-	{"text": "El progreso no es rápido ni sencillo.", "by": "Marie Curie · Notas autobiográficas (1923)"},
-	{"text": "Si he visto más lejos, es por estar sobre hombros de gigantes.", "by": "Isaac Newton · carta a Robert Hooke (1676)"},
-	{"text": "No debes engañarte a ti mismo; eres quien más fácilmente puedes engañar.", "by": "Richard Feynman · Cargo Cult Science (1974)"}
 ]
 const HOME_CURVES := ["sin", "cos", "tan", "parabola", "cubic", "sqrt", "log", "exp", "gaussian", "heart", "rose", "lissajous", "spiral", "butterfly"]
 const HOME_COSMIC_EVENTS := ["black_hole", "sun", "nebula", "eclipse", "pulsar"]
@@ -103,6 +97,9 @@ const CampusUI = preload("res://scripts/student_campus.gd")
 const PagedView = preload("res://scripts/paged_view.gd")
 const Ambient = preload("res://scripts/mention_ambient.gd")
 var _ambient: TextureRect
+var _effects: Node
+var _page_style: StyleBox
+var _page_width := 880.0
 var _options_page := 0
 var campus_ui: RefCounted
 var career_story_ui: RefCounted
@@ -119,7 +116,6 @@ var selected_faculty := ""
 var draft_player_name := ""
 var current_question: Dictionary = {}
 var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false, "low_performance": false}
-var system_font: SystemFont
 var formula_font: SystemFont
 var random := RandomNumberGenerator.new()
 var _active_back := Callable()
@@ -136,9 +132,6 @@ var _home_formula_bodies: Array[Dictionary] = []
 var _home_formula_order: Array = []
 var _home_formula_cursor := 0
 var _home_formula_time := 0.0
-var _home_quote_label: Label
-var _home_quote_index := 0
-var _home_quote_time := 0.0
 var _home_stars: Array[Dictionary] = []
 var _home_nebulae: Array[Dictionary] = []
 var _home_sparks: Array[Dictionary] = []
@@ -157,7 +150,7 @@ func _ready() -> void:
 	_use_menu_theme()
 	get_window().min_size = Vector2i(900, 640)
 	_apply_image_settings()
-	DisplayServer.set_icon(GAME_LOGO.get_image())
+	DisplayServer.set_icon(APP_ICON.get_image())
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings["fullscreen"] else DisplayServer.WINDOW_MODE_WINDOWED)
 	_show_main()
 	queue_redraw()
@@ -170,6 +163,9 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), bg)
 	if _home_art:
 		_draw_home_science()
+	elif _page_style != null:
+		var width := minf(_page_width, size.x - 64)
+		draw_style_box(_page_style, Rect2(Vector2((size.x - width) * 0.5, 24), Vector2(width, maxf(0, size.y - 48))))
 
 
 func _draw_home_cosmos() -> void:
@@ -450,12 +446,7 @@ func _process(delta: float) -> void:
 		var body_slot := _home_formula_cursor % _home_formula_bodies.size()
 		_home_formula_bodies[body_slot] = _make_home_body(_home_formula_order[_home_formula_cursor])
 		_home_formula_cursor += 1
-	_home_quote_time += delta
 	_home_cosmic_time += delta
-	if _home_quote_time >= 12.0:
-		_home_quote_time = 0.0
-		_home_quote_index = (_home_quote_index + 1) % HOME_QUOTES.size()
-		_update_home_quote()
 	_home_curve_time += delta
 	if _home_curve_time >= HOME_CURVE_DURATION:
 		_home_curve_time = 0.0
@@ -812,13 +803,6 @@ func _resolve_formula_collisions() -> void:
 			_home_formula_bodies[j] = b
 
 
-func _update_home_quote() -> void:
-	if not is_instance_valid(_home_quote_label):
-		return
-	var quote: Dictionary = HOME_QUOTES[_home_quote_index]
-	_home_quote_label.text = "“%s”\n— %s" % [quote["text"], quote["by"]]
-
-
 func _use_neutral_theme() -> void:
 	_visual_program_id = ""
 	_visual_mention_id = ""
@@ -871,10 +855,6 @@ func _input(event: InputEvent) -> void:
 
 func _setup_theme() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	system_font = SystemFont.new()
-	system_font.font_names = PackedStringArray(["Trebuchet MS", "Segoe UI", "Arial"])
-	system_font.antialiasing = TextServer.FONT_ANTIALIASING_NONE
-	system_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	formula_font = SystemFont.new()
 	formula_font.font_names = PackedStringArray(["Segoe Print", "Cambria Math", "STIX Two Math", "Segoe UI Symbol", "Arial"])
 	formula_font.antialiasing = TextServer.FONT_ANTIALIASING_NONE
@@ -891,6 +871,10 @@ func _setup_theme() -> void:
 	game_theme.set_stylebox("hover", "Button", NeonVisuals.button(NEON_THEME, false, "hover"))
 	game_theme.set_stylebox("pressed", "Button", NeonVisuals.button(NEON_THEME, false, "pressed"))
 	theme = game_theme
+	_effects = FractureAnimator.new()
+	_effects.name = "FractureEffects"
+	add_child(_effects)
+	_effects.configure(bool(settings["animations"]), bool(settings.get("low_performance", false)))
 
 
 func _apply_image_settings() -> void:
@@ -1008,7 +992,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	_active_back = back
 	_sync_ambient()
 	for child in get_children():
-		if child == _transition_overlay or child == _ambient:
+		if child == _transition_overlay or child == _ambient or child == _effects:
 			continue
 		remove_child(child)
 		child.queue_free()
@@ -1016,8 +1000,12 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	margin.name = "PageMargin"
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(margin)
+	_effects.clear()
+	_page_style = _home_panel_style()
+	_effects.register(self, _page_style)
 	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios", "Grafo de la historia", "Explorar FNI", "Mapa del campus", "Plano aportado"]
 	var maximum_width := 1100.0 if graph_workspace else 880.0
+	_page_width = maximum_width
 	var resize_page := func() -> void:
 		var side := maxi(24, int((size.x - maximum_width) * 0.5))
 		margin.add_theme_constant_override("margin_left", side)
@@ -1186,8 +1174,6 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	if action.is_valid():
 		button.pressed.connect(action)
-	button.mouse_entered.connect(_animate_button.bind(button, true))
-	button.mouse_exited.connect(_animate_button.bind(button, false))
 	parent.add_child(button)
 	return button
 
@@ -1211,8 +1197,10 @@ func _focus_style() -> PixelStyle:
 func _card(parent: Control, tinted: bool = false) -> VBoxContainer:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", _card_style(tinted))
+	var style := _card_style(tinted)
+	panel.add_theme_stylebox_override("panel", style)
 	parent.add_child(panel)
+	_effects.register(panel, style)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 7)
 	panel.add_child(box)
@@ -1226,6 +1214,7 @@ func _card_style(tinted: bool) -> PixelStyle:
 func _input_style(focused: bool) -> PixelStyle:
 	var style := NeonVisuals.panel(_current_theme, focused, bool(settings.get("low_performance", false)))
 	style.bg_color = _current_theme.get("bg", Color("#050713"))
+	style.fractured = false
 	style.content_margin_top = 10
 	style.content_margin_bottom = 10
 	return style
@@ -1262,11 +1251,6 @@ func _apply_career_theme(program_id: String, mention_id: String = "") -> void:
 	queue_redraw()
 
 
-func _animate_button(_button: Button, _hovering: bool) -> void:
-	# Hover/pressed frames provide feedback without blurring or rotating pixels.
-	pass
-
-
 func _add_compact_list(parent: Control) -> VBoxContainer:
 	var rows := VBoxContainer.new()
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1278,9 +1262,10 @@ func _add_compact_list(parent: Control) -> VBoxContainer:
 
 func _show_main() -> void:
 	_active_back = Callable()
-	_home_quote_label = null
+	_effects.clear()
+	_page_style = null
 	for child in get_children():
-		if child == _transition_overlay or child == _ambient:
+		if child == _transition_overlay or child == _ambient or child == _effects:
 			continue
 		remove_child(child)
 		child.queue_free()
@@ -1290,8 +1275,10 @@ func _show_main() -> void:
 	_activate_menu_backdrop()
 	var menu_panel := PanelContainer.new()
 	menu_panel.name = "MainMenuPanel"
-	menu_panel.add_theme_stylebox_override("panel", _home_panel_style())
+	var menu_style := _home_panel_style()
+	menu_panel.add_theme_stylebox_override("panel", menu_style)
 	stage.add_child(menu_panel)
+	_effects.register(menu_panel, menu_style)
 	var menu := VBoxContainer.new()
 	menu.name = "PageContent"
 	menu.add_theme_constant_override("separation", 6)
@@ -1300,14 +1287,17 @@ func _show_main() -> void:
 	var branding := HBoxContainer.new()
 	branding.add_theme_constant_override("separation", 14)
 	menu.add_child(branding)
-	var logo := TextureRect.new()
+	var logo := CareerLogo.new()
 	logo.name = "SisInfLogo"
-	logo.texture = GAME_LOGO
-	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.custom_minimum_size = Vector2(48, 48)
-	logo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	branding.add_child(logo)
+	logo.modulate.a = 0.75
+	stage.add_child(logo)
+	stage.move_child(logo, 0)
+	var place_logo := func() -> void:
+		var extent := floorf(minf(stage.size.x * 0.48, stage.size.y * 0.72) / CareerLogo.SIDE) * CareerLogo.SIDE
+		logo.size = Vector2.ONE * maxf(CareerLogo.SIDE, extent)
+		logo.position = (Vector2(stage.size.x * 0.73, stage.size.y * 0.5) - logo.size * 0.5).round()
+	stage.resized.connect(place_logo)
+	place_logo.call_deferred()
 	var title := _label(HOME_NAME, 30, Color("#f4fdff"))
 	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	branding.add_child(title)
@@ -1326,15 +1316,23 @@ func _show_main() -> void:
 	_add_button(menu, "Salir", Callable(self, "_exit_game"), false, 34)
 	for action in menu.get_children():
 		if action is Button:
-			action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			action.custom_minimum_size.x = 0
+			action.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			action.autowrap_mode = TextServer.AUTOWRAP_OFF
 			action.add_theme_font_size_override("font_size", int(round(14 * float(settings["font_scale"]))))
+	var actions_width := 0.0
+	for action in menu.get_children():
+		if action is Button:
+			actions_width = maxf(actions_width, NeonVisuals.PIXEL_FONT.get_string_size(action.text, HORIZONTAL_ALIGNMENT_LEFT, -1, action.get_theme_font_size("font_size")).x + 36)
+	for action in menu.get_children():
+		if action is Button:
+			action.custom_minimum_size.x = actions_width
 	var fit_menu := func() -> void:
-		var width := minf(440 + maxf(0, float(settings["font_scale"]) - 1) * 200, maxf(0, stage.size.x - 64))
+		if not is_instance_valid(menu_panel) or not menu_panel.is_inside_tree():
+			return
+		var width := minf(ceilf(maxf(320, actions_width + 80) / 16) * 16, maxf(0, stage.size.x - 128))
 		menu_panel.size.x = width
 		menu_panel.size.y = menu_panel.get_combined_minimum_size().y
-		menu_panel.position = Vector2(40, maxf(28, floorf((stage.size.y - menu_panel.size.y) * 0.5)))
+		menu_panel.position = Vector2(72, maxf(28, floorf((stage.size.y - menu_panel.size.y) * 0.5)))
 	stage.resized.connect(fit_menu)
 	menu.minimum_size_changed.connect(func() -> void: fit_menu.call_deferred())
 	fit_menu.call_deferred()
@@ -1342,7 +1340,7 @@ func _show_main() -> void:
 
 func _home_panel_style() -> BrokenPanel:
 	var style := BrokenPanel.new()
-	style.edge_color = _current_theme.get("accent", Color("#42eaff"))
+	style.border_color = _current_theme.get("accent", Color("#42eaff"))
 	return style
 
 
@@ -2083,6 +2081,8 @@ func _achievement_card(parent: Control, item: Dictionary) -> void:
 
 
 func _sync_ambient() -> void:
+	if is_instance_valid(_effects):
+		_effects.configure(bool(settings["animations"]), bool(settings.get("low_performance", false)))
 	var enabled := not _home_art and not _visual_program_id.is_empty()
 	if not is_instance_valid(_ambient):
 		if not enabled:

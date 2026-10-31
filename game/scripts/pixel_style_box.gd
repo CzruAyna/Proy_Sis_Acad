@@ -1,4 +1,5 @@
 extends StyleBox
+const Fracture = preload("res://scripts/fracture_geometry.gd")
 ## Original stepped frame. Geometry stays crisp without a full-screen pixel filter.
 
 var bg_color := Color("#07172e")
@@ -10,6 +11,10 @@ var draw_center := true
 var border_width := 2
 var raised := false
 var pressed := false
+var fractured := false
+var chunk_size := 16
+var fracture_depth := 0
+var terminal_phase := -1.0
 
 
 func set_border_width_all(value: int) -> void:
@@ -21,11 +26,16 @@ func _get_minimum_size() -> Vector2:
 
 
 func _get_draw_rect(rect: Rect2) -> Rect2:
+	if fractured:
+		return rect.grow(fracture_depth)
 	return rect.merge(Rect2(rect.position + shadow_offset, rect.size)) if shadow_size > 0 else rect
 
 
 func _draw(item: RID, rect: Rect2) -> void:
 	var box := Rect2(rect.position.round(), rect.size.round())
+	if fractured and draw_center:
+		Fracture.draw(item, box, bg_color, border_color, chunk_size, fracture_depth, terminal_phase)
+		return
 	if shadow_size > 0 and draw_center:
 		_fill(item, _outline(Rect2(box.position + shadow_offset, box.size)), shadow_color)
 	if draw_center:

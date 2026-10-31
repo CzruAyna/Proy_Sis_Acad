@@ -80,7 +80,11 @@ game/
   scripts/simulation_save_store.gd
   scripts/achievement_catalog.gd
   tests/
-  assets/campus_vector.svg
+  scripts/procedural_career_logo.gd
+  scripts/fracture_geometry.gd
+  scripts/fracture_animator.gd
+  assets/branding/   (icono del sistema y referencia del emblema)
+  assets/fonts/
   build/           (ejecutable/exportado)
 ```
 

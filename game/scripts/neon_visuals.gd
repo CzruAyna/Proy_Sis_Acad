@@ -66,14 +66,15 @@ static func text(canvas: CanvasItem, font: Font, position: Vector2, value: Strin
 
 static func panel(theme: Dictionary, emphasized: bool = false, economical: bool = false) -> PixelStyle:
 	var style := PixelStyle.new()
+	style.fractured = true
 	var glow: Color = theme.get("neon", theme.get("accent", Color("#39bcff")))
-	style.bg_color = Color(theme.get("panel", Color("#07172e")), 1.0)
+	style.bg_color = Color("#070b0e")
 	style.border_color = Color(glow, 0.82 if emphasized else 0.48)
 	style.set_border_width_all(2 if emphasized else 1)
 	style.content_margin_left = 16
 	style.content_margin_right = 16
 	style.content_margin_top = 12
-	style.content_margin_bottom = 12
+	style.content_margin_bottom = 18
 	style.shadow_color = Color(glow.darkened(0.65), 0.65)
 	style.shadow_size = 0 if economical else 4
 	style.shadow_offset = Vector2(4, 4)
@@ -82,6 +83,7 @@ static func panel(theme: Dictionary, emphasized: bool = false, economical: bool 
 
 static func button(theme: Dictionary, emphasized: bool, state: String, economical: bool = false) -> PixelStyle:
 	var style := panel(theme, emphasized, economical)
+	style.fractured = false
 	var glow: Color = theme.get("neon", theme.get("accent", Color("#39bcff")))
 	style.bg_color = theme.get("fill", Color("#124a9a")) if emphasized else theme.get("panel", Color("#07172e"))
 	style.border_color = Color(glow, 0.95 if emphasized else 0.58)
@@ -90,7 +92,6 @@ static func button(theme: Dictionary, emphasized: bool, state: String, economica
 	style.shadow_color = Color(glow.darkened(0.72), 0.8)
 	if state == "hover":
 		style.bg_color = style.bg_color.lightened(0.12)
-		style.border_color = theme.get("core", Color.WHITE)
 		style.border_color = theme.get("core", Color.WHITE)
 	elif state == "pressed":
 		style.bg_color = style.bg_color.darkened(0.15)
@@ -103,7 +104,3 @@ static func button(theme: Dictionary, emphasized: bool, state: String, economica
 	style.content_margin_top = 6
 	style.content_margin_bottom = 6
 	return style
-
-
-static func background(_canvas: CanvasItem, _extent: Vector2, _theme: Dictionary, _economical: bool = false) -> void:
-	pass

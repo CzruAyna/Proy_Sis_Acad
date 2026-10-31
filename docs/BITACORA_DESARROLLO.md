@@ -415,3 +415,34 @@ aislado terminó con salida 0, sin errores de scripts. La matriz y los registros
 están en [Exploración FNI](EXPLORACION_FNI.md). El controlador recurrió a ANGLE.
 Faltan planos de plantas, accesos confirmados, fotos autorizadas y evaluación
 con jugadores u otros equipos; corresponden a usuario, frontend/arte y datos.
+
+## 31 de octubre: emblema geométrico, bloques grandes y limpieza visual
+
+**Estado:** cambios de esta entrega sin commit creado.
+
+Se analizó el emblema aportado y se construyó una interpretación en una rejilla
+de 160×160 con discos, elipses, líneas, letras pixeladas y una malla reutilizada.
+La portada dibuja geometría en lugar de mostrar el PNG como logo del menú.
+El original sigue siendo necesario para el icono de Windows y como referencia
+de procedencia; los derechos del emblema no se sustituyen por los del código.
+
+Se ampliaron las roturas a bloques de 32 unidades con capas profundas en el
+inicio y fondos de página, y de 16 en las tarjetas. Se extendió la presentación
+a las pantallas interiores, conservando controles con límites legibles. Los
+botones principales comparten el ancho de la etiqueta más larga. Un único
+reloj actualiza apariciones ocasionales de texto verde en los márgenes; se
+detiene con movimiento reducido o bajo consumo y no cambia el estado académico.
+
+Se retiraron el SVG anterior sin uso, su importación y las exportaciones locales
+antiguas. Se eliminaron citas y su reloj, una fuente sin uso, conexiones de
+hover vacías, una función de fondo vacía y una asignación duplicada. Se redujo
+el número simultáneo de fórmulas de portada. No se midieron FPS. Se actualizaron
+los nombres de las guías vigentes y se conservaron el historial y la ruta de
+partidas anterior, que todavía es necesaria para compatibilidad.
+
+Diez suites completaron **5.678 comprobaciones sin fallos**. Se generaron ocho
+capturas reales y se revisaron composición, logo, rupturas, márgenes verdes y
+texto ampliado. La exportación de Windows y su arranque aislado terminaron
+correctamente. Casos, registros, recursos retirados y pendientes están en
+[Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md). Quedan sin medir
+el rendimiento comparativo y la experiencia en otros equipos o con jugadores.

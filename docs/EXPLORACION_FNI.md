@@ -31,7 +31,9 @@ Las fuentes, contradicciones y material pendiente están en
 
 El inicio ofrece todas sus acciones en un único menú de altura contenida,
 sin paginación, con fondo negro y borde irregular de píxeles rotos. Conserva
-logo y cosmos; se retiró el recuadro separado de citas. La exploración dispone
+el cosmos; el emblema del fondo se dibuja con funciones geométricas en pixel
+art, con bloques grandes y letras verdes ocasionales en los menús. Se retiró
+el recuadro separado de citas. La exploración dispone
 de un lienzo ancho y barra propia, sin repetir las pestañas académicas.
 
 La geometría es una adaptación para jugar, sin escala topográfica. Las

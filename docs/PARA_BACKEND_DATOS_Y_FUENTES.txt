@@ -1,4 +1,4 @@
-PARA BACKEND: INFORMACIÓN REAL Y MATERIAL ORIGINAL PARA CAMPUS EN JUEGO
+PARA BACKEND: INFORMACIÓN REAL Y MATERIAL ORIGINAL PARA SIS-INF
 Solicitud del usuario: 29/10/2026. Revisar también /REGLAS_USUARIO.txt.
 Este archivo solicita revisión y datos; NO confirma vigencia ni modifica reglas.
 

@@ -4,7 +4,7 @@ Actualizado: 30 de octubre de 2026.
 
 ## Licencia del proyecto
 
-El código original y la documentación técnica propia de CAMPUS EN JUEGO se
+El código original y la documentación técnica propia de SIS-INF se
 ofrecen bajo la **GNU General Public License, versión 3 o cualquier versión
 posterior**, con identificador SPDX `GPL-3.0-or-later`.
 

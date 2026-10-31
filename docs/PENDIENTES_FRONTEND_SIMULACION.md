@@ -1,4 +1,4 @@
-# Integración gráfica de CAMPUS EN JUEGO
+# Integración gráfica de SIS-INF
 
 Actualización del 30/10/2026: el nombre actual es **SIS-INF** y se añadió
 [Exploración FNI](EXPLORACION_FNI.md). El estado espacial se mantiene separado

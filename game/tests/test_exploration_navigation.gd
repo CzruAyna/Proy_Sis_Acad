@@ -11,7 +11,7 @@ func _run() -> void:
 	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game._show_main()
 	_check(game.find_child("ExplorationEntry", true, false) != null, "Acceso independiente en el menú")
-	_check(game.find_child("SisInfLogo", true, false).texture == game.GAME_LOGO, "Logo aportado visible")
+	_check(game.find_child("SisInfLogo", true, false).get_script() == game.CareerLogo, "Emblema dibujado con geometría en el fondo")
 	game._show_exploration()
 	var ui = game.exploration_ui
 	_check(game.find_child("StartExploration", true, false).disabled, "Nombre obligatorio en visita libre")

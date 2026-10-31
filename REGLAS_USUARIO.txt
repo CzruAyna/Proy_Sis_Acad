@@ -119,3 +119,15 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     sin cambiar de página. Su fondo será negro con borde irregular de píxeles
     rotos y huecos. Esta precisión actualiza la composición del inicio prevista
     en la regla 8; conservar las demás reglas de navegación y presentación.
+
+18. EMBLEMA GEOMÉTRICO Y RUPTURA GRANDE, indicada el 31/10/2026.
+    Analizar el emblema aportado y recrearlo mediante funciones geométricas en
+    pixel art para el fondo de la interfaz. Dar a los fondos negros una ruptura
+    con bloques grandes y profundidad, como una abertura de cueva. Extender el
+    lenguaje de ruptura a los demás menús y ajustar el ancho de los botones
+    al máximo contenido del grupo. Añadir apariciones ocasionales de letras
+    verdes de estilo hacker en zonas negras, sin impedir la lectura; respetar
+    movimiento reducido y bajo consumo. Retirar la marca anterior y recursos
+    o código sin uso. Conservar la trazabilidad histórica y la compatibilidad
+    con partidas existentes; una ruta todavía utilizada no es material sobrante.
+    Esta precisión amplía las reglas 15 y 17 sin cambiar reglas académicas.

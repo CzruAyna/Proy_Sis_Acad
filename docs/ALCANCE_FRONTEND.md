@@ -2,7 +2,7 @@
 
 Actualizado: 30 de octubre de 2026.
 
-El frontend de CAMPUS EN JUEGO comprende lo que el jugador ve, entiende y
+El frontend de SIS-INF comprende lo que el jugador ve, entiende y
 controla en Godot. Las reglas permanentes están en
 [`REGLAS_USUARIO.txt`](../REGLAS_USUARIO.txt) y la presentación vigente en
 [Diseño visual](DISENO_VISUAL_CAMPUS.md).

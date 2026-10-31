@@ -44,8 +44,9 @@ las reglas académicas ni los archivos de guardado.
   muestreo vecino más próximo. No se cambia su geometría de interacción ni la
   validación de conexiones. El cosmos del inicio utiliza discos de baja resolución.
 - El ambiente por mención conserva animación tenue y desenfoque, con muestreo
-  escalonado. Opciones tiene fondo quieto. Bajo consumo y movimiento reducido
-  mantienen sus controles existentes.
+  escalonado. La temática de mención permanece oculta en Opciones. Las letras
+  verdes de los paneles obedecen el ajuste de movimiento, también allí.
+  Bajo consumo y movimiento reducido mantienen sus controles existentes.
 
 La escala tipográfica admite los ajustes 80%, 100% y 120%. El filtrado cercano
 mantiene píxeles definidos, aunque un tamaño no entero o el escalado del sistema
@@ -54,6 +55,12 @@ texto y las acciones en todas las páginas.
 
 Las fuentes, sprites y marcos añadidos son recursos propios bajo
 `GPL-3.0-or-later`; no se incorporan paquetes gráficos de terceros.
+
+La revisión posterior del 31/10 amplía la ruptura a todos los menús, aumenta
+los bloques de la portada a 32 unidades y añade un emblema de fondo construido
+con geometría. Los botones del inicio se ajustan al contenido más largo del
+grupo. El diseño, animación verde, recursos retirados y compatibilidad de
+guardados se explican en [Ruptura y emblema](DISENO_RUPTURA_Y_EMBLEMA.md).
 
 ### Componentes compartidos
 

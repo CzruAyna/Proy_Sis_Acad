@@ -4,7 +4,7 @@ Actualizada: 30 de octubre de 2026.
 
 ## Para qué se mantiene esta documentación
 
-CAMPUS EN JUEGO comenzó como un sistema académico web y evolucionó hacia una
+El proyecto comenzó como un sistema académico web y evolucionó hacia una
 simulación de escritorio. Conviven Godot, Django y Next.js, con modelos y formas
 de persistencia diferentes. La documentación permite identificar qué componente
 debe revisarse y evita cambiar el backend para corregir una pantalla o tratar
