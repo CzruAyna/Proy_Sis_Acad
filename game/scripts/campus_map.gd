@@ -9,6 +9,17 @@ const COMPUTING_SOURCE := "https://www.sisinf.fni.uto.edu.bo/computacion/"
 # Published room names; positions below are deliberately a playable recreation.
 const SYSTEMS_ROOMS := {"sis_a": ["LSIA-1", "LSIA-4"], "sis_b": ["LSIB-1", "LSIB-2", "LSIB-4"]}
 const LEGACY_ROOMS := {"sis_a": "SIS A", "sis_b": "SIS B"}
+# Silhouettes adapted from the supplied plan, not surveyed footprints.
+const FOOTPRINTS := {
+	"sis_a": [[0.35, 0], [0.8, 0], [0.8, 0.3], [1, 0.3], [1, 0.7], [0.65, 0.7], [0.65, 1], [0.2, 1], [0.2, 0.65], [0, 0.65], [0, 0.25], [0.35, 0.25]],
+	"geologia": [[0, 0.1], [0.25, 0], [0.45, 0.12], [0.45, 0.4], [0.65, 0.4], [0.65, 0.06], [0.85, 0], [1, 0.08], [1, 0.9], [0.8, 1], [0.65, 0.9], [0.65, 0.6], [0.45, 0.6], [0.45, 0.95], [0.2, 1], [0, 0.9]],
+	"decanato": [[0, 0.5], [0.3, 0.5], [0.3, 0], [1, 0], [1, 0.45], [0.7, 0.45], [0.7, 0.7], [0.55, 0.7], [0.55, 1], [0, 1]],
+	"basicas": [[0.35, 0], [0.65, 0], [0.65, 0.3], [1, 0.3], [1, 0.65], [0.7, 0.65], [0.7, 1], [0.35, 1], [0.35, 0.7], [0, 0.7], [0, 0.35], [0.35, 0.35]],
+	"minas": [[0, 0.25], [0.2, 0.25], [0.2, 0], [0.55, 0], [0.55, 0.15], [1, 0.15], [1, 0.85], [0.75, 0.85], [0.75, 1], [0.35, 1], [0.35, 0.85], [0, 0.85]],
+	"electrica_aulas": [[0, 0.25], [0.3, 0.25], [0.3, 0], [0.7, 0], [0.7, 0.25], [1, 0.25], [1, 1], [0, 1]],
+	"civil": [[0, 0.2], [0.25, 0.2], [0.25, 0], [0.6, 0], [0.6, 0.25], [1, 0.25], [1, 0.7], [0.75, 0.7], [0.75, 1], [0.4, 1], [0.4, 0.8], [0, 0.8]],
+	"admin_geo": [[0, 0.35], [0.35, 0.35], [0.35, 0], [0.7, 0], [0.7, 0.35], [1, 0.35], [1, 0.7], [0.65, 0.7], [0.65, 1], [0.35, 1], [0.35, 0.7], [0, 0.7]]
+}
 const ROWS := [
 	["metalurgia", "METALURGIA", 5, 16, 12, 7, "lab", ["MET-1"]],
 	["metalurgia2", "METALURGIA 2", 4, 28, 7, 7, "lab", ["Bloque Metalurgia 2"]],
@@ -19,7 +30,7 @@ const ROWS := [
 	["posta", "POSTA SANITARIA", 50, 26, 3, 4, "social", ["Posta sanitaria"]],
 	["industrial", "INDUSTRIAL", 38, 29, 5, 5, "classroom", ["Bloque Industrial"]],
 	["sis_d", "SISTEMAS D", 67, 30, 4, 3, "classroom", ["SIS D"]],
-	["sis_e", "SISTEMAS E", 69, 36, 3, 3, "classroom", ["SIS E"]],
+	["sis_e", "SISTEMAS E · JUEGOS", 69, 36, 3, 3, "games_room", ["SIS E"]],
 	["sis_c", "SISTEMAS C", 73, 36, 3, 6, "classroom", ["CU-SIC1", "CU-SIC4", "CU-SIC5"]],
 	["sis_b", "SISTEMAS B", 68, 41, 4, 5, "classroom", ["SIS B"]],
 	["sis_a", "SISTEMAS A", 63, 39, 3, 5, "classroom", ["SIS A"]],
@@ -66,7 +77,10 @@ static func buildings() -> Array[Dictionary]:
 		rect.position = rect.position.snapped(Vector2(8, 8))
 		rect.size = rect.size.snapped(Vector2(8, 8))
 		var rooms: Array = SYSTEMS_ROOMS.get(row[0], row[7]).duplicate()
-		result.append({"id": row[0], "name": row[1], "rect": rect, "kind": row[6], "rooms": rooms,
+		var footprint := PackedVector2Array()
+		for vertex in FOOTPRINTS.get(row[0], [[0, 0], [1, 0], [1, 1], [0, 1]]):
+			footprint.append((rect.position + Vector2(vertex[0], vertex[1]) * rect.size).snapped(Vector2(2, 2)))
+		result.append({"id": row[0], "name": row[1], "rect": rect, "footprint": footprint, "kind": row[6], "rooms": rooms,
 			"room_source": COMPUTING_SOURCE if SYSTEMS_ROOMS.has(row[0]) else "FNI-PLANO-01",
 			"door": Vector2(rect.get_center().x, rect.end.y + 14).snapped(Vector2(2, 2))})
 	return result
@@ -87,13 +101,25 @@ static func building(id: String) -> Dictionary:
 
 static func room_obstacles(kind: String) -> Array[Rect2]:
 	var result: Array[Rect2] = []
-	if kind in ["classroom", "lab"]:
+	if kind == "games_room":
+		for station in game_stations():
+			result.append(station["rect"])
+	elif kind in ["classroom", "lab"]:
 		for y in [112, 168, 224]:
 			for x in [72, 168, 288, 384]:
 				result.append(Rect2(x, y, 40, 20))
 	else:
 		result.append(Rect2(120, 116, 240, 32))
 	return result
+
+
+static func game_stations() -> Array[Dictionary]:
+	return [
+		{"id": "billar", "title": "Billar", "rect": Rect2(64, 88, 136, 56), "approach": Vector2(132, 164)},
+		{"id": "ping_pong", "title": "Ping-pong", "rect": Rect2(280, 88, 136, 56), "approach": Vector2(348, 164)},
+		{"id": "ajedrez", "title": "Ajedrez", "rect": Rect2(92, 210, 64, 48), "approach": Vector2(176, 234)},
+		{"id": "monopolio", "title": "Monopolio", "rect": Rect2(316, 210, 64, 48), "approach": Vector2(296, 234)}
+	]
 
 
 static func room_kind(id: String, room: String) -> String:

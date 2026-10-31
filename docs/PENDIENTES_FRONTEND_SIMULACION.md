@@ -1,5 +1,12 @@
 # Integración gráfica de SIS-INF
 
+Actualización del 31/10/2026: se preparó la presentación de billar, ping-pong,
+ajedrez y Monopolio en Sistemas E. **Motor/backend debe implementar su
+funcionamiento**; el botón de partida sigue deshabilitado. Consultar
+[Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) para IDs, alcance, contrato
+propuesto, reglas pendientes y material que el usuario necesita aportar.
+La sala fue indicada por el usuario; no hay plano interior confirmado.
+
 Actualización del 30/10/2026: el nombre actual es **SIS-INF** y se añadió
 [Exploración FNI](EXPLORACION_FNI.md). El estado espacial se mantiene separado
 de la simulación académica. Frontend/arte debe completar interiores con fotos

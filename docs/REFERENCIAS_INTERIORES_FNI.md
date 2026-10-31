@@ -10,11 +10,17 @@ Consulta: 31 de octubre de 2026. Área: frontend y datos de ambientación.
 | FNI-COMPUTACION-01 | [Computación, sitio de Sistemas e Informática](https://www.sisinf.fni.uto.edu.bo/computacion/). | Publica los nombres LSIA-1, LSIA-4, LSIB-1, LSIB-2 y LSIB-4. Describe puestos informáticos con monitores, asientos y conexión de red. | La introducción habla de cuatro instalaciones y el listado nombra cinco; no se adopta ese total como inventario vigente. No demuestra la planta ni la posición de cada sala. |
 | FNI-REDES-01 | [Redes Informáticas, sitio de la carrera](https://www.sisinf.fni.uto.edu.bo/redes-informaticas/). | Sirve como referencia temática para equipos y prácticas de conectividad. | No se asigna ese laboratorio a un aula concreta del mapa. Algunas descripciones mezclan tipos de dispositivos y requieren revisión antes de usarlas como contenido didáctico. |
 | FNI-DATACENTER-01 | [Data Center, sitio de la carrera](https://www.sisinf.fni.uto.edu.bo/data-center/). | Describe armarios de red, servidores, canalizaciones y acondicionamiento. Inspira detalles originales de equipamiento. | No prueba su ubicación dentro de A o B ni acceso libre del alumnado. No se representan niveles de certificación, inventario vigente o temperaturas como datos confirmados. |
+| FNI-MAPS-01 | [Galería de Ciudad Universitaria en Google Maps](https://www.google.com/maps/place/?q=place_id:ChIJD-l6vvmw4pMR6quM_wi-_DY), revisada visualmente el 31/10/2026. | Paseo adoquinado con árboles altos y copas diferentes; construcciones bajas con columnas y ladrillo; cancha con cubierta curva, estructura metálica, aro y graderías. | Galería con fotografías antiguas, algunas fechadas en 2017 y 2018. No confirma inventario, acceso ni distribución actual. No es un levantamiento topográfico. |
+| FNI-E-USUARIO-01 | Indicación expresa del usuario del 31/10/2026: sala de juegos en el bloque E. | Identificar E como destino recreativo y preparar billar, ping-pong, ajedrez y Monopolio. | Mesas e interior recreados; falta croquis, fotos autorizadas y confirmación del inventario actual. |
 
-Se buscaron fotografías interiores. Las imágenes enlazadas desde esas páginas
-no pudieron visualizarse con la herramienta de consulta; algunas corresponden
-a retratos de responsables. No se afirma haber inspeccionado fotografías de
-las aulas ni se incorporan imágenes remotas al juego.
+En la primera revisión, las imágenes de las páginas institucionales no se
+pudieron visualizar. En este avance se abrió la ficha de Ciudad Universitaria
+en Google Maps, distinguida de la sede de calle San Felipe, y se inspeccionó
+su galería exterior. Se observaron la foto del paseo de octubre de 2018 y
+la cancha cubierta, además de fachadas visibles en las miniaturas. No se
+afirma haber inspeccionado interiores de aulas ni imágenes satelitales.
+La sesión muestra una vista limitada de Maps. No se descargaron ni incorporaron
+fotografías, mapas o teselas de Google al juego; los dibujos nuevos son propios.
 
 ## Aplicación al juego
 
@@ -22,6 +28,16 @@ Los nombres LSIA y LSIB se agrupan en Sistemas A y B por su nomenclatura y el
 encargo del usuario. Esa correspondencia necesita confirmación institucional.
 Los pasillos, posición de puertas, dimensiones, orden de salas y mobiliario
 son una **recreación jugable**, no un levantamiento arquitectónico.
+
+El exterior incorpora siluetas escalonadas distintas para Sistemas A,
+Geología, Decanatura, Básicas, Minas, Civil y otros bloques según el plano.
+El dibujo, la colisión y el mapa de orientación usan el mismo contorno.
+Los detalles de cubiertas, equipos, ventanas y entrada diferencian bloques;
+las especies concretas de árboles no se identifican como verificadas. El
+paseo adoquinado y las copas variadas toman rasgos de la galería exterior,
+sin atribuirles medidas ni ubicación exacta. Fútbol sintético/tierra,
+voleibol, tenis y canchas polifuncionales tienen marcas y elementos diferentes.
+Los cortes de cubierta permiten ver las canchas que el plano llama techadas.
 
 El bloque A tiene dos ambientes identificados por esos nombres; el B tiene
 tres. No se inventan LSIA-2/3 ni LSIB-3 para llenar una numeración. Los otros
@@ -42,6 +58,7 @@ conservan `GPL-3.0-or-later`; no cambia la titularidad de recursos de terceros.
 | Usuario y frontend/arte | Fotos propias o autorizadas de fachadas, pasillos, ventanas, aulas y equipos, identificadas por lugar y fecha. | Comparación de las recreaciones con material que pueda utilizarse. |
 | Backend/datos | Revisión de la diferencia entre el total de instalaciones y el listado de Computación, y de las descripciones de Redes. | Inventario versionado y contenido técnico revisado. |
 | Backend/datos | Aula, materia, paralelo y horario con sus fuentes. | Contrato que permita contextualizar actividades sin deducir notas ni inscripciones por entrar a una sala. |
+| Usuario + backend/datos | Croquis/fotos propias o autorizadas de la sala E, fecha, mesas reales y acceso. | Interior y usos contrastados; ver [nota de minijuegos](JUEGOS_BLOQUE_E.md). |
 
 La solicitud general de originales y permisos continúa en
 [Datos y fuentes para backend](PARA_BACKEND_DATOS_Y_FUENTES.txt).

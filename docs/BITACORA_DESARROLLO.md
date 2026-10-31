@@ -446,3 +446,50 @@ texto ampliado. La exportación de Windows y su arranque aislado terminaron
 correctamente. Casos, registros, recursos retirados y pendientes están en
 [Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md). Quedan sin medir
 el rendimiento comparativo y la experiencia en otros equipos o con jugadores.
+
+## 31 de octubre: terminal, tipografía pixel y sala recreativa de E
+
+**Estado:** cambios de esta entrega sin commit creado.
+
+Se retiraron las capas azuladas y los fragmentos de borde de las rupturas:
+ahora son negro puro. El inicio conserva un solo menú compacto; su abertura
+continúa detrás de los controles y deja aparecer un árbol de carpetas que
+alterna sintaxis de Linux y Windows. Es decoración geométrica, sin ventana
+de terminal separada ni ejecución de comandos. Conserva el reloj compartido,
+movimiento reducido, bajo consumo y colores de los controles por carrera.
+
+La fuente pixel propia se extendió a texto pequeño, entradas, selectores,
+modelos, fórmulas y grafos. El atlas pasó de 119 a 207 glifos para representar
+ramas de árbol, ASCII y notación matemática sin introducir otra tipografía
+en esas etiquetas. Se conserva fallback para caracteres excepcionales.
+
+Se revisó visualmente la galería exterior de Ciudad Universitaria en Google
+Maps, con fotos antiguas de paseo arbolado, fachadas y cancha cubierta.
+No se copiaron imágenes remotas ni se inspeccionaron plantas interiores o
+imágenes satelitales. El plano aportado sigue guiando la ubicación de bloques;
+sus formas se adaptaron con contornos propios compartidos por dibujo,
+colisión y mapa. Hay cubiertas y equipamiento distintos, cinco variantes de
+árbol, paseo adoquinado y marcas/elementos diferentes para los deportes.
+La revisión gráfica permitió retirar árboles de las canchas y proteger la
+legibilidad de los rótulos. Se evita redibujar el mundo exterior inmóvil;
+no se afirma una mejora de FPS medida.
+
+Por indicación del usuario, Sistemas E incorpora una sala recreada con billar,
+ping-pong, ajedrez y Monopolio. Las mesas se recorren a pie y abren su vista
+previa. La partida sigue deshabilitada: frontend no añadió física, reglas,
+turnos ni economía. Se conservaron el ID y las visitas de E. Las necesidades
+del responsable de motor/backend y las fotos/croquis pendientes están en
+[Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md). No se modificó backend ni
+la simulación académica.
+
+Los archivos principales son `fracture_geometry.gd`, `terminal_cave.gd`,
+`game.gd`, `generate_pixel_font.py`, `campus_architecture.gd`, `campus_map.gd`,
+`campus_world.gd`, `campus_overview.gd`, `campus_exploration_ui.gd` y
+`minigame_preview.gd`. Se añadió la regla acumulativa 19. Las doce suites
+completaron **8.003 comprobaciones sin fallos**; se generaron trece capturas,
+se revisaron las vistas y se exportó Windows con arranque aislado de salida 0.
+Matriz, registros y avisos del entorno en
+[Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md).
+
+Quedan pendientes la lógica de minijuegos, confirmación del interior de E y
+distribución actual, material autorizado y pruebas con jugadores/otros equipos.

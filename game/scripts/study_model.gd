@@ -36,7 +36,7 @@ func _draw_physics(bounds: Rect2, color: Color) -> void:
 		var t := float(index) / 40.0
 		points.append(origin + Vector2(t * (bounds.size.x - 50), -t * factor * (bounds.size.y - 27)))
 	Neon.path(self, points, color, 2.5)
-	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(8, 18), "Velocidad: %d · distancia / tiempo" % int(factor * 100), HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
+	draw_string(Neon.PIXEL_FONT, bounds.position + Vector2(8, 18), "Velocidad: %d · distancia / tiempo" % int(factor * 100), HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
 
 
 func _draw_network(bounds: Rect2, color: Color) -> void:
@@ -49,7 +49,7 @@ func _draw_network(bounds: Rect2, color: Color) -> void:
 	for index in range(positions.size()):
 		draw_circle(positions[index], radius * (0.48 if index == 0 else 0.34), visual_theme["panel"])
 		Neon.ring(self, positions[index], radius * (0.48 if index == 0 else 0.34), color)
-	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(8, 18), "%d enlaces activos" % active, HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
+	draw_string(Neon.PIXEL_FONT, bounds.position + Vector2(8, 18), "%d enlaces activos" % active, HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
 
 
 func _draw_steps(bounds: Rect2, color: Color) -> void:
@@ -61,13 +61,13 @@ func _draw_steps(bounds: Rect2, color: Color) -> void:
 	for index in range(3):
 		var rect := Rect2(bounds.position.x + 12.0 + float(index) * (box_width + gap), y, box_width, 30)
 		draw_style_box(_box_style(color.lightened(float(index) * 0.12)), rect)
-		draw_string(ThemeDB.fallback_font, rect.position + Vector2(5, 19), labels[index], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 10.0, int(12 * font_scale), Color("#fffaf0"))
+		draw_string(Neon.PIXEL_FONT, rect.position + Vector2(5, 19), labels[index], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 10.0, int(12 * font_scale), Color("#fffaf0"))
 		if index < 2:
 			var arrow_start := Vector2(rect.end.x + 2, y + 15)
 			var arrow_end := arrow_start + Vector2(gap - 4, 0)
 			Neon.line(self, arrow_start, arrow_end, color, 2.0)
 			draw_colored_polygon(PackedVector2Array([arrow_end, arrow_end - Vector2(5, 3), arrow_end - Vector2(5, -3)]), color)
-	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(8, 18), "El mismo procedimiento transforma distintos datos", HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
+	draw_string(Neon.PIXEL_FONT, bounds.position + Vector2(8, 18), "El mismo procedimiento transforma distintos datos", HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
 
 
 func _draw_system(bounds: Rect2, color: Color) -> void:
@@ -83,7 +83,7 @@ func _draw_system(bounds: Rect2, color: Color) -> void:
 		points.append(Vector2(start_x + t * width, center_y - backlog * bounds.size.y))
 	draw_line(Vector2(start_x, center_y), Vector2(start_x + width, center_y), Color(color, 0.5), 1.0, true)
 	Neon.path(self, points, color, 2.5)
-	draw_string(ThemeDB.fallback_font, bounds.position + Vector2(8, 18), "Capacidad disponible: %d%%" % int(factor * 100), HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
+	draw_string(Neon.PIXEL_FONT, bounds.position + Vector2(8, 18), "Capacidad disponible: %d%%" % int(factor * 100), HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, int(12 * font_scale), color)
 
 
 func _box_style(color: Color) -> Neon.PixelStyle:

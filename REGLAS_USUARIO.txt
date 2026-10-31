@@ -131,3 +131,17 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     o código sin uso. Conservar la trazabilidad histórica y la compatibilidad
     con partidas existentes; una ruta todavía utilizada no es material sobrante.
     Esta precisión amplía las reglas 15 y 17 sin cambiar reglas académicas.
+
+19. NEGRO PURO, TERMINAL Y SALA DE JUEGOS, indicada el 31/10/2026.
+    La ruptura será negro puro, sin bordes ni capas de otros colores. Detrás
+    del mismo menú aparecerá una terminal simulada mostrando árboles de
+    carpetas como tree de Linux y Windows. Aplicar letras pixel art también
+    a las partes del juego que todavía usaban otra tipografía. Consultar
+    Google Maps y el plano para variar edificios, árboles, recorridos y
+    canchas: evitar repetir un mismo edificio para todo el campus. El usuario
+    indica que el bloque E tiene una sala de juegos. Crear su presentación
+    de frontend con billar, ping-pong, ajedrez y Monopolio; dejar documentado
+    para backend el funcionamiento pendiente. No implementar sus reglas en
+    el frontend ni presentar la recreación del espacio como planta confirmada.
+    Esta precisión actualiza los colores de la ruptura de la regla 18 y
+    conserva colores por carrera, accesibilidad y preferencias de animación.

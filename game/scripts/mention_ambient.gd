@@ -39,7 +39,7 @@ class MotifCanvas extends Node2D:
 	func _draw() -> void:
 		var lines: Array = SAMPLES.get(kind, SAMPLES["software"])
 		var drift := sin(phase * 0.16) * 5.0
-		var font := ThemeDB.fallback_font
+		var font := preload("res://assets/fonts/campus_pixel.fnt")
 		var progress := int(phase * 10.0)
 		for column in range(2):
 			var origin := Vector2(18 + column * 285, 35 + column * 70) + Vector2(drift, -drift)

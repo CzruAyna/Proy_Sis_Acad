@@ -227,10 +227,10 @@ func _draw() -> void:
 		_draw_sphere(index)
 	draw_set_transform(Vector2.ZERO)
 	if reference_layout:
-		Neon.text(self, ThemeDB.fallback_font, Vector2(16, 25), "Vista por conexiones: las esferas repetidas representan la misma materia.", int(12 * font_scale), glow, low_performance, size.x - 32)
+		Neon.text(self, Neon.PIXEL_FONT, Vector2(16, 25), "Vista por conexiones: las esferas repetidas representan la misma materia.", int(12 * font_scale), glow, low_performance, size.x - 32)
 	elif hovered >= 0 and hovered < visible_nodes.size() and _dragging < 0:
 		var item: Dictionary = visible_nodes[hovered]
-		Neon.text(self, ThemeDB.fallback_font, Vector2(16, 25), "%s · %s" % [item.get("sigla", ""), item.get("name", "")], int(12 * font_scale), glow, low_performance, size.x - 32)
+		Neon.text(self, Neon.PIXEL_FONT, Vector2(16, 25), "%s · %s" % [item.get("sigla", ""), item.get("name", "")], int(12 * font_scale), glow, low_performance, size.x - 32)
 
 
 func _draw_sphere(index: int) -> void:
@@ -252,22 +252,22 @@ func _draw_sphere(index: int) -> void:
 		Neon.ring(self, center, radius + 5, Color(graph_theme["core"], 0.95), low_performance)
 	var code := str(item.get("sigla", ""))
 	var code_size := int(13 * font_scale)
-	var code_width := ThemeDB.fallback_font.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size).x
+	var code_width := Neon.PIXEL_FONT.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size).x
 	var baseline := center + Vector2(-code_width * 0.5, 5)
-	draw_string_outline(ThemeDB.fallback_font, baseline, code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size, 3, Color(0.01, 0.02, 0.04, 0.9))
-	draw_string(ThemeDB.fallback_font, baseline, code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size, graph_theme["text"])
+	draw_string_outline(Neon.PIXEL_FONT, baseline, code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size, 3, Color(0.01, 0.02, 0.04, 0.9))
+	draw_string(Neon.PIXEL_FONT, baseline, code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size, graph_theme["text"])
 	var lines := _name_lines(str(item.get("name", "")), bool(item.get("admission", false)))
 	for line_index in range(lines.size()):
 		var name_position := center + Vector2(-92, radius + 20 + float(line_index) * 16 * font_scale)
-		draw_string_outline(ThemeDB.fallback_font, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), 3, Color(0.01, 0.02, 0.04, 0.9))
-		draw_string(ThemeDB.fallback_font, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), graph_theme["text"])
+		draw_string_outline(Neon.PIXEL_FONT, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), 3, Color(0.01, 0.02, 0.04, 0.9))
+		draw_string(Neon.PIXEL_FONT, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), graph_theme["text"])
 	var status := str(personal_states.get(item.get("sigla", ""), ""))
 	if not status.is_empty():
 		if item.get("retained", false):
 			Neon.ring(self, center, radius + 6, Color("#ffd36a"), low_performance)
 			var retained_label := "RECURSAR · S%d" % int(item.get("semester", 1))
-			draw_string_outline(ThemeDB.fallback_font, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), 3, Color(0, 0, 0, 0.9))
-			draw_string(ThemeDB.fallback_font, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), Color("#ffd36a"))
+			draw_string_outline(Neon.PIXEL_FONT, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), 3, Color(0, 0, 0, 0.9))
+			draw_string(Neon.PIXEL_FONT, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), Color("#ffd36a"))
 		var indicator := glow
 		if status == "Aprobada":
 			indicator = Color("#61ffc4")

@@ -26,18 +26,29 @@ de la nomenclatura y debe validarse, al igual que las plantas y los accesos.
 Los laboratorios se distinguen con monitores, teclados, canaletas y un armario;
 las aulas mantienen pupitres y las otras salas de prácticas tienen mesones.
 La cantidad de puestos dibujados no representa un inventario real.
+Sistemas E abre una sala recreada con mesas de billar, ping-pong, ajedrez y
+Monopolio. Acercarse a una mesa y pulsar E abre una vista previa; el cartel
+del fondo permite elegir entre las cuatro. Las partidas aún no funcionan:
+el encargo actual es su presentación. La lógica y el material que falta
+confirmar están en [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md).
 Las fuentes, contradicciones y material pendiente están en
 [Referencias de interiores](REFERENCIAS_INTERIORES_FNI.md).
 
 El inicio ofrece todas sus acciones en un único menú de altura contenida,
 sin paginación, con fondo negro y borde irregular de píxeles rotos. Conserva
 el cosmos; el emblema del fondo se dibuja con funciones geométricas en pixel
-art, con bloques grandes y letras verdes ocasionales en los menús. Se retiró
+art, con bloques grandes negros y una salida verde simulada de `tree` de Linux
+y Windows. Las letras pequeñas también usan la fuente pixel. Se retiró
 el recuadro separado de citas. La exploración dispone
 de un lienzo ancho y barra propia, sin repetir las pestañas académicas.
 
 La geometría es una adaptación para jugar, sin escala topográfica. Las
-entradas se sitúan en el frente inferior de los bloques como decisión de
+fachadas, cubiertas y siluetas tienen variaciones entre bloques; los árboles
+incluyen copas anchas, altas, cónicas y ramificadas. El paseo adoquinado y
+los detalles deportivos se inspiran en el plano y fotos exteriores revisadas
+en Google Maps, sin copiar sus imágenes ni afirmar una distribución actual
+verificada. Las colisiones y el mapa de orientación siguen los contornos.
+Las entradas se sitúan en el frente inferior de los bloques como decisión de
 diseño; no se afirma que sean sus puertas físicas reales. El recuadro de
 Aulas Básicas del plano se incorpora como una zona del esquema: su conexión
 espacial exacta queda pendiente de confirmación. No se ha añadido la sede del

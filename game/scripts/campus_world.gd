@@ -4,10 +4,13 @@ signal progress_changed(state: Dictionary)
 signal menu_requested
 signal map_requested
 signal activity_requested(building: Dictionary, room: String)
+signal minigame_requested(id: String)
 signal context_changed(text: String)
 
 const Map = preload("res://scripts/campus_map.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
+const Architecture = preload("res://scripts/campus_architecture.gd")
+const GameTables = preload("res://scripts/minigame_preview.gd")
 const SPEED := 112.0
 const PLAYER_RADIUS := 7.0
 const SPRITE := [
@@ -46,9 +49,29 @@ func _ready() -> void:
 	rng.seed = 81030
 	for index in range(170):
 		var point := Vector2(rng.randf_range(30, Map.SIZE.x - 30), rng.randf_range(40, Map.SIZE.y - 60)).snapped(Vector2(8, 8))
-		if _can_stand(point) and point.distance_to(Map.SPAWN) > 80 and not _near_road(point):
+		if _can_plant(point) and point.distance_to(Map.SPAWN) > 80 and not _near_road(point):
 			_tree_positions.append(point)
+	# An avenue and small groves, rather than repeating one tree everywhere.
+	for y in range(784, 1384, 52):
+		for x in [1164, 1310]:
+			var point := Vector2(x + posmod(y, 3) * 4, y)
+			if _can_plant(point):
+				_tree_positions.append(point)
+	_tree_positions.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.y < b.y)
 	set_process(true)
+
+
+func _can_plant(point: Vector2) -> bool:
+	# Planting always uses outdoor bounds, including when resuming an interior.
+	if not point.is_finite() or not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
+		return false
+	for block in buildings:
+		if Rect2(block["rect"]).grow(32).has_point(point):
+			return false
+	for row in Map.COURTS:
+		if Architecture.court_rect(row).grow(28).has_point(point):
+			return false
+	return true
 
 
 func _take_focus() -> void:
@@ -104,13 +127,15 @@ func snapshot() -> Dictionary:
 func _process(delta: float) -> void:
 	if paused:
 		return
+	var was_moving := moving
 	var direction := Vector2(float(_pressed(KEY_D) or _pressed(KEY_RIGHT)) - float(_pressed(KEY_A) or _pressed(KEY_LEFT)), float(_pressed(KEY_S) or _pressed(KEY_DOWN)) - float(_pressed(KEY_W) or _pressed(KEY_UP)))
 	move_player(direction, delta, _pressed(KEY_SHIFT))
 	var current := interaction_text()
 	if current != _last_context:
 		_last_context = current
 		context_changed.emit(current)
-	queue_redraw()
+	if moving or was_moving:
+		queue_redraw()
 
 
 func _pressed(key: Key) -> bool:
@@ -170,8 +195,14 @@ func _can_stand(point: Vector2) -> bool:
 		if not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
 			return false
 		for building in buildings:
-			if Rect2(building["rect"]).grow(PLAYER_RADIUS).has_point(point):
+			if not Rect2(building["rect"]).grow(PLAYER_RADIUS).has_point(point):
+				continue
+			var outline: PackedVector2Array = building["footprint"]
+			if Geometry2D.is_point_in_polygon(point, outline):
 				return false
+			for index in range(outline.size()):
+				if point.distance_to(Geometry2D.get_closest_point_to_segment(point, outline[index], outline[(index + 1) % outline.size()])) <= PLAYER_RADIUS:
+					return false
 	else:
 		var bounds := Rect2(Vector2(22, 30), Map.hall_size(room_id) - Vector2(44, 50)) if room_name.is_empty() else Rect2(22, 30, 436, 270)
 		if not bounds.grow(-PLAYER_RADIUS).has_point(point):
@@ -206,6 +237,11 @@ func interaction_text() -> String:
 			return "E · Entrar a " + str(space["name"]) if not space.is_empty() else "Pasillo · Acércate a una puerta iluminada y pulsa E"
 		if player.distance_to(Vector2(240, 286)) < 36:
 			return "E · Volver al pasillo" if Map.building(room_id)["rooms"].size() > 1 else "E · Salir al campus"
+		if Map.room_kind(room_id, room_name) == "games_room":
+			var station := nearby_game()
+			if not station.is_empty():
+				return "E · Ver mesa de " + str(station["title"])
+			return "Sala de juegos · Acércate a una mesa o al cartel del fondo"
 		if player.y < 92:
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
@@ -229,6 +265,8 @@ func interact() -> void:
 				return_to_hall()
 			else:
 				leave_room()
+		elif Map.room_kind(room_id, room_name) == "games_room" and not nearby_game().is_empty():
+			minigame_requested.emit(str(nearby_game()["id"]))
 		elif player.y < 92:
 			activity_requested.emit(Map.building(room_id), room_name)
 	else:
@@ -241,6 +279,15 @@ func nearby_room() -> Dictionary:
 	for space in Map.hall_rooms(room_id):
 		if player.distance_to(space["door"]) < 30:
 			return space
+	return {}
+
+
+func nearby_game() -> Dictionary:
+	if room_id != "sis_e" or room_name.is_empty():
+		return {}
+	for station in Map.game_stations():
+		if player.distance_to(station["approach"]) < 32:
+			return station
 	return {}
 
 
@@ -333,13 +380,13 @@ func _draw_campus(view: Rect2) -> void:
 	for route in Map.routes():
 		draw_polyline(route, Color("#50616b"), 38, false)
 		draw_polyline(route, Color("#8d9695"), 28, false)
+	if view.intersects(Rect2(1160, 760, 160, 630)):
+		Architecture.plaza(self)
 	for row in Map.COURTS:
-		var rect := Rect2(Vector2(float(row[1]), float(row[2])) * Map.SIZE / 100, Vector2(float(row[3]), float(row[4])) * Map.SIZE / 100)
+		var rect := Architecture.court_rect(row)
 		if not view.intersects(rect):
 			continue
-		draw_rect(rect, Color("#537768"))
-		draw_rect(rect.grow(-6), Color("#c6d7b3"), false, 2)
-		draw_line(Vector2(rect.get_center().x, rect.position.y + 6), Vector2(rect.get_center().x, rect.end.y - 6), Color("#c6d7b3"), 2)
+		Architecture.court(self, row)
 		_sign(rect.position + Vector2(4, 16), str(row[0]), 10)
 	for building in buildings:
 		var rect: Rect2 = building["rect"]
@@ -347,8 +394,12 @@ func _draw_campus(view: Rect2) -> void:
 			continue
 		_draw_building(building)
 	for point in _tree_positions:
-		if view.grow(24).has_point(point):
-			_tree(point)
+		if view.grow(48).has_point(point):
+			Architecture.tree(self, point)
+	# Wayfinding stays readable above canopies and roof details.
+	for block in buildings:
+		if view.grow(80).intersects(block["rect"]):
+			_sign(Rect2(block["rect"]).position + Vector2(3, -8), str(block["name"]), 10)
 	for point in [Vector2(1136, 832), Vector2(1264, 1360)]:
 		draw_rect(Rect2(point - Vector2(24, 16), Vector2(48, 32)), Color("#c6c8b8"))
 		draw_rect(Rect2(point - Vector2(18, 10), Vector2(36, 20)), Color("#537e94"))
@@ -359,50 +410,13 @@ func _draw_campus(view: Rect2) -> void:
 
 
 func _draw_building(building: Dictionary) -> void:
-	var rect: Rect2 = building["rect"]
-	var kind := str(building["kind"])
-	var color := Color("#796c65")
-	if kind == "lab":
-		color = Color("#657d85")
-	elif kind == "office":
-		color = Color("#8b725c")
-	elif kind == "social":
-		color = Color("#68795d")
-	if str(building["id"]).begins_with("sis_") or building["id"] == "admin_sis":
-		color = Color("#345e7f")
-	draw_rect(Rect2(rect.position + Vector2(8, 14), rect.size), Color("#42524c"))
-	draw_rect(Rect2(rect.position + Vector2(0, 18), rect.size), Color("#c5b596"))
-	draw_rect(rect, color.darkened(0.3))
-	draw_rect(rect.grow(-4), color)
-	for y in range(int(rect.position.y + 8), int(rect.end.y - 4), 8):
-		draw_line(Vector2(rect.position.x + 4, y), Vector2(rect.end.x - 4, y), color.lightened(0.12), 1)
-	draw_rect(Rect2(rect.position + Vector2(8, 5), Vector2(rect.size.x - 16, 3)), color.lightened(0.3))
-	for x in range(int(rect.position.x + 10), int(rect.end.x - 8), 24):
-		draw_rect(Rect2(x - 2, rect.end.y + 3, 14, 10), Color("#888d7b"))
-		draw_rect(Rect2(x, rect.end.y + 4, 10, 7), Color("#28494e"))
-		draw_rect(Rect2(x + 4, rect.end.y + 4, 2, 7), Color("#a1b1a2"))
-	if building["rooms"].size() > 1:
-		# Separate roof bays and a long glazed front read as a multi-room block.
-		var bays := mini(building["rooms"].size(), 5)
-		for bay in range(1, bays):
-			var x := snappedf(rect.position.x + rect.size.x * bay / bays, 2)
-			draw_rect(Rect2(x, rect.position.y + 6, 2, rect.size.y - 12), color.darkened(0.25))
-		_sign(rect.position + Vector2(4, 16), "%d AMBIENTES" % building["rooms"].size(), 8)
+	Architecture.building(self, building)
 	var door: Vector2 = building["door"]
 	draw_rect(Rect2(door - Vector2(10, 18), Vector2(20, 17)), Color("#223a40"))
 	draw_rect(Rect2(door - Vector2(6, 15), Vector2(12, 14)), Color("#6ddab9"))
 	draw_rect(Rect2(door - Vector2(14, 0), Vector2(28, 4)), Color("#d4c7a0"))
-	_sign(rect.position + Vector2(3, -8), str(building["name"]), 10)
 	if player.distance_to(door) < 29:
 		draw_rect(Rect2(door - Vector2(13, 20), Vector2(26, 24)), Color("#fff1a6"), false, 2)
-
-
-func _tree(point: Vector2) -> void:
-	draw_rect(Rect2(point + Vector2(-9, 8), Vector2(22, 6)), Color("#576b57"))
-	draw_rect(Rect2(point + Vector2(-2, -1), Vector2(4, 14)), Color("#78614b"))
-	draw_rect(Rect2(point + Vector2(-11, -16), Vector2(22, 20)), Color("#355f50"))
-	draw_rect(Rect2(point + Vector2(-7, -21), Vector2(14, 26)), Color("#416c52"))
-	draw_rect(Rect2(point + Vector2(-8, -15), Vector2(10, 8)), Color("#64805a"))
 
 
 func _draw_room() -> void:
@@ -415,10 +429,14 @@ func _draw_room() -> void:
 			draw_rect(Rect2(x, y, 15, 15), Color("#b6af93") if (x / 16 + y / 16) % 2 == 0 else Color("#c5bd9f"))
 	draw_rect(Rect2(16, 16, 448, 20), Color("#727a77"))
 	draw_rect(Rect2(152, 28, 176, 32), Color("#345c53"))
-	_sign(Vector2(166, 48), room_name, 10)
+	if kind != "games_room":
+		_sign(Vector2(166, 48), room_name, 10)
 	for x in [28, 444]:
 		for y in [64, 112, 160, 208]:
 			draw_rect(Rect2(x, y, 8, 28), Color("#59898f"))
+	if kind == "games_room":
+		_draw_games_room()
+		return
 	for desk in Map.room_obstacles("lab" if kind == "computer_lab" else kind):
 		draw_rect(Rect2(desk.position + Vector2(2, 4), desk.size), Color("#6d6858"))
 		draw_rect(desk, Color("#8b6b4f"))
@@ -447,6 +465,22 @@ func _draw_room() -> void:
 	_sign(Vector2(32, 80), "E: ACTIVIDADES / AULAS", 10)
 	draw_rect(Rect2(222, 292, 36, 16), Color("#6ddab9"))
 	_sign(Vector2(220, 290), "PASILLO" if building["rooms"].size() > 1 else "SALIR", 10)
+
+
+func _draw_games_room() -> void:
+	_sign(Vector2(174, 48), "SALA DE JUEGOS · E", 10)
+	for station in Map.game_stations():
+		var rect: Rect2 = station["rect"]
+		GameTables.draw_table(self, rect, str(station["id"]))
+		_sign(rect.position + Vector2(0, -8), str(station["title"]).to_upper(), 9)
+		if player.distance_to(station["approach"]) < 32:
+			draw_rect(rect.grow(3), Color("#f2e8a5"), false, 2)
+	# Lamps stay clear of the walkable central aisle.
+	for x in [52, 408]:
+		draw_rect(Rect2(x, 42, 18, 4), Color("#f5dea0"))
+	_sign(Vector2(152, 67), "E: ELIGE UNA MESA", 9)
+	draw_rect(Rect2(222, 292, 36, 16), Color("#6ddab9"))
+	_sign(Vector2(220, 290), "SALIR", 10)
 
 
 func _draw_hall() -> void:

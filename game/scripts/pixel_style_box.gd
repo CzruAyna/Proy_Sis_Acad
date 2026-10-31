@@ -15,6 +15,8 @@ var fractured := false
 var chunk_size := 16
 var fracture_depth := 0
 var terminal_phase := -1.0
+var terminal_output := true
+var terminal_strength := 1.0
 
 
 func set_border_width_all(value: int) -> void:
@@ -34,7 +36,7 @@ func _get_draw_rect(rect: Rect2) -> Rect2:
 func _draw(item: RID, rect: Rect2) -> void:
 	var box := Rect2(rect.position.round(), rect.size.round())
 	if fractured and draw_center:
-		Fracture.draw(item, box, bg_color, border_color, chunk_size, fracture_depth, terminal_phase)
+		Fracture.draw(item, box, bg_color, border_color, chunk_size, fracture_depth, terminal_phase if terminal_output else -1, terminal_strength)
 		return
 	if shadow_size > 0 and draw_center:
 		_fill(item, _outline(Rect2(box.position + shadow_offset, box.size)), shadow_color)

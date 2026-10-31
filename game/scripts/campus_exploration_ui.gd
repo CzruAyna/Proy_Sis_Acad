@@ -4,6 +4,7 @@ const World = preload("res://scripts/campus_world.gd")
 const Map = preload("res://scripts/campus_map.gd")
 const Overview = preload("res://scripts/campus_overview.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
+const MinigamePreview = preload("res://scripts/minigame_preview.gd")
 
 var host: WeakRef
 var world_ref: WeakRef
@@ -157,6 +158,7 @@ func show_world() -> void:
 	world.menu_requested.connect(show_progress)
 	world.map_requested.connect(show_map)
 	world.activity_requested.connect(show_room)
+	world.minigame_requested.connect(show_minigame)
 	var pager = _ui().find_child("PageNavigator", true, false)
 	pager.space_changed.connect(func(available: Vector2) -> void:
 		var other := workspace.get_combined_minimum_size().y - world.custom_minimum_size.y
@@ -249,6 +251,9 @@ func show_reference() -> void:
 func show_room(building: Dictionary, room: String) -> void:
 	_save()
 	_theme()
+	if building["kind"] == "games_room":
+		show_games()
+		return
 	var page: VBoxContainer = _ui()._make_page(room, "Interior recreado · " + str(building["name"]), show_world)
 	_text(page, "Estás en " + room + ". La decoración es una recreación didáctica; no representa todavía el mobiliario real.", 17)
 	var actions := _actions(page)
@@ -265,6 +270,47 @@ func show_room(building: Dictionary, room: String) -> void:
 	for name in building["rooms"]:
 		_ui()._add_button(rooms, str(name), _choose_room.bind(str(building["id"]), str(name)), str(name) == room, 40)
 	_ui()._add_button(page, "Volver al interior", show_world, false, 40)
+
+
+func show_games() -> void:
+	_save()
+	_theme()
+	var page: VBoxContainer = _ui()._make_page("Sala de juegos · Bloque E", "Elige una mesa para conocer el minijuego", show_world, false, false)
+	_text(page, "Cuatro mesas para descansar entre recorridos. Acércate a ellas con WASD y pulsa E, o elige aquí una presentación.", 16)
+	for station in Map.game_stations():
+		var id := str(station["id"])
+		var item: Dictionary = MinigamePreview.CATALOG[id]
+		var card: VBoxContainer = _ui()._card(page)
+		_text(card, str(item["title"]), 20)
+		_text(card, str(item["description"]), 14)
+		_ui()._add_button(card, "Ver mesa de " + str(item["title"]), show_minigame.bind(id), false, 38)
+	_text(page, "Vista previa. Las partidas todavía están en preparación.", 14)
+	_ui()._add_button(page, "Volver a la sala", show_world, true, 38)
+
+
+func show_minigame(id: String) -> void:
+	if not MinigamePreview.CATALOG.has(id):
+		return
+	_save()
+	_theme()
+	var item: Dictionary = MinigamePreview.CATALOG[id]
+	var page: VBoxContainer = _ui()._make_page(str(item["title"]), "Sala de juegos · Sistemas E · vista previa", show_games, false, false)
+	var preview := MinigamePreview.new()
+	preview.name = "MinigamePreview"
+	preview.game_id = id
+	preview.custom_minimum_size = Vector2(0, 200)
+	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview.set_meta("page_atomic", true)
+	page.add_child(preview)
+	_text(page, str(item["description"]), 16)
+	_text(page, "Controles previstos: " + str(item["controls"]), 14)
+	_text(page, str(item["pending"]), 14)
+	var row := _actions(page)
+	var start: Button = _ui()._add_button(row, "Partida en desarrollo", Callable(), false, 40)
+	start.name = "MinigameStart"
+	start.disabled = true
+	_ui()._add_button(row, "Elegir otra mesa", show_games, false, 40)
+	_ui()._add_button(row, "Volver a la sala", show_world, true, 40)
 
 
 func _choose_room(id: String, room: String) -> void:

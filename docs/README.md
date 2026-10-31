@@ -18,6 +18,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
 | [Exploración FNI](EXPLORACION_FNI.md) | Campus pixel art de SIS-INF, personaje, controles, aulas, guardado y recordatorios de ambientación. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
+| [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Presentación de las cuatro mesas, límites del frontend y nota de funcionamiento para motor/backend. |
 | [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Avances por fecha, commits de referencia y cambios todavía sin commit. |
 
 ## Especificación y coordinación

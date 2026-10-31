@@ -6,6 +6,7 @@ const PixelStyle = preload("res://scripts/pixel_style_box.gd")
 const BrokenPanel = preload("res://scripts/broken_pixel_panel.gd")
 const CareerLogo = preload("res://scripts/procedural_career_logo.gd")
 const FractureAnimator = preload("res://scripts/fracture_animator.gd")
+const TerminalCave = preload("res://scripts/terminal_cave.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
@@ -116,7 +117,7 @@ var selected_faculty := ""
 var draft_player_name := ""
 var current_question: Dictionary = {}
 var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false, "low_performance": false}
-var formula_font: SystemFont
+var formula_font: Font
 var random := RandomNumberGenerator.new()
 var _active_back := Callable()
 var _home_art := false
@@ -310,11 +311,11 @@ func _draw_home_science() -> void:
 		var tx := center.x + float(tick) * scale_px
 		if tx >= 0 and tx <= size.x:
 			if tick % 5 == 0:
-				draw_string(ThemeDB.fallback_font, Vector2(tx + 3, center.y + 15), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#aab6bb", 0.62))
+				draw_string(NeonVisuals.PIXEL_FONT, Vector2(tx + 3, center.y + 15), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#aab6bb", 0.62))
 		var ty := center.y - float(tick) * scale_px
 		if ty >= 0 and ty <= size.y:
 			if tick % 5 == 0:
-				draw_string(ThemeDB.fallback_font, Vector2(center.x + 7, ty - 3), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#ffffff", 0.72))
+				draw_string(NeonVisuals.PIXEL_FONT, Vector2(center.x + 7, ty - 3), str(tick), HORIZONTAL_ALIGNMENT_LEFT, 26, 9, Color("#ffffff", 0.72))
 	var curve_color := Color("#ffffff", 0.94) if str(HOME_CURVES[_home_curve_index]) not in ["heart", "rose", "lissajous", "spiral", "butterfly"] else _home_curve_color()
 	_draw_home_axes(center, axis_color)
 	_draw_home_trace(_home_curve_forward, curve_color)
@@ -335,9 +336,9 @@ func _draw_home_axes(center: Vector2, axis_color: Color) -> void:
 	draw_line(Vector2(center.x, size.y), Vector2(center.x, 14), axis_color, 1.8, true)
 	draw_colored_polygon(PackedVector2Array([Vector2(size.x - 3, center.y), Vector2(size.x - 15, center.y - 5), Vector2(size.x - 15, center.y + 5)]), axis_color)
 	draw_colored_polygon(PackedVector2Array([Vector2(center.x, 3), Vector2(center.x - 5, 15), Vector2(center.x + 5, 15)]), axis_color)
-	draw_string(ThemeDB.fallback_font, Vector2(size.x - 25, center.y - 10), "x", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
-	draw_string(ThemeDB.fallback_font, Vector2(center.x + 9, 18), "y", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
-	draw_string(ThemeDB.fallback_font, center + Vector2(8, 17), "0", HORIZONTAL_ALIGNMENT_LEFT, 12, 10, Color("#ffffff", 0.78))
+	draw_string(NeonVisuals.PIXEL_FONT, Vector2(size.x - 25, center.y - 10), "x", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
+	draw_string(NeonVisuals.PIXEL_FONT, Vector2(center.x + 9, 18), "y", HORIZONTAL_ALIGNMENT_LEFT, 16, 13, Color.WHITE)
+	draw_string(NeonVisuals.PIXEL_FONT, center + Vector2(8, 17), "0", HORIZONTAL_ALIGNMENT_LEFT, 12, 10, Color("#ffffff", 0.78))
 	var scale_px := minf(size.x, size.y) / 24.0
 	var tick_range := int(ceil(maxf(center.x, center.y) / scale_px))
 	for tick in range(-tick_range, tick_range + 1):
@@ -855,14 +856,11 @@ func _input(event: InputEvent) -> void:
 
 func _setup_theme() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	formula_font = SystemFont.new()
-	formula_font.font_names = PackedStringArray(["Segoe Print", "Cambria Math", "STIX Two Math", "Segoe UI Symbol", "Arial"])
-	formula_font.antialiasing = TextServer.FONT_ANTIALIASING_NONE
-	formula_font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
+	formula_font = NeonVisuals.PIXEL_FONT
 	var game_theme := Theme.new()
 	var pixel_font: FontFile = NeonVisuals.PIXEL_FONT
 	pixel_font.fallbacks = [ThemeDB.fallback_font]
-	game_theme.default_font = ThemeDB.fallback_font
+	game_theme.default_font = pixel_font
 	game_theme.default_font_size = 18
 	game_theme.set_font("font", "Button", NeonVisuals.PIXEL_FONT)
 	game_theme.set_stylebox("panel", "PopupPanel", NeonVisuals.panel(NEON_THEME))
@@ -980,7 +978,7 @@ func _show_global_achievements(back: Callable = Callable(), _menu_backdrop: bool
 			card.add_child(_label("✦ " + str(title), 16, _current_theme.get("text", INK)))
 
 
-func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false) -> VBoxContainer:
+func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false, campus_navigation: bool = true) -> VBoxContainer:
 	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
 		_apply_career_theme(str(current_profile["program_id"]), str(current_profile["mention_id"]))
 	if menu_backdrop:
@@ -1030,7 +1028,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		layout.add_child(_label(title, 24, _current_theme.get("text", INK)))
 	if not subtitle.is_empty() and not graph_workspace:
 		layout.add_child(_label(subtitle, 13, _current_theme.get("sub", INK)))
-	if not current_profile.is_empty() and simulation != null and not menu_backdrop and not graph_workspace:
+	if not current_profile.is_empty() and simulation != null and not menu_backdrop and not graph_workspace and campus_navigation:
 		_add_campus_navigation(layout)
 	var pager := PagedView.new()
 	layout.add_child(pager)
@@ -1111,9 +1109,8 @@ func _focus_control(reference: WeakRef) -> void:
 func _label(text: String, font_size: int = 18, color: Color = INK, centered: bool = false) -> Label:
 	var label := Label.new()
 	label.text = text
-	if font_size >= 20:
-		label.add_theme_font_override("font", NeonVisuals.PIXEL_FONT)
-		label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	label.add_theme_font_override("font", NeonVisuals.PIXEL_FONT)
+	label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if _current_theme.is_empty():
 		_current_theme = Catalog.THEME.get("sistemas", {})
 	var tcolor = color
@@ -1276,9 +1273,18 @@ func _show_main() -> void:
 	var menu_panel := PanelContainer.new()
 	menu_panel.name = "MainMenuPanel"
 	var menu_style := _home_panel_style()
+	menu_style.terminal_output = false
 	menu_panel.add_theme_stylebox_override("panel", menu_style)
 	stage.add_child(menu_panel)
 	_effects.register(menu_panel, menu_style)
+	var terminal := TerminalCave.new()
+	terminal.name = "MenuTerminalBackground"
+	terminal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	terminal.style = _home_panel_style()
+	terminal.style.terminal_strength = 3.0
+	stage.add_child(terminal)
+	stage.move_child(terminal, 0)
+	_effects.register(terminal, terminal.style)
 	var menu := VBoxContainer.new()
 	menu.name = "PageContent"
 	menu.add_theme_constant_override("separation", 6)
@@ -1333,6 +1339,9 @@ func _show_main() -> void:
 		menu_panel.size.x = width
 		menu_panel.size.y = menu_panel.get_combined_minimum_size().y
 		menu_panel.position = Vector2(72, maxf(28, floorf((stage.size.y - menu_panel.size.y) * 0.5)))
+		# Continue the same opening; keep the buttons' container compact.
+		terminal.size = Vector2(304, 304)
+		terminal.position = (menu_panel.position + Vector2(menu_panel.size.x - 48, menu_panel.size.y * 0.42)).floor()
 	stage.resized.connect(fit_menu)
 	menu.minimum_size_changed.connect(func() -> void: fit_menu.call_deferred())
 	fit_menu.call_deferred()

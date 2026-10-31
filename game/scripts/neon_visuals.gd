@@ -68,7 +68,7 @@ static func panel(theme: Dictionary, emphasized: bool = false, economical: bool 
 	var style := PixelStyle.new()
 	style.fractured = true
 	var glow: Color = theme.get("neon", theme.get("accent", Color("#39bcff")))
-	style.bg_color = Color("#070b0e")
+	style.bg_color = Color.BLACK
 	style.border_color = Color(glow, 0.82 if emphasized else 0.48)
 	style.set_border_width_all(2 if emphasized else 1)
 	style.content_margin_left = 16

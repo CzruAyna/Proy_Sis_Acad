@@ -6,8 +6,8 @@ func _init() -> void:
 	fractured = true
 	chunk_size = 32
 	fracture_depth = 24
-	bg_color = Color("#020405")
-	border_color = Color("#338aff")
+	bg_color = Color.BLACK
+	border_color = Color.BLACK
 	content_margin_left = 40
 	content_margin_right = 40
 	content_margin_top = 24
