@@ -493,3 +493,33 @@ Matriz, registros y avisos del entorno en
 
 Quedan pendientes la lógica de minijuegos, confirmación del interior de E y
 distribución actual, material autorizado y pruebas con jugadores/otros equipos.
+
+## 31 de octubre: terminal interior continua y desintegración del menú
+
+**Estado:** cambios de esta entrega sin commit creado.
+
+Se eliminó la prolongación derecha de la terminal. El mismo fondo del inicio
+escribe la orden y simula una salida masiva de `tree`, alternando Linux y
+Windows. Los botones conservan dimensiones y acciones, con relleno y sombreado
+translúcidos que dejan pasar las líneas verdes. La cabecera queda despejada.
+
+La abertura negra usa una silueta irregular sin el patrón periódico anterior.
+Al permanecer en el inicio, pierde bloques en etapas y desprende fragmentos
+hasta desintegrar el fondo; las etiquetas y áreas de interacción siguen
+disponibles. Los símbolos de Sistemas e Informática se dibujan en dos mallas
+reutilizadas y flotan con desplazamientos pequeños sobre píxeles enteros.
+Escritura, erosión y emblema comparten reloj y se detienen con movimiento
+reducido o bajo consumo. La salida genera solo filas visibles y limita los
+fragmentos: no crea un historial ilimitado ni un control por línea.
+
+Se añadió la regla acumulativa 20. Los cambios principales están en
+`menu_cave.gd`, `pixel_style_box.gd`, `fracture_animator.gd`, `game.gd` y
+`procedural_career_logo.gd`; se retiraron `terminal_cave.gd` y su UID.
+No se cambiaron reglas académicas, backend ni datos institucionales.
+
+Ocho suites completaron **4.771 comprobaciones sin fallos**. Se generaron
+32 capturas reales, se inspeccionaron la transparencia, lectura, rotura y
+texto ampliado, y se preparó una vista animada de los primeros seis segundos.
+Se actualizó la exportación de Windows. Matriz, registros y límites en
+[Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md).
+Quedan sin medir FPS comparativos y uso en otros equipos o con jugadores.

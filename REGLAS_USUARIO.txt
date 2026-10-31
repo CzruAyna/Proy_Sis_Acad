@@ -145,3 +145,17 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     el frontend ni presentar la recreación del espacio como planta confirmada.
     Esta precisión actualiza los colores de la ruptura de la regla 18 y
     conserva colores por carrera, accesibilidad y preferencias de animación.
+
+20. MENÚ CON TERMINAL INTERIOR Y DESINTEGRACIÓN, indicada el 31/10/2026.
+    Eliminar la extensión derecha de la terminal: toda su escritura debe
+    mostrarse dentro del mismo menú. Simular la escritura de la orden tree
+    y después una cantidad muy grande de líneas imprimiéndose continuamente.
+    Los botones del inicio serán parcialmente transparentes para dejar ver
+    esa escritura, conservando etiquetas y acciones legibles. Esta precisión
+    actualiza la presentación opaca de esos botones, no la de las tarjetas
+    de las demás pantallas. Hacer más compleja e irregular la silueta negra,
+    sin un patrón cuadrado repetitivo. Al permanecer en el menú, desprender
+    progresivamente más bloques hasta desintegrar visualmente su fondo.
+    Añadir un movimiento animado pequeño a los símbolos de SIS e INF.
+    Conservar navegación, posiciones y acceso a las acciones; respetar
+    movimiento reducido y bajo consumo para todos estos efectos.

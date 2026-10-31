@@ -1,5 +1,6 @@
 extends StyleBox
 const Fracture = preload("res://scripts/fracture_geometry.gd")
+const MenuCave = preload("res://scripts/menu_cave.gd")
 ## Original stepped frame. Geometry stays crisp without a full-screen pixel filter.
 
 var bg_color := Color("#07172e")
@@ -17,6 +18,10 @@ var fracture_depth := 0
 var terminal_phase := -1.0
 var terminal_output := true
 var terminal_strength := 1.0
+var animated_cave := false
+var translucent := false
+var text_backing := Vector2.ZERO
+var terminal_inset_top := 0.0
 
 
 func set_border_width_all(value: int) -> void:
@@ -29,20 +34,35 @@ func _get_minimum_size() -> Vector2:
 
 func _get_draw_rect(rect: Rect2) -> Rect2:
 	if fractured:
-		return rect.grow(fracture_depth)
+		return rect.grow(fracture_depth + (96 if animated_cave else 0))
 	return rect.merge(Rect2(rect.position + shadow_offset, rect.size)) if shadow_size > 0 else rect
 
 
 func _draw(item: RID, rect: Rect2) -> void:
 	var box := Rect2(rect.position.round(), rect.size.round())
+	if animated_cave and draw_center:
+		MenuCave.draw(item, box, chunk_size, fracture_depth, terminal_phase, terminal_inset_top)
+		return
 	if fractured and draw_center:
 		Fracture.draw(item, box, bg_color, border_color, chunk_size, fracture_depth, terminal_phase if terminal_output else -1, terminal_strength)
 		return
 	if shadow_size > 0 and draw_center:
 		_fill(item, _outline(Rect2(box.position + shadow_offset, box.size)), shadow_color)
 	if draw_center:
-		_fill(item, _outline(box), border_color)
-		_fill(item, _outline(box.grow(-border_width)), bg_color)
+		if translucent:
+			# Stroke the perimeter; an opaque polygon under the fill would hide code.
+			_fill(item, _outline(box), bg_color)
+			if text_backing != Vector2.ZERO:
+				var extent := text_backing.min(box.size - Vector2(12, 8))
+				RenderingServer.canvas_item_add_rect(item, Rect2((box.get_center() - extent * 0.5).round(), extent.ceil()), Color(0, 0, 0, 0.42))
+			var points := _outline(box.grow(-border_width * 0.5))
+			for index in range(points.size()):
+				var a := points[index]
+				var b := points[(index + 1) % points.size()]
+				RenderingServer.canvas_item_add_rect(item, Rect2(Vector2(minf(a.x, b.x), minf(a.y, b.y)), Vector2(absf(a.x - b.x) + border_width, absf(a.y - b.y) + border_width)), border_color)
+		else:
+			_fill(item, _outline(box), border_color)
+			_fill(item, _outline(box.grow(-border_width)), bg_color)
 	else:
 		# Focus brackets do not obscure the currently pressed/hovered background.
 		for corner in [box.position, Vector2(box.end.x - 8, box.position.y), Vector2(box.position.x, box.end.y - 2), box.end - Vector2(8, 2)]:

@@ -13,7 +13,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Desarrollo local](DESARROLLO_LOCAL.md) | Requisitos, ejecución y exportación de Godot, API Django e interfaz Next.js. |
 | [Simulación individual](SIMULACION_ESTUDIANTE.md) | Reglas y estados del recorrido individual en Godot. |
 | [Diseño visual](DISENO_VISUAL_CAMPUS.md) | Identidad, grafos, navegación y comportamiento visual acordados. |
-| [Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md) | Fondo construido con código, bloques grandes, letras verdes y limpieza compatible con las partidas. |
+| [Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md) | Terminal interior, botones translúcidos, erosión progresiva, emblema animado y verificaciones. |
 | [Tareas de frontend](ALCANCE_FRONTEND.md) | Qué puede asumir interfaz, ejemplos de encargos y coordinación con motor/backend. |
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
 | [Exploración FNI](EXPLORACION_FNI.md) | Campus pixel art de SIS-INF, personaje, controles, aulas, guardado y recordatorios de ambientación. |

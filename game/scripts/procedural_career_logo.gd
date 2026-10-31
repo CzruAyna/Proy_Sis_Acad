@@ -16,6 +16,7 @@ const GLYPHS := {
 }
 static var _meshes: Dictionary = {}
 var night := true
+var effect_phase := -1.0
 
 class Painter:
 	var cells: Dictionary = {}
@@ -143,27 +144,46 @@ static func emblem(dark: bool = true) -> ArrayMesh:
 	for row in range(4):
 		for column in range(8):
 			p.rect(Rect2i(35 + column * 5 + row * 2, 113 + row * 4, 4, 3), gray)
+	_meshes["systems_dark" if dark else "systems_light"] = p.mesh()
+	var q := Painter.new()
 	var globe := Vector2(101, 109)
-	p.disc(globe, 31, red)
-	p.disc(globe, 28, paper)
+	q.disc(globe, 31, red)
+	q.disc(globe, 28, paper)
 	for radius in [Vector2(24, 24), Vector2(12, 24), Vector2(24, 9)]:
-		p.ellipse(globe, radius, gray, true)
-	p.line(globe - Vector2(23, 0), globe + Vector2(23, 0), gray)
-	p.line(globe - Vector2(0, 23), globe + Vector2(0, 23), gray)
+		q.ellipse(globe, radius, gray, true)
+	q.line(globe - Vector2(23, 0), globe + Vector2(23, 0), gray)
+	q.line(globe - Vector2(0, 23), globe + Vector2(0, 23), gray)
 	for index in range(36):
 		var angle := TAU * index / 36.0
-		p.disc(globe + Vector2(cos(angle), sin(angle)) * 29, 0.8, ink)
-	p.letter("i", Vector2(79, 90), red, 3)
-	p.letter("n", Vector2(97, 90), red, 3)
-	p.letter("f", Vector2(115, 90), red, 3)
+		q.disc(globe + Vector2(cos(angle), sin(angle)) * 29, 0.8, ink)
+	q.letter("i", Vector2(79, 90), red, 3)
+	q.letter("n", Vector2(97, 90), red, 3)
+	q.letter("f", Vector2(115, 90), red, 3)
 	for row in range(3):
-		p.ellipse(Vector2(98, 123 + row * 3), Vector2(14, 3), navy, true)
+		q.ellipse(Vector2(98, 123 + row * 3), Vector2(14, 3), navy, true)
+	_meshes["informatics_dark" if dark else "informatics_light"] = q.mesh()
+	p.cells.merge(q.cells, true)
 	_meshes[dark] = p.mesh()
 	return _meshes[dark]
+
+
+func advance_effects(phase: float) -> void:
+	effect_phase = phase
+	queue_redraw()
 
 
 func _draw() -> void:
 	var scale := maxf(1, floorf(minf(size.x, size.y) / SIDE))
 	var origin := ((size - Vector2.ONE * SIDE * scale) * 0.5).round()
-	draw_set_transform(origin, 0, Vector2.ONE * scale)
-	draw_mesh(emblem(night), null)
+	var full := emblem(night)
+	if effect_phase < 0:
+		draw_set_transform(origin, 0, Vector2.ONE * scale)
+		draw_mesh(full, null)
+		return
+	# Each symbol floats independently on whole source pixels, without resampling.
+	var systems := Vector2(sin(effect_phase * 0.38) * 1.6, cos(effect_phase * 0.31) * 1.6).round()
+	var informatics := Vector2(sin(effect_phase * 0.43 + 0.8) * 1.8, cos(effect_phase * 0.36 + 1.3) * 1.8).round()
+	draw_set_transform(origin + systems * scale, 0, Vector2.ONE * scale)
+	draw_mesh(_meshes["systems_dark" if night else "systems_light"], null)
+	draw_set_transform(origin + informatics * scale, 0, Vector2.ONE * scale)
+	draw_mesh(_meshes["informatics_dark" if night else "informatics_light"], null)

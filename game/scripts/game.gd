@@ -6,7 +6,6 @@ const PixelStyle = preload("res://scripts/pixel_style_box.gd")
 const BrokenPanel = preload("res://scripts/broken_pixel_panel.gd")
 const CareerLogo = preload("res://scripts/procedural_career_logo.gd")
 const FractureAnimator = preload("res://scripts/fracture_animator.gd")
-const TerminalCave = preload("res://scripts/terminal_cave.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const SimulationCommands = preload("res://scripts/simulation_commands.gd")
@@ -1273,18 +1272,10 @@ func _show_main() -> void:
 	var menu_panel := PanelContainer.new()
 	menu_panel.name = "MainMenuPanel"
 	var menu_style := _home_panel_style()
-	menu_style.terminal_output = false
+	menu_style.animated_cave = true
 	menu_panel.add_theme_stylebox_override("panel", menu_style)
 	stage.add_child(menu_panel)
 	_effects.register(menu_panel, menu_style)
-	var terminal := TerminalCave.new()
-	terminal.name = "MenuTerminalBackground"
-	terminal.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	terminal.style = _home_panel_style()
-	terminal.style.terminal_strength = 3.0
-	stage.add_child(terminal)
-	stage.move_child(terminal, 0)
-	_effects.register(terminal, terminal.style)
 	var menu := VBoxContainer.new()
 	menu.name = "PageContent"
 	menu.add_theme_constant_override("separation", 6)
@@ -1298,6 +1289,7 @@ func _show_main() -> void:
 	logo.modulate.a = 0.75
 	stage.add_child(logo)
 	stage.move_child(logo, 0)
+	_effects.register_actor(logo)
 	var place_logo := func() -> void:
 		var extent := floorf(minf(stage.size.x * 0.48, stage.size.y * 0.72) / CareerLogo.SIDE) * CareerLogo.SIDE
 		logo.size = Vector2.ONE * maxf(CareerLogo.SIDE, extent)
@@ -1329,9 +1321,29 @@ func _show_main() -> void:
 	for action in menu.get_children():
 		if action is Button:
 			actions_width = maxf(actions_width, NeonVisuals.PIXEL_FONT.get_string_size(action.text, HORIZONTAL_ALIGNMENT_LEFT, -1, action.get_theme_font_size("font_size")).x + 36)
+	var first_action: Button
 	for action in menu.get_children():
 		if action is Button:
+			if first_action == null:
+				first_action = action
 			action.custom_minimum_size.x = actions_width
+			for state in ["normal", "hover", "pressed", "disabled"]:
+				var style: PixelStyle = action.get_theme_stylebox(state).duplicate()
+				style.translucent = true
+				style.bg_color = Color(0.01, 0.04, 0.07, 0.32 if state == "normal" else (0.56 if state == "hover" else 0.68))
+				style.shadow_size = 0
+				style.raised = false
+				var font_size: int = action.get_theme_font_size("font_size")
+				style.text_backing = Vector2(NeonVisuals.PIXEL_FONT.get_string_size(action.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 16, NeonVisuals.PIXEL_FONT.get_height(font_size) + 4)
+				action.add_theme_stylebox_override(state, style)
+			action.add_theme_color_override("font_outline_color", Color.BLACK)
+			action.add_theme_constant_override("outline_size", 2)
+	for label in menu.find_children("*", "Label", true, false):
+		label.add_theme_color_override("font_outline_color", Color.BLACK)
+		label.add_theme_constant_override("outline_size", 2)
+		label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
 	var fit_menu := func() -> void:
 		if not is_instance_valid(menu_panel) or not menu_panel.is_inside_tree():
 			return
@@ -1339,9 +1351,8 @@ func _show_main() -> void:
 		menu_panel.size.x = width
 		menu_panel.size.y = menu_panel.get_combined_minimum_size().y
 		menu_panel.position = Vector2(72, maxf(28, floorf((stage.size.y - menu_panel.size.y) * 0.5)))
-		# Continue the same opening; keep the buttons' container compact.
-		terminal.size = Vector2(304, 304)
-		terminal.position = (menu_panel.position + Vector2(menu_panel.size.x - 48, menu_panel.size.y * 0.42)).floor()
+		if first_action != null:
+			menu_style.terminal_inset_top = maxf(0, first_action.get_global_rect().position.y - menu_panel.get_global_rect().position.y - 18)
 	stage.resized.connect(fit_menu)
 	menu.minimum_size_changed.connect(func() -> void: fit_menu.call_deferred())
 	fit_menu.call_deferred()

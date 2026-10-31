@@ -10,8 +10,9 @@ geometría. No carga una textura para representar ese emblema dentro del menú.
 Los paneles adoptan una ruptura de bloques grandes y escalones en **negro
 puro**, sin rebordes ni capas de otro color, extendida a pantallas interiores
 y tarjetas de contenido. Esta precisión sustituye los tonos de las capas
-del avance anterior. Botones
-y campos mantienen límites continuos para leerlos e interactuar con precisión.
+del avance anterior. Los botones del inicio tienen relleno translúcido y
+etiquetas opacas; los demás botones, campos y tarjetas conservan su presentación.
+Todos mantienen límites legibles para interactuar con precisión.
 
 Los botones del inicio comparten el ancho necesario para su etiqueta más larga,
 con un margen de 36 unidades; el panel ajusta su ancho a ese grupo. Se conservan
@@ -43,22 +44,51 @@ confirmación; el código geométrico no cambia los derechos sobre ese diseño.
 | Componente | Función |
 |---|---|
 | `fracture_geometry.gd` | Dibuja la abertura negra escalonada y la salida simulada de `tree` de ambos sistemas. |
+| `menu_cave.gd` | Construye la silueta irregular del inicio, la salida masiva de terminal, grietas y desprendimientos. |
 | `broken_pixel_panel.gd` | Configura aberturas de bloques de 32 unidades y profundidad de 24 para el inicio y el fondo de las páginas. |
 | `pixel_style_box.gd` | Mantiene los estados de botones/campos e incorpora la variante de tarjetas con ruptura de 16 unidades. |
-| `fracture_animator.gd` | Usa un solo reloj para actualizar las superficies visibles, como máximo una vez cada 0,16 segundos. |
+| `fracture_animator.gd` | Usa un solo reloj para superficies y emblema: intervalo mínimo de 0,05 s en el inicio animado y 0,16 s en las otras vistas. |
 | `game.gd` | Construye el menú, registra superficies y conecta las preferencias de movimiento/consumo. |
-| `terminal_cave.gd` | Continúa la misma abertura detrás del inicio para mostrar el árbol junto a los botones; no es otra ventana ni un menú. |
 
-La salida verde alterna un árbol con `tree -L 3` de Linux y otro con `tree /A`
-de Windows. Se escribe por líneas, permanece y se desvanece. En el inicio,
-una prolongación irregular del mismo fondo deja visible el árbol junto a
-los botones, sin ensanchar sus controles ni agregar otra ventana. En las
-páginas interiores queda más tenue para mantener la legibilidad. Los nombres
-de carpetas son ilustrativos: no se leen rutas personales ni se ejecutan
-comandos. El reloj
-guarda referencias débiles a los controles, descarta superficies retiradas y
-se detiene con movimiento reducido o bajo consumo. No existe un temporizador
-por tarjeta. La temática de cada mención permanece detrás de las tarjetas.
+En el inicio, la terminal está **dentro del mismo menú**, sin prolongación
+derecha. Primero escribe `tree -a /campus` o `tree /F /A`; después simula 170
+líneas por segundo y alterna sistema cada 24 segundos. Se generan solamente
+las filas visibles, hasta 48: el contador puede superar tres mil líneas por
+ejecución sin conservar ese historial en memoria ni crear controles por fila.
+Las carpetas y archivos son ficticios; no se leen rutas ni se ejecutan comandos.
+En las páginas interiores se conserva el árbol breve, con menor intensidad.
+La cabecera del inicio queda reservada para título y partida; la salida se
+extiende por la zona de acciones dentro del mismo panel.
+
+La silueta del inicio usa ruido determinista en sus cuatro lados y bloques
+de 16 unidades dentro de la configuración de ruptura de 32. No repite el
+antiguo patrón de filas. Como decisión de frontend, comienza a erosionarse
+después de una espera inicial de 12 segundos, con etapas cada 8: primer
+desprendimiento a los 20 y desintegración completa a los 92. Los fragmentos
+son negros, tienen duración corta y un máximo de
+36 fragmentos simultáneos. La escritura se limita a los tramos que siguen
+perteneciendo al fondo. Las posiciones, etiquetas y áreas de interacción no
+dependen de la erosión: todas las acciones siguen accesibles al terminar.
+Volver a entrar al inicio reinicia el efecto.
+
+Los rellenos de los botones principales usan opacidad parcial según estado:
+0,32 normal, 0,56 hover y 0,68 presionado/deshabilitado. El contorno se dibuja
+por separado, sin un polígono ni sombra opacos que oculten la terminal debajo.
+Las etiquetas permanecen opacas, con contorno negro. La transparencia se limita
+a los controles del inicio, con un sombreado también translúcido bajo su texto
+para que las líneas rápidas no compitan con la etiqueta. No afecta
+a la opacidad de las tarjetas informativas.
+
+El emblema reutiliza dos mallas, una para Sistemas y otra para Informática,
+además de su representación compuesta estática. Los dos símbolos flotan con
+desplazamientos pequeños y distintos, ajustados a píxeles de la rejilla original.
+No se regenera la geometría en cada cuadro ni se modifica el icono de Windows.
+
+El reloj guarda referencias débiles a superficies y emblema y descarta los
+controles retirados. Movimiento reducido y bajo consumo detienen escritura,
+erosión, fragmentos y emblema, dejando una silueta estática. No existe un
+temporizador por tarjeta ni otro reloj para el logo. La temática de cada
+mención permanece detrás de las tarjetas.
 
 La fuente pixel propia se aplica ahora también a textos pequeños, campos,
 selectores, ecuaciones, grafos y modelos didácticos; no solo títulos y botones.
@@ -170,6 +200,49 @@ exportación y arranque; no impidió completarlos. No se ha verificado otra GPU,
 una sesión de uso con jugadores ni la distribución física actual del campus.
 La lógica de las cuatro partidas permanece pendiente para motor/backend en
 [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md).
+
+## Verificación de terminal continua y desintegración del inicio
+
+31/10/2026. Esta precisión sustituye la prolongación lateral del avance
+anterior. Se retiraron `terminal_cave.gd` y su UID; no quedan referencias de
+código a ese componente. Se añadió `menu_cave.gd`, se separaron las mallas
+del emblema y se mantuvo un único reloj de efectos.
+
+Se ejecutaron ocho suites, **4.771 comprobaciones y cero fallos**:
+
+| Suite | Comprobaciones |
+|---|---:|
+| `test_dynamic_menu.gd` | 1.059 |
+| `test_cave_visuals.gd` | 311 |
+| `test_compact_navigation.gd` | 2.335 |
+| `test_pixel_ui.gd` | 669 |
+| `test_ambient_layout.gd` | 59 |
+| `test_neon_visuals.gd` | 123 |
+| `test_frontend_campus.gd` | 194 |
+| `test_game_integration.gd` | 21 |
+
+Registros: `game/.test-artifacts/dynamic-test_*.log`. La suite nueva comprueba
+progresión y final de la erosión, límite de fragmentos/filas, escritura de la
+orden, miles de líneas, alternancia de sistema, ausencia del costado y
+estabilidad de las acciones en nueve combinaciones de ventana/texto. Comprueba
+también el emblema con el reloj compartido, movimiento reducido, bajo consumo
+y que se pueda abrir Opciones después de la destrucción.
+
+`capture_dynamic_menu.gd` produjo 32 PNG con el renderizador real: ocho vistas
+de escritura, salida masiva, Windows, distintas fases de erosión, texto al 120%
+y movimiento reducido, además de 24 cuadros muestreados para una vista animada.
+Están en `game/.test-artifacts/dynamic-menu/`; `menu-animado.gif` reúne la
+secuencia inicial de seis segundos, muestreada cuatro veces por segundo.
+Se revisaron las capturas para despejar la cabecera y proteger las etiquetas
+sin ocultar por completo la salida bajo los botones.
+
+Se actualizó `game/build/SIS-INF.exe/.pck`. El arranque headless aislado y el
+resultado de exportación se registran en los archivos `dynamic-export.log`
+y `dynamic-smoke/`, dentro de `.test-artifacts`. No se midió rendimiento
+comparativo ni se verificaron otras GPU o una sesión de uso con jugadores.
+El aviso de certificados del entorno restringido y el uso de ANGLE se
+mantienen como limitaciones de esta máquina, sin errores de scripts en las
+comprobaciones finales.
 
 Siguen pendientes la aprobación visual del usuario, ensayos con jugadores,
 otras GPU y medidas de rendimiento comparables. La reducción de trabajo
