@@ -1,5 +1,12 @@
 # Integración gráfica de SIS-INF
 
+Actualización del 02/11/2026: los cuatro minijuegos de E tienen motores locales
+y rivales automáticos, con pausa, reinicio y guardado independiente. El encargo
+del usuario habilitó completar el funcionamiento antes pendiente. El estado
+actual, variantes elegidas, optimizaciones y pendientes están en
+[Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md). El texto siguiente conserva
+el antecedente de presentación; ya no describe el estado actual de las mesas.
+
 Actualización del 31/10/2026: se preparó la presentación de billar, ping-pong,
 ajedrez y Monopolio en Sistemas E. **Motor/backend debe implementar su
 funcionamiento**; el botón de partida sigue deshabilitado. Consultar

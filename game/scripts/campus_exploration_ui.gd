@@ -5,6 +5,7 @@ const Map = preload("res://scripts/campus_map.gd")
 const Overview = preload("res://scripts/campus_overview.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
 const MinigamePreview = preload("res://scripts/minigame_preview.gd")
+const MinigameSessions = preload("res://scripts/minigame_session_ui.gd")
 
 var host: WeakRef
 var world_ref: WeakRef
@@ -12,6 +13,7 @@ var saved: Dictionary = {}
 var session_key := ""
 var guest_name := ""
 var target_id := ""
+var minigames: RefCounted
 
 
 func _init(controller: Control) -> void:
@@ -92,6 +94,8 @@ func _start_guest(field: LineEdit) -> void:
 
 
 func capture() -> void:
+	if minigames != null:
+		minigames.checkpoint()
 	if world_ref != null:
 		var world = world_ref.get_ref()
 		if is_instance_valid(world) and world.is_inside_tree():
@@ -273,44 +277,29 @@ func show_room(building: Dictionary, room: String) -> void:
 
 
 func show_games() -> void:
+	if minigames != null:
+		minigames.suspend()
 	_save()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Sala de juegos · Bloque E", "Elige una mesa para conocer el minijuego", show_world, false, false)
-	_text(page, "Cuatro mesas para descansar entre recorridos. Acércate a ellas con WASD y pulsa E, o elige aquí una presentación.", 16)
+	var page: VBoxContainer = _ui()._make_page("Sala de juegos · Bloque E", "Elige una partida contra un rival automático", show_world, false, false)
+	_text(page, "Cuatro juegos locales con pausa y revancha. Acércate a una mesa con WASD y pulsa E, o elige aquí.", 16)
 	for station in Map.game_stations():
 		var id := str(station["id"])
 		var item: Dictionary = MinigamePreview.CATALOG[id]
 		var card: VBoxContainer = _ui()._card(page)
 		_text(card, str(item["title"]), 20)
 		_text(card, str(item["description"]), 14)
-		_ui()._add_button(card, "Ver mesa de " + str(item["title"]), show_minigame.bind(id), false, 38)
-	_text(page, "Vista previa. Las partidas todavía están en preparación.", 14)
+		_ui()._add_button(card, "Jugar a " + str(item["title"]), show_minigame.bind(id), false, 38)
+	_text(page, "La pausa conserva la partida. Los resultados recreativos no alteran tu expediente académico.", 14)
 	_ui()._add_button(page, "Volver a la sala", show_world, true, 38)
 
 
 func show_minigame(id: String) -> void:
 	if not MinigamePreview.CATALOG.has(id):
 		return
-	_save()
-	_theme()
-	var item: Dictionary = MinigamePreview.CATALOG[id]
-	var page: VBoxContainer = _ui()._make_page(str(item["title"]), "Sala de juegos · Sistemas E · vista previa", show_games, false, false)
-	var preview := MinigamePreview.new()
-	preview.name = "MinigamePreview"
-	preview.game_id = id
-	preview.custom_minimum_size = Vector2(0, 200)
-	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	preview.set_meta("page_atomic", true)
-	page.add_child(preview)
-	_text(page, str(item["description"]), 16)
-	_text(page, "Controles previstos: " + str(item["controls"]), 14)
-	_text(page, str(item["pending"]), 14)
-	var row := _actions(page)
-	var start: Button = _ui()._add_button(row, "Partida en desarrollo", Callable(), false, 40)
-	start.name = "MinigameStart"
-	start.disabled = true
-	_ui()._add_button(row, "Elegir otra mesa", show_games, false, 40)
-	_ui()._add_button(row, "Volver a la sala", show_world, true, 40)
+	if minigames == null:
+		minigames = MinigameSessions.new(_ui(), self)
+	minigames.open(id)
 
 
 func _choose_room(id: String, room: String) -> void:

@@ -49,6 +49,8 @@ interfaz invente resultados.
 | `game/scripts/achievement_catalog.gd` | Catálogo e identificadores de logros globales. |
 | `game/scripts/catalog.gd`, `uto_curricula.gd` | Carreras, menciones, materias y datos curriculares usados por el juego. |
 | `game/scripts/career_story.gd`, `career_story_ui.gd` | Motor y pantallas de la historia demostrativa. La historia usa la simulación sin ocupar una partida guardada. |
+| `game/scripts/recreation_game.gd`, `chess_game.gd`, `pool_game.gd`, `pong_game.gd`, `campus_property_game.gd` | Motores recreativos locales, reglas, física y rivales, independientes del expediente académico. |
+| `game/scripts/minigame_board.gd`, `minigame_session_ui.gd` | Controles, representación y sesiones de las cuatro mesas. Detalle en [Sala de juegos](JUEGOS_BLOQUE_E.md). |
 | `game/scripts/curriculum_graph.gd`, `graph_routing.gd` | Dibujo, interacción, disposición y comprobación geométrica de los grafos curriculares. |
 | `game/scripts/study_demo.gd`, `study_model.gd` | Controles didácticos y dibujos de demostración para las materias. |
 | `game/scripts/neon_visuals.gd`, `mention_ambient.gd`, `mention_art.gd` | Paletas, efectos visuales y ambientes temáticos por mención. |

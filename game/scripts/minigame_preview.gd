@@ -1,11 +1,11 @@
 extends Control
-## Presentation only. No turns, rules, scores, physics or academic mutations.
+## Shared table art; gameplay belongs to the recreation engines.
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 const CATALOG := {
-	"billar": {"title": "Billar", "description": "Mesa, troneras, taco y bolas preparados para el minijuego.", "controls": "Apuntar · ajustar fuerza con botones · tirar", "pending": "La partida de billar todavía no está disponible."},
-	"ping_pong": {"title": "Ping-pong", "description": "Mesa dividida por la red, dos paletas y pelota.", "controls": "Mover paleta · sacar · pausar", "pending": "La partida de ping-pong todavía no está disponible."},
-	"ajedrez": {"title": "Ajedrez", "description": "Tablero de 8 × 8 y piezas diferenciadas para ambos lados.", "controls": "Elegir pieza · elegir casilla · confirmar jugada", "pending": "La partida de ajedrez todavía no está disponible."},
-	"monopolio": {"title": "Monopolio", "description": "Tablero ilustrativo original, fichas y espacio para cartas.", "controls": "Lanzar dados · consultar casilla · finalizar turno", "pending": "La partida de Monopolio todavía no está disponible."}
+	"billar": {"title": "Billar", "description": "Duelo de seis bolas contra un rival que calcula ángulos y deja margen de error."},
+	"ping_pong": {"title": "Ping-pong", "description": "Duelo arcade con paletas, servicio y rival de reacción limitada."},
+	"ajedrez": {"title": "Ajedrez", "description": "Blancas contra un rival que estudia dos medias jugadas. Sin reloj."},
+	"monopolio": {"title": "Monopolio", "description": "Ruta del campus: variante propia breve con compras, rentas, mejoras y un rival prudente."}
 }
 var game_id := "billar"
 

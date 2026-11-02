@@ -27,9 +27,9 @@ Los laboratorios se distinguen con monitores, teclados, canaletas y un armario;
 las aulas mantienen pupitres y las otras salas de prácticas tienen mesones.
 La cantidad de puestos dibujados no representa un inventario real.
 Sistemas E abre una sala recreada con mesas de billar, ping-pong, ajedrez y
-Monopolio. Acercarse a una mesa y pulsar E abre una vista previa; el cartel
-del fondo permite elegir entre las cuatro. Las partidas aún no funcionan:
-el encargo actual es su presentación. La lógica y el material que falta
+Monopolio. Acercarse a una mesa y pulsar E abre una partida contra un rival
+automático; el cartel del fondo permite elegir entre las cuatro. Incluyen
+pausa, reinicio y guardado independiente. Las variantes y el material por
 confirmar están en [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md).
 Las fuentes, contradicciones y material pendiente están en
 [Referencias de interiores](REFERENCIAS_INTERIORES_FNI.md).

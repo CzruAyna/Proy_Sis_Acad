@@ -51,6 +51,15 @@ recreaciones y quedan pendientes de referencias reales. Los controles,
 recordatorios de decoración, fuentes y pendientes se detallan en
 [Exploración FNI](../docs/EXPLORACION_FNI.md).
 
+## Minijuegos del bloque E
+
+En Exploración → Sistemas E están disponibles billar de seis bolas,
+ping-pong arcade, ajedrez y Monopolio en la variante propia Ruta del campus.
+Se juegan contra rivales sencillos, con pausa, reglas, reinicio y recuperación.
+Los estados se guardan separados del expediente académico; la visita libre
+los conserva durante la sesión. Controles, algoritmos y límites en
+[Sala de juegos del bloque E](../docs/JUEGOS_BLOQUE_E.md).
+
 ## Historia demostrativa
 
 En el menú, **Historia de una carrera** permite generar un recorrido ficticio

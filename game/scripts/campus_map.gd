@@ -70,6 +70,9 @@ const COURTS := [
 ]
 
 
+static var _building_index: Dictionary = {}
+
+
 static func buildings() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for row in ROWS:
@@ -93,10 +96,10 @@ static func routes() -> Array[PackedVector2Array]:
 
 
 static func building(id: String) -> Dictionary:
-	for item in buildings():
-		if item["id"] == id:
-			return item
-	return {}
+	if _building_index.is_empty():
+		for item in buildings():
+			_building_index[str(item["id"])] = item
+	return _building_index[id].duplicate(true) if _building_index.has(id) else {}
 
 
 static func room_obstacles(kind: String) -> Array[Rect2]:

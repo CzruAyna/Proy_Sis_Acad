@@ -159,3 +159,11 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     Añadir un movimiento animado pequeño a los símbolos de SIS e INF.
     Conservar navegación, posiciones y acceso a las acciones; respetar
     movimiento reducido y bajo consumo para todos estos efectos.
+
+21. MINIJUEGOS FUNCIONALES Y OPTIMIZACIÓN, indicada el 02/11/2026.
+    Hacer jugables los minijuegos contra rivales automáticos sencillos, con
+    dificultad accesible pero con desafío. Revisar funcionalidades faltantes
+    y priorizar código bien ejecutado y optimizado; utilizar algoritmos y
+    estructuras de datos adecuados cuando resuelvan necesidades concretas.
+    Esta instrucción habilita implementar los motores pendientes de la regla
+    19, conservando su separación de la presentación y del expediente académico.

@@ -523,3 +523,70 @@ texto ampliado, y se preparó una vista animada de los primeros seis segundos.
 Se actualizó la exportación de Windows. Matriz, registros y límites en
 [Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md).
 Quedan sin medir FPS comparativos y uso en otros equipos o con jugadores.
+
+## 2 de noviembre: minijuegos funcionales y rivales locales
+
+**Estado:** cambios de esta entrega sin commit creado.
+
+La sala E tenía cuatro presentaciones y el botón de partida deshabilitado.
+Por encargo del usuario se implementaron billar de seis bolas, ping-pong
+arcade, ajedrez sin reloj y Ruta del campus, variante propia del Monopolio
+solicitado. Todas las mesas abren partidas contra rivales automáticos y
+conservan pausa, final, reinicio y recuperación. Las reglas concretas y sus
+límites están en [Sala de juegos](JUEGOS_BLOQUE_E.md).
+
+Los motores nuevos son recreation_game.gd, chess_game.gd, pool_game.gd,
+pong_game.gd y campus_property_game.gd. minigame_board.gd y
+minigame_session_ui.gd conectan dibujo, controles y sesiones. Se actualizó
+campus_exploration_ui.gd y se conservó minigame_preview.gd como arte usado
+por las mesas físicas. Las sesiones se almacenan en minigames, separado de
+simulation; no se cambiaron reglas académicas ni la API Django.
+
+Se eligieron variantes breves como decisión técnica para el alcance local.
+Los rivales tienen límites explícitos: ajedrez busca dos medias jugadas con
+poda alfa-beta y hasta 2.400 nodos, billar calcula recorridos y fuerza con
+error angular, ping-pong limita reacción/velocidad y mantiene un error de
+previsión por intercambio, y Ruta del campus conserva una reserva al invertir.
+La búsqueda de ajedrez se reparte por candidato entre fotogramas y utiliza
+una caché de hasta 128 posiciones legales, con copias aisladas. La física usa
+pasos de 1/120 s. Los juegos pausados/finalizados no mantienen el bucle activo
+y el billar en reposo no solicita redibujos por fotograma.
+
+Se detectó otro coste concreto: campus_map.gd reconstruía los 40 bloques en
+cada consulta por ID. Ahora construye un índice una vez y devuelve la copia
+del bloque solicitado. La prueba de aislamiento y los recorridos por puertas
+y pasillos verifican que la optimización conserva el contrato de datos.
+
+Cinco suites completaron **12.004 comprobaciones y cero fallos finales**:
+
+| Suite | Comprobaciones |
+|---|---:|
+| test_recreation_models.gd | 9.246 |
+| test_recreation_ui.gd | 172 |
+| test_games_room.gd | 2.095 |
+| test_building_interiors.gd | 470 |
+| test_game_integration.gd | 21 |
+
+Las pruebas incluyen perft inicial 20/400/8.902, mate, enroque, captura al paso
+con rey clavado, subpromoción y repetición; presupuesto de búsqueda, cachés,
+física, faltas y capacidad del rival de billar para embocar y del rival de
+ping-pong para perder puntos. Se simularon 30 partidas económicas completas,
+se probaron revisiones antiguas, JSON/RNG de 64 bits, recuperación y separación
+del estado académico. La interfaz verifica clic de origen/destino, W para
+paleta, pausa/reinicio y nueve combinaciones de tamaño/escala de las mesas.
+
+Un diagnóstico aislado tras e2–e4 informó 474 nodos y 210 ms en la última
+ejecución del test de modelos. No es una medición de FPS ni una garantía para
+otros equipos o posiciones. Se generaron once capturas con el renderizador
+real en game/.test-artifacts/minigames/; se inspeccionaron las cuatro mesas,
+coordenadas de ajedrez y contraste en 900×640 al 120%. El equipo utilizó ANGLE.
+La exportación Windows se completó y el arranque aislado headless de SIS-INF
+terminó con salida 0 y sin errores de scripts.
+
+Quedan sin verificar la dificultad percibida con jugadores, sesiones largas
+y otros equipos. No se implementaron reloj/protocolo arbitral completo ni
+todos los casos de posición muerta de ajedrez. Continúan pendientes las
+fuentes académicas, fotos/croquis interiores y plano de la sede del centro.
+El responsable y criterio de cierre de cada asunto están en la guía de juegos
+y los documentos de datos enlazados. No se añadieron recursos gráficos ni
+dependencias de terceros para estos minijuegos.
