@@ -167,3 +167,10 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     estructuras de datos adecuados cuando resuelvan necesidades concretas.
     Esta instrucción habilita implementar los motores pendientes de la regla
     19, conservando su separación de la presentación y del expediente académico.
+
+22. DOCUMENTACIÓN Y VOZ DEL AUTOR, indicada el 02/11/2026.
+    Revisar todos los commits y sus descripciones para documentar el avance
+    y actualizar el estado actual. Mantener detalle técnico útil, sin repetir
+    explicaciones ni añadir relleno. Acercar la bitácora a la forma directa
+    de escribir del autor; las notas personales deben proceder de mensajes
+    o explicaciones reales, sin inventar experiencias, resultados o decisiones.

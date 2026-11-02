@@ -106,6 +106,10 @@ npm run build
 
 ## Pruebas y diagnósticos
 
+El inventario actual contiene 21 scripts `test_*.gd`. Los resultados históricos
+y las ejecuciones acotadas de esta revisión se separan en
+[Verificaciones](VERIFICACIONES.md).
+
 Las pruebas de Godot son scripts independientes dentro de `game/tests/` y se
 ejecutan con el mismo motor:
 
@@ -120,3 +124,11 @@ están separadas por archivo en `game/tests/`. Las capturas gráficas requieren
 un entorno de escritorio y no se ejecutan en modo `--headless`. Los documentos
 de [diseño visual](DISENO_VISUAL_CAMPUS.md) y [simulación](SIMULACION_ESTUDIANTE.md)
 incluyen los comandos y límites conocidos de sus áreas.
+
+Para los motores recreativos y su integración:
+
+```powershell
+godot --headless --path game --script res://tests/test_recreation_models.gd
+godot --headless --path game --script res://tests/test_recreation_ui.gd
+godot --headless --path game --script res://tests/test_games_room.gd
+```

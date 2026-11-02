@@ -5,6 +5,10 @@ permite explorar carreras de Ingeniería, cursar materias, resolver actividades,
 gestionar trámites simulados y avanzar por auxiliatura y graduación. El progreso
 de las partidas y los logros se guardan localmente en el equipo.
 
+Incluye campus pixel art, historia demostrativa y cuatro minijuegos locales.
+El alcance revisado y lo que falta están en
+[Estado actual](docs/ESTADO_ACTUAL.md).
+
 Este repositorio también conserva una API académica en Django y una interfaz
 web en Next.js. Son componentes separados del juego Godot: la partida de
 escritorio no necesita PostgreSQL ni se conecta a la API.
@@ -57,6 +61,8 @@ sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 - [Información institucional y fuentes pendientes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
 - [Guía de documentación](docs/GUIA_DOCUMENTACION.md)
 - [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md)
+- [Detalle técnico de los 32 commits revisados](docs/HISTORIAL_COMMITS.md)
+- [Resultados y límites de verificación](docs/VERIFICACIONES.md)
 - [Licencia y libertades del código](docs/LICENCIA_CODIGO_LIBRE.md)
 
 Antes de modificar el proyecto, cualquier agente debe leer `AGENTS.md` y el

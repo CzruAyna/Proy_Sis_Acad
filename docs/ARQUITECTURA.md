@@ -1,5 +1,7 @@
 # Arquitectura
 
+Revisada: 2 de noviembre de 2026. Código de referencia: `b122e96`.
+
 ## Alcance
 
 El repositorio contiene tres componentes relacionados con la vida académica,
@@ -55,6 +57,8 @@ interfaz invente resultados.
 | `game/scripts/study_demo.gd`, `study_model.gd` | Controles didácticos y dibujos de demostración para las materias. |
 | `game/scripts/neon_visuals.gd`, `mention_ambient.gd`, `mention_art.gd` | Paletas, efectos visuales y ambientes temáticos por mención. |
 | `game/scripts/paged_view.gd`, `choice_picker.gd` | Paginación por botones y selección de opciones sin rueda ni deslizadores. |
+| `game/scripts/menu_cave.gd`, `fracture_geometry.gd`, `fracture_animator.gd`, `broken_pixel_panel.gd` | Terminal interior, forma de los paneles rotos y reloj compartido de efectos. |
+| `game/scripts/procedural_career_logo.gd`, `pixel_style_box.gd` | Emblema geométrico y estilos pixel art; no alteran el estado de una partida. |
 | `game/tests/` | Pruebas automatizadas y capturas controladas del proyecto Godot. |
 
 ### Flujo de datos de una partida
@@ -79,6 +83,20 @@ esas validaciones.
 La navegación principal usa botones y páginas explícitas. La interfaz no debe
 requerir rueda, barras de desplazamiento ni sliders; estas reglas están
 detalladas en [`../REGLAS_USUARIO.txt`](../REGLAS_USUARIO.txt).
+
+### Estado espacial y recreativo
+
+El perfil mantiene `simulation`, `campus_exploration` y `minigames` como
+campos separados. El primero pertenece al motor académico; el segundo conserva
+posición, ambiente y visitas; el tercero almacena hasta cuatro sesiones de
+minijuegos. Una victoria recreativa no cambia notas ni logros académicos.
+
+Los motores de las mesas heredan el contrato de `recreation_game.gd`:
+`command(action, expected_revision)` valida la acción y `advance(delta)`
+actualiza física o rival. `serialize()` y `restore()` controlan la recuperación,
+incluido el estado aleatorio de 64 bits como texto. La interfaz guarda en
+cambios discretos y suspende sesiones al salir. Véase
+[Sala de juegos](JUEGOS_BLOQUE_E.md).
 
 ## API Django
 

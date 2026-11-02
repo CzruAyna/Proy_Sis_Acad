@@ -1,7 +1,8 @@
 # Emblema geométrico y superficies de ruptura
 
-Actualizado: 31 de octubre de 2026. Estado: implementación local, sin commit
-creado por esta entrega.
+Revisado: 2 de noviembre de 2026. La evolución del emblema y la ruptura está
+registrada en `f49ec69`, `6515d1c` y `865d7e1`. El estado descrito es el del
+último de esos commits.
 
 ## Presentación vigente
 

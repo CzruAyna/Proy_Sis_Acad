@@ -1,592 +1,101 @@
-# Bitácora de desarrollo
+# Bitácora de desarrollo de SIS-INF
 
-Actualizada: 30 de octubre de 2026.
+Actualizada: 2 de noviembre de 2026. Corte: `b122e96`; 32 commits en 15 fechas.
 
-## Alcance del registro
+Esta es la memoria por jornada. El detalle de cada versión, con su mensaje original y archivos de referencia, está en [Historial por commit](HISTORIAL_COMMITS.md). Las fechas siguen Git (UTC−04:00), no horas de dedicación. Las notas personales citadas proceden de los mensajes; no completé jornadas sin registro con experiencias supuestas.
 
-Esta bitácora relaciona los avances con el historial local disponible: 24 commits
-en 13 fechas, del 15 al 30 de octubre de 2026, hasta `78cc2f2`. El registro está
-redactado en primera persona para la memoria del autor. Describe archivos y
-cambios comprobables; las explicaciones personales proceden de su relato.
+## 15 de octubre de 2026: Arranque del sistema académico
 
-Las fechas corresponden al registro en Git, en UTC−04:00. No representan horas
-de dedicación ni acreditan que todo el trabajo se haya realizado en ese día.
-Las comprobaciones de esta reconstrucción son documentales: historial, archivos
-y diferencias. No se han ejecutado de nuevo las pruebas de cada versión.
-
-El estado actual está descrito en [Arquitectura](ARQUITECTURA.md),
-[Diseño visual](DISENO_VISUAL_CAMPUS.md) y
-[Simulación individual](SIMULACION_ESTUDIANTE.md). Una interfaz descrita en una
-entrada antigua puede haber sido sustituida después.
-
-## 15 de octubre: estructura inicial
 **Commits:** `242e755`, `8302683`.
 
-Creé el repositorio y preparé la estructura del sistema académico.
-Separé el backend y el frontend, incorporé las dependencias iniciales y
-definí la configuración de desarrollo local. En Django añadí un usuario
-basado en `AbstractUser`, con CI y rol académico, y lo declaré como
-modelo de autenticación del proyecto.
+Empecé por ordenar el proyecto: backend, frontend y documentos de reglas. Django me resultaba más fácil de seguir por Python; la parte difícil era pasar lo que conocía de la facultad a condiciones concretas: quién puede hacer algo, qué datos necesita y cuándo corresponde hacerlo. Dejé la base preparada para el catálogo, todavía sin presentar los directorios vacíos como módulos terminados.
 
-En esta primera etapa necesitaba convertir procesos que conocía por
-experiencia en reglas que pudieran programarse. Fui reuniendo información
-de situaciones cotidianas y deduciendo sus elementos principales:
-quién interviene, qué datos requiere una operación y qué condiciones
-deben cumplirse para realizarla. Esta dificultad marcó el trabajo inicial
-de especificación; no he asignado a un solo día todo ese levantamiento.
+## 18 de octubre de 2026: La web empieza a consultar datos
 
-Dejé una especificación funcional, un modelo de datos inicial, reglas
-identificadas como R1–R13 y un orden de implementación. Los módulos de
-dominio todavía estaban mayormente reservados como directorios.
-La base quedó preparada para incorporar el catálogo y las operaciones
-académicas.
-
-## 18 de octubre: catálogo y oferta académica
 **Commits:** `8162267`, `6f5ced9`, `f97e336`.
 
-Trabajé en la presentación de la portada y después incorporé el núcleo
-académico: carreras, planes, materias, prerrequisitos y periodos.
-Añadí migraciones, administración, serializadores y consultas de API.
-Conecté el catálogo de Next.js con esos recursos y agrupé las materias
-por semestre.
+Primero trabajé en la portada. Después conecté carreras, planes y materias con la API, y añadí aulas, docentes, paralelos y sesiones. Ya podía recorrer la oferta desde la interfaz en lugar de mantenerla como datos de muestra. La malla necesitaba relaciones válidas: incorporé comprobaciones de duplicados, autorreferencias y ciclos.
 
-Representé los requisitos como relaciones entre materias. Para mantener
-coherencia en la malla añadí comprobaciones de relaciones duplicadas,
-autorreferencias y ciclos. Con ello el catálogo dejó de ser solamente
-contenido de la interfaz y pasó a tener una estructura de dominio.
+## 19 de octubre de 2026: Inscripción, acceso y notas
 
-En la oferta incorporé aulas, habilitación de docentes, paralelos y
-sesiones de clase. Añadí validaciones de capacidad e intervalos horarios
-y publiqué la consulta de paralelos abiertos. Los cambios se distribuyeron
-principalmente entre `backend/apps/academico/`,
-`backend/apps/oferta/` y los componentes de catálogo y oferta
-del frontend.
-
-## 19 de octubre: inscripción y gestión de notas
 **Commits:** `bace499`, `c9ecbed`, `cca8f0e`.
 
-Implementé la inscripción autenticada y el retiro de materias.
-Concentré la asignación de cupos en un servicio transaccional:
-si el paralelo solicitado está lleno, el servicio intenta los siguientes
-paralelos abiertos de la misma materia y periodo. El panel del estudiante
-permite consultar sus inscripciones y realizar estas operaciones.
+Añadí la inscripción con control de cupos y el panel del estudiante. Si el paralelo elegido se llena, el servicio intenta los siguientes de la misma materia y periodo. Luego conecté el panel docente con actas y notas: el cierre exige registros completos y una corrección posterior deja auditoría. La inscripción y la calificación empezaban a formar un recorrido más completo.
 
-Después incorporé actas, notas y correcciones. Separé la carga ordinaria
-del cierre de acta. El cierre exige notas completas, actualiza el resultado
-de cada inscripción y registra al usuario responsable. Una corrección
-posterior necesita permisos administrativos y genera un registro con el
-puntaje anterior, el nuevo, el motivo y la referencia del trámite.
+## 20 de octubre de 2026: No bastaba con tener cupo
 
-En el frontend añadí el panel docente. Al finalizar esta fecha el sistema
-ya tenía un recorrido que conectaba oferta, inscripción y calificación.
-Las estructuras nuevas se encuentran en
-`backend/apps/inscripciones/` y `backend/apps/notas/`.
-
-## 20 de octubre: requisitos y carga académica
 **Commits:** `122d1d3`.
 
-Amplié la inscripción para evaluar prerrequisitos, corequisitos y carga
-académica. Calculé el promedio ponderado del periodo ordinario anterior
-a partir de notas de actas cerradas. El límite queda en seis materias,
-o siete cuando el promedio alcanza 65.
+Amplié la inscripción para comprobar requisitos y carga académica. Añadí la evaluación de seis o siete materias y una respuesta de elegibilidad con motivos de rechazo. También mejoré el horario del panel. El commit quedó como «horarios», aunque la mayor parte del trabajo fue validar qué podía inscribir el estudiante; el generador automático de horarios seguía pendiente.
 
-Añadí una consulta de elegibilidad para devolver la habilitación y sus
-motivos junto con los paralelos del periodo. El frontend utiliza esa
-información para explicar por qué una materia puede o no inscribirse.
-También amplié la presentación del horario del estudiante.
+## 21 de octubre de 2026: Cambio de rumbo: el juego
 
-El cambio se concentra en el servicio y la vista de inscripciones y en
-`inscripciones-panel.tsx`. Esta entrega implementó validaciones
-y consulta del horario; la generación automática de combinaciones de
-paralelos continuó como trabajo pendiente.
-
-## 21 de octubre: incorporación del juego
 **Commits:** `3dc9d7d`.
 
-Incorporé una experiencia de juego en la web y añadí el proyecto Godot.
-En Next.js trasladé la interfaz de gestión a `/sistema` y utilicé
-la portada para el componente `JuegoAcademico`.
-La versión de escritorio comenzó con escena principal, catálogo,
-controlador y configuración de exportación.
+La idea se fue apartando de una réplica del sistema. Había visto varios proyectos parecidos y quería algo que pudiera mostrar en ferias y EXPOTECO. Incorporé el juego web y la primera versión de escritorio con Godot, y conservé la gestión en /sistema. El código registra el cambio aquí; la decisión venía de revisar para qué quería utilizar el proyecto.
 
-Este cambio corresponde a la evolución del propósito del proyecto:
-aprovechar la base académica para representar el recorrido del estudiante
-en una demostración interactiva. La fecha identifica la incorporación
-del código del juego; la reflexión que dio lugar al cambio fue parte de
-la evolución del trabajo.
+## 22 de octubre de 2026: Un avance pequeño en la selección
 
-Conservé el sistema web en el repositorio y desarrollé la aplicación
-de escritorio dentro de `game/`. A partir de esta etapa el
-historial concentra la mayor parte de los cambios en el juego.
-
-## 22 de octubre: selección de enfoques
 **Commits:** `5ee374a`.
 
-Amplié el catálogo de muestra con opciones de enfoque o mención y añadí
-una pantalla de selección antes de crear la partida.
-Guardé la opción elegida en el perfil para que continuara disponible
-durante el recorrido.
+Añadí enfoques de muestra para las carreras y conservé la elección en la partida. Era una selección provisional, antes de concentrar las mallas en Sistemas e Informática. En el mensaje dejé una explicación bastante directa del tamaño de la entrega: «me quede sin luz, bueno poquito es algo».
 
-Los cambios afectaron `game/scripts/catalog.gd` y
-`game/scripts/game.gd`. Las opciones de esta versión eran
-provisionales; posteriormente las sustituí por el contenido centrado
-en Sistemas e Informática.
+## 23 de octubre de 2026: Materias, mallas y ventana
 
-## 23 de octubre: mallas y avance por materias
 **Commits:** `fde9e82`, `a8af2b5`, `45653c6`.
 
-Amplié los flujos de partida y ajusté la ventana para permitir
-redimensionamiento y mejorar la lectura. En esta etapa el README
-registraba el nombre *UNI SIMULATOR* y describía modalidades
-individual y local por turnos.
+Trabajé en los recorridos del juego y en una ventana que pudiera adaptarse mejor. La versión todavía se llamaba UNI SIMULATOR y tenía una modalidad individual y otra local por turnos. Después añadí las mallas de Sistemas e Informática y el grafo curricular. Eso cambió el catálogo: las materias empezaron a tener un lugar concreto en el semestre y sus requisitos.
 
-Después incorporé las mallas de Sistemas e Informática en
-`uto_curricula.gd` y añadí un componente de grafo curricular.
-El catálogo pasó a relacionar materias, semestres y requisitos
-con mayor detalle. Adapté el recorrido para consultar materias y
-revisar sus dependencias.
+## 24 de octubre de 2026: Portada y continuidad entre partidas
 
-El cambio redujo el contenido de muestra y concentró el juego en
-las carreras que podía relacionar con mi experiencia y con las
-exposiciones conjuntas. La malla se convirtió en una parte funcional
-del recorrido, además de una vista informativa.
-
-## 24 de octubre: portada, estudio y logros globales
 **Commits:** `154aa6a`, `f861963`.
 
-Trabajé en la portada con curvas, fórmulas y animaciones, y consolidé
-el nombre *CAMPUS EN JUEGO*. Añadí arte para las menciones,
-demostraciones de estudio y ajustes del grafo curricular.
-Estos cambios se apoyaron en los nuevos módulos
-`mention_art.gd` y `study_demo.gd`.
+Desarrollé la portada científica, el arte de las menciones y las primeras demostraciones de estudio. El nombre pasó a CAMPUS EN JUEGO. Añadí transiciones, logros globales y bajo consumo, para que el progreso no dependiera solo de una partida. El primer commit está registrado a las 00:18; mantengo esa fecha sin convertirla en horas de trabajo supuestas.
 
-También incorporé un perfil de logros globales, transiciones de menú y
-una opción de bajo consumo. Esta opción reduce detalles visuales y
-limita las animaciones a 30 FPS. Los logros se conservan entre partidas.
+## 25 de octubre de 2026: Separar el motor de las pantallas
 
-El primer commit de esta fecha se registró a las 00:18. Mantengo la fecha
-de Git como referencia, sin convertir ese horario en una estimación
-de duración de la sesión.
-
-## 25 de octubre: motor individual e interfaz del campus
 **Commits:** `f2e23de`, `0d5b259`.
 
-Separé la simulación del controlador principal. En
-`student_simulation.gd` reuní inscripción, cursado, resultados,
-historial, cambios de plan, auxiliatura y graduación.
-Añadí módulos específicos para definiciones de trámites, comandos
-opcionales y guardado.
+Extraje las reglas a un motor individual y separé trámites, comandos y guardado. El recorrido quedó centrado en el estudiante, con historial, auxiliatura y titulación. Después conecté las vistas del campus con ese estado y añadí formularios. Era importante que una pantalla no pudiera dar por aprobado un resultado o un trámite por su cuenta. Incorporé pruebas del motor y de sus conexiones con la interfaz.
 
-El recorrido quedó centrado en un estudiante. La auxiliatura pasó a ser
-una actividad dentro de su carrera y las autoridades se representaron
-mediante oficinas y procesos simulados. El modo de equipo de las
-versiones anteriores dejó de ofrecerse como recorrido jugable.
-Conservé compatibilidad de lectura para el historial individual antiguo.
+## 26 de octubre de 2026: Nombre y logros que faltaban
 
-En la interfaz incorporé una navegación común entre materias, malla,
-trámites, historial, auxiliatura y graduación. Añadí formularios para
-solicitudes y separé las demostraciones de estudio de la evaluación
-que registra notas. La vista utiliza el estado del motor y ejecuta
-sus operaciones; no modifica directamente el avance de un trámite.
-
-Añadí pruebas de simulación, guardado, integración e interfaz.
-La separación permitió comprobar reglas académicas sin recorrer
-manualmente todas las pantallas.
-
-## 26 de octubre: identidad del jugador y catálogo de logros
 **Commits:** `fd84010`.
 
-Corregí el flujo de creación para exigir un nombre no vacío y conservarlo
-al volver entre la selección de carrera y mención. Ajusté también
-la asignación de materias de ingreso para el primer semestre.
+Corregí la creación de partidas: el nombre pasó a ser obligatorio y se conserva al retroceder. Ajusté también la asignación del primer semestre y ordené los logros públicos y ocultos. El propio mensaje del commit menciona esos dos problemas; aquí el arreglo es concreto, no solo una mejora general de la interfaz.
 
-Organicé los logros en un catálogo con identificadores estables.
-La interfaz muestra los públicos como pendientes o desbloqueados y
-revela los ocultos cuando se consiguen. Mantuve la migración de
-registros históricos y añadí pruebas de las reglas del jugador.
+## 28 de octubre de 2026: Identidad por carrera y grafo utilizable
 
-Los archivos principales de esta entrega fueron
-`game.gd`, `student_simulation.gd` y el nuevo
-`achievement_catalog.gd`.
-
-## 28 de octubre: identidad visual y malla interactiva
 **Commits:** `fa203e7`, `23b5dd0`.
 
-Centralicé las paletas y primitivas visuales en
-`neon_visuals.gd`. Apliqué una identidad azul para Sistemas,
-roja para Informática y motivos de fondo para las cinco menciones.
-Extendí esa identidad a controles, estudio y pantallas del campus.
+Unifiqué la identidad azul de Sistemas y roja de Informática en las pantallas del juego. Después amplié la malla con arrastre, zoom y distribución conservada durante la sesión. Separé la validación de conexiones del dibujo para comprobar los cruces y las distancias. Mover una esfera debía mejorar la vista, no cambiar sus requisitos ni tapar una relación.
 
-Amplié la malla a todo el ancho disponible y trasladé la ficha de la
-materia debajo del grafo. Añadí arrastre de nodos, desplazamiento,
-zoom, restablecimiento y conservación de la distribución durante
-la sesión. Las posiciones son de presentación y no cambian los
-prerrequisitos ni los resultados académicos.
-
-En `graph_routing.gd` añadí validación de las polilíneas que
-se dibujan. El validador evita cruces, contacto entre aristas y paso
-por esferas ajenas a la conexión. Un arrastre que incumple esas
-condiciones se rechaza antes de actualizar el dibujo. La separación
-mínima entre aristas está definida en 24 unidades del lienzo.
-
-Incorporé pruebas de separación e interacción. La prueba de separación
-incluye una comprobación geométrica independiente del validador
-utilizado por el grafo, para contrastar sus resultados.
-
-## 29 de octubre: navegación por botones y ambiente de menciones
+## 29 de octubre de 2026: Navegación clara e historia demostrativa
 
 **Commits:** `32d6a59`, `e486e77`.
 
-Sustituí la dependencia de la rueda y los deslizadores por controles explícitos,
-páginas y selectores. Añadí `paged_view.gd` y `choice_picker.gd`, revisé opciones
-y vistas del campus y mantuve la identidad de la partida en su cabecera.
+Reemplacé la rueda y los deslizadores por páginas, botones y selectores. Separé los ambientes de mención y dejé registradas las reglas y las fuentes que faltaban. Añadí una historia de carrera que genera un recorrido con semilla reproducible y sin ocupar los guardados del jugador. También amplié el movimiento de ramas del grafo. La idea era poder mostrar un recorrido completo sin tener que jugar cada semestre en una exposición.
 
-Separé el ambiente de cada mención en `mention_ambient.gd`. Los fondos son
-animados, desenfocados y de baja presencia visual; las tarjetas permanecen
-opacas. Registré las reglas de presentación y el material institucional que
-falta confirmar en los documentos de coordinación.
+## 30 de octubre de 2026: Documentación, pixel art y SIS-INF
 
-Después incorporé la historia demostrativa con `career_story.gd` y
-`career_story_ui.gd`. El generador recorre una carrera mediante el motor del
-estudiante con perfiles aislados, semillas y parámetros ficticios. La
-demostración no ocupa espacios ni escribe partidas o logros. Amplié el grafo
-para mover ramas y girarlas dentro de la protección geométrica.
+**Commits:** `78cc2f2`, `b1aef99`, `b28cf38`, `389dc82`.
 
-Añadí pruebas de navegación compacta, ambiente, historia y navegación de la
-historia. Su existencia y sus casos se comprueban en el historial; esta entrada
-no presenta una nueva ejecución de esas pruebas.
+Ordené las guías del repositorio y la licencia libre, y dejé la bitácora vinculada con el historial. Después pasé la interfaz a pixel art: es un estilo que me gusta y quedó como dirección del juego. Al cerrar el día cambié el nombre a SIS-INF y añadí la exploración basada en el plano aportado. El personaje puede caminar, entrar en ambientes y consultar el progreso; una visita no concede notas ni completa trámites.
 
-## 30 de octubre: guías del repositorio y procedimiento de documentación
+## 31 de octubre de 2026: Edificios, emblema y terminal del menú
 
-**Commit:** `78cc2f2`.
+**Commits:** `a663c1a`, `f49ec69`, `6515d1c`, `865d7e1`.
 
-Actualicé el README para presentar Godot como producto principal y distinguir
-la API Django y la interfaz Next.js. Incorporé el índice de documentación,
-la guía de arquitectura y las instrucciones de desarrollo y compilación local.
-Amplié `AGENTS.md` con la revisión de reglas al cerrar y el uso de Markdown
-para la documentación técnica.
+Amplié los edificios con pasillos y ambientes distintos. Recreé el emblema con geometría y trabajé en la ruptura del menú hasta dejar la terminal dentro del mismo contenedor. Varié fachadas, árboles y canchas y añadí las mesas de la sala E. En esa versión las mesas eran presentación, todavía sin partidas jugables. La última entrega acotó las líneas y los fragmentos de la animación para no acumular objetos sin límite.
 
-La estructura permite encontrar los contratos y responsables sin confundir
-la memoria histórica con las guías del estado actual.
+## 2 de noviembre de 2026: Las mesas ya se pueden jugar
 
-### Cambios de documentación todavía sin commit
+**Commits:** `b122e96`.
 
-**Fecha de preparación:** 30 de octubre de 2026.
+Implementé las partidas contra rivales locales: ajedrez, billar, ping-pong y Ruta del campus. Los motores quedaron separados de la vista y del expediente académico, con pausa y recuperación por perfil. La búsqueda de ajedrez tiene un presupuesto y la física usa pasos fijos. Aproveché para evitar que el mapa reconstruyera todos los edificios en cada consulta. Faltan partidas con personas para ajustar la dificultad: que el rival funcione no demuestra que el juego resulte cómodo o divertido.
 
-Incorporé las reglas acumulativas sobre documentación, código libre y título
-del summary. Añadí esta bitácora, una guía de mantenimiento de documentos y
-la política de licencia; enlacé esos documentos desde los índices.
+## Revisión de la documentación del 2 de noviembre
 
-Adopté `GPL-3.0-or-later` para el código original y la documentación propia
-y añadí el texto oficial completo a `LICENSE`. Conservé las licencias de
-terceros y registré las revisiones de procedencia, dependencias y distribución
-pendientes en [Código libre y licencia](LICENCIA_CODIGO_LIBRE.md).
+Relacioné las entradas que todavía decían «sin commit» con sus versiones reales. Separé la memoria por jornada del detalle técnico y actualicé las guías al nombre SIS-INF, la exploración y los minijuegos ya jugables. Los resultados registrados por entregas anteriores quedan fechados en [Verificaciones](VERIFICACIONES.md); no son una ejecución nueva.
 
-Las comprobaciones de cierre se registran en el resumen de esta entrega.
-No se atribuye un identificador de commit a cambios que todavía no lo tienen.
-
-## 30 de octubre: interfaces pixel art y alcance de frontend
-
-**Estado:** cambios de esta entrega todavía sin commit.
-
-Se aplicó el estilo pixel art solicitado a marcos, botones, títulos, iconos
-de menciones y esferas. Se conservaron la composición del inicio, azul para
-Sistemas, rojo para Informática, las páginas sin rueda y los estados del motor.
-Los textos largos mantienen una fuente de lectura. Los recursos originales
-incluyen una fuente de 119 glifos y cinco sprites, con generadores mantenidos
-en el repositorio.
-
-Los componentes principales son `pixel_style_box.gd`, `pixel_mention_sprite.gd`,
-`neon_visuals.gd`, `game.gd`, `curriculum_graph.gd`, `mention_art.gd` y
-`mention_ambient.gd`. Se extendieron los controles comunes a la historia
-demostrativa y a las ilustraciones de estudio. Se ajustaron herramientas del
-grafo y se dejó Opciones con fondo quieto.
-
-Se incorporó la instrucción acumulativa a `REGLAS_USUARIO.txt` y se publicó
-la guía [Tareas de frontend](ALCANCE_FRONTEND.md), con ejemplos de encargos y
-el límite de responsabilidad frente a motor/backend y datos institucionales.
-
-Se ejecutaron nueve suites: **10.898 comprobaciones, cero fallos**. Se generaron
-19 capturas con el renderizador real y se exportó Windows, cuyo arranque aislado
-terminó con salida 0 y sin errores de scripts. El detalle de casos,
-archivos de prueba y registros está en [Diseño visual](DISENO_VISUAL_CAMPUS.md).
-Quedan pendientes la evaluación con jugadores y otras configuraciones gráficas;
-la prueba local no demuestra compatibilidad con todos los equipos.
-
-### Precisión del formato de los summaries
-
-**Fecha:** 30 de octubre de 2026. **Estado:** cambio todavía sin commit.
-
-Se explicitó la instrucción del usuario de comenzar cada summary con el
-prefijo correspondiente al trabajo y dos puntos, admitiendo ámbito opcional.
-Se amplió la regla 12 de `REGLAS_USUARIO.txt` y se armonizaron `AGENTS.md` y
-[Guía de documentación](GUIA_DOCUMENTACION.md). El título se entrega por chat;
-no implica crear un commit. La revisión corresponde a documentación y no
-modifica el comportamiento del juego.
-
-## 30 de octubre: SIS-INF y exploración espacial de la FNI
-
-**Estado:** cambios de esta entrega sin commit creado.
-
-Por solicitud del usuario, el juego pasa a llamarse **SIS-INF** y usa el
-emblema aportado en portada e iconos. El JPEG se convirtió a PNG de las mismas
-dimensiones, sin redibujarlo. La ruta anterior de partidas en Windows se
-conserva mediante configuración explícita; cerrar la ventana ejecuta el
-guardado del perfil y mantiene la partida abierta si el guardado falla.
-
-Se añadió un módulo con personaje, WASD/flechas, carrera con Shift, colisiones,
-cámara, interacción con E, mapa y menús de progreso. La adaptación del plano
-aportado contiene 40 bloques y 65 espacios interiores. Se accede como visita
-libre con nombre obligatorio o desde una partida. El estado espacial se guarda
-separado del expediente académico; explorar no concede aprobaciones ni logros.
-
-Los archivos nuevos son `campus_map.gd`, `campus_world.gd`,
-`campus_exploration_ui.gd`, `campus_overview.gd` y el importador del logo.
-`game.gd`, `student_campus.gd`, la configuración y los índices conectan el
-módulo con los recorridos existentes. Se actualizaron las expectativas de
-pruebas sobre el número de accesos: el campus tiene ocho áreas y el inicio
-ocho acciones cuando existe una partida reciente.
-
-Se ejecutaron ocho suites, con **6.305 comprobaciones y cero fallos finales**:
-
-| Suite | Comprobaciones |
-|---|---:|
-| `test_exploration.gd` | 503 |
-| `test_exploration_navigation.gd` | 892 |
-| `test_compact_navigation.gd` | 2.335 |
-| `test_frontend_campus.gd` | 194 |
-| `test_pixel_ui.gd` | 669 |
-| `test_ambient_layout.gd` | 59 |
-| `test_game_integration.gd` | 21 |
-| `test_student_simulation.gd` | 1.632 |
-
-Las pruebas de exploración verifican accesibilidad de todas las puertas desde
-el ingreso, movimiento, interiores, visitas y guardado/recarga con perfiles
-ficticios. Se corrigieron accesos demasiado próximos entre bloques y una
-solicitud de foco diferida sobre un mundo ya retirado. La integración final no
-emite ese error. También se corrigió una declaración duplicada del manejador
-de notificaciones detectada durante compilación, conservando el manejador de
-redimensionado existente.
-
-Se generaron diez capturas reales en `game/.test-artifacts/exploration/` y se
-inspeccionaron inicio, ingreso, Sistemas, interior y ventana compacta al 120%.
-El controlador gráfico recurrió a ANGLE. Se exportaron `SIS-INF.exe` y
-`SIS-INF.pck`; el arranque aislado headless terminó con salida 0 y sin errores
-de scripts. La prueba de arranque no equivale a una partida manual completa.
-
-El funcionamiento, recordatorios de decoración y fuentes están en
-[Exploración FNI](EXPLORACION_FNI.md), enlazado desde los índices. Los interiores,
-puertas y la conexión del recuadro de Básicas son recreaciones/adaptaciones.
-Faltan fotos autorizadas y validación espacial; también procedencia, vigencia y
-condiciones de redistribución del plano y el logo. No se recibió el plano de
-la sede del centro. Esos pendientes corresponden a usuario, frontend/arte y
-backend/datos según la tabla de la guía. Quedan sin probar otras GPU,
-plataformas y una sesión de usabilidad con estudiantes.
-
-## 31 de octubre: edificios con pasillos y menú único fragmentado
-
-**Estado:** cambios de esta entrega sin commit creado.
-
-Se sustituyó el salto directo al primer ambiente de los bloques con varias
-aulas por un pasillo transitable con puertas individuales. E permite entrar
-en una sala y regresar a su puerta; la salida del corredor devuelve al campus.
-Los bloques de un solo ambiente mantienen el acceso directo. Sistemas A/B
-incorporan nombres LSIA/LSIB publicados por la carrera, con agrupación por
-nomenclatura y distribución recreada pendientes de validación. Se distinguen
-los puestos informáticos, pupitres y otros mesones, y se añadió relieve en las
-fachadas. Las antiguas visitas genéricas A/B se conservan al recargar.
-
-Se redujo el menú principal a un único contenedor con todas las acciones
-visibles. Se retiraron paginación y recuadro separado de citas. El nuevo
-`broken_pixel_panel.gd` dibuja el fondo negro con huecos y píxeles desprendidos;
-logo y cosmos permanecen. La barra de Exploración y su lienzo utilizan el
-espacio disponible sin repetir las pestañas académicas.
-
-Los archivos principales son `campus_map.gd`, `campus_world.gd`,
-`campus_exploration_ui.gd`, `game.gd` y el nuevo marco. Se registró la regla 17
-y se documentaron las fuentes y sus límites en
-[Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md). No se añaden
-fotografías remotas, no se inventan salas intermedias de la numeración y no
-se modifican reglas académicas ni backend.
-
-Siete suites ejecutadas completaron **4.497 comprobaciones, cero fallos**.
-Se generaron y revisaron ocho capturas reales; se exportó Windows y su arranque
-aislado terminó con salida 0, sin errores de scripts. La matriz y los registros
-están en [Exploración FNI](EXPLORACION_FNI.md). El controlador recurrió a ANGLE.
-Faltan planos de plantas, accesos confirmados, fotos autorizadas y evaluación
-con jugadores u otros equipos; corresponden a usuario, frontend/arte y datos.
-
-## 31 de octubre: emblema geométrico, bloques grandes y limpieza visual
-
-**Estado:** cambios de esta entrega sin commit creado.
-
-Se analizó el emblema aportado y se construyó una interpretación en una rejilla
-de 160×160 con discos, elipses, líneas, letras pixeladas y una malla reutilizada.
-La portada dibuja geometría en lugar de mostrar el PNG como logo del menú.
-El original sigue siendo necesario para el icono de Windows y como referencia
-de procedencia; los derechos del emblema no se sustituyen por los del código.
-
-Se ampliaron las roturas a bloques de 32 unidades con capas profundas en el
-inicio y fondos de página, y de 16 en las tarjetas. Se extendió la presentación
-a las pantallas interiores, conservando controles con límites legibles. Los
-botones principales comparten el ancho de la etiqueta más larga. Un único
-reloj actualiza apariciones ocasionales de texto verde en los márgenes; se
-detiene con movimiento reducido o bajo consumo y no cambia el estado académico.
-
-Se retiraron el SVG anterior sin uso, su importación y las exportaciones locales
-antiguas. Se eliminaron citas y su reloj, una fuente sin uso, conexiones de
-hover vacías, una función de fondo vacía y una asignación duplicada. Se redujo
-el número simultáneo de fórmulas de portada. No se midieron FPS. Se actualizaron
-los nombres de las guías vigentes y se conservaron el historial y la ruta de
-partidas anterior, que todavía es necesaria para compatibilidad.
-
-Diez suites completaron **5.678 comprobaciones sin fallos**. Se generaron ocho
-capturas reales y se revisaron composición, logo, rupturas, márgenes verdes y
-texto ampliado. La exportación de Windows y su arranque aislado terminaron
-correctamente. Casos, registros, recursos retirados y pendientes están en
-[Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md). Quedan sin medir
-el rendimiento comparativo y la experiencia en otros equipos o con jugadores.
-
-## 31 de octubre: terminal, tipografía pixel y sala recreativa de E
-
-**Estado:** cambios de esta entrega sin commit creado.
-
-Se retiraron las capas azuladas y los fragmentos de borde de las rupturas:
-ahora son negro puro. El inicio conserva un solo menú compacto; su abertura
-continúa detrás de los controles y deja aparecer un árbol de carpetas que
-alterna sintaxis de Linux y Windows. Es decoración geométrica, sin ventana
-de terminal separada ni ejecución de comandos. Conserva el reloj compartido,
-movimiento reducido, bajo consumo y colores de los controles por carrera.
-
-La fuente pixel propia se extendió a texto pequeño, entradas, selectores,
-modelos, fórmulas y grafos. El atlas pasó de 119 a 207 glifos para representar
-ramas de árbol, ASCII y notación matemática sin introducir otra tipografía
-en esas etiquetas. Se conserva fallback para caracteres excepcionales.
-
-Se revisó visualmente la galería exterior de Ciudad Universitaria en Google
-Maps, con fotos antiguas de paseo arbolado, fachadas y cancha cubierta.
-No se copiaron imágenes remotas ni se inspeccionaron plantas interiores o
-imágenes satelitales. El plano aportado sigue guiando la ubicación de bloques;
-sus formas se adaptaron con contornos propios compartidos por dibujo,
-colisión y mapa. Hay cubiertas y equipamiento distintos, cinco variantes de
-árbol, paseo adoquinado y marcas/elementos diferentes para los deportes.
-La revisión gráfica permitió retirar árboles de las canchas y proteger la
-legibilidad de los rótulos. Se evita redibujar el mundo exterior inmóvil;
-no se afirma una mejora de FPS medida.
-
-Por indicación del usuario, Sistemas E incorpora una sala recreada con billar,
-ping-pong, ajedrez y Monopolio. Las mesas se recorren a pie y abren su vista
-previa. La partida sigue deshabilitada: frontend no añadió física, reglas,
-turnos ni economía. Se conservaron el ID y las visitas de E. Las necesidades
-del responsable de motor/backend y las fotos/croquis pendientes están en
-[Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md). No se modificó backend ni
-la simulación académica.
-
-Los archivos principales son `fracture_geometry.gd`, `terminal_cave.gd`,
-`game.gd`, `generate_pixel_font.py`, `campus_architecture.gd`, `campus_map.gd`,
-`campus_world.gd`, `campus_overview.gd`, `campus_exploration_ui.gd` y
-`minigame_preview.gd`. Se añadió la regla acumulativa 19. Las doce suites
-completaron **8.003 comprobaciones sin fallos**; se generaron trece capturas,
-se revisaron las vistas y se exportó Windows con arranque aislado de salida 0.
-Matriz, registros y avisos del entorno en
-[Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md).
-
-Quedan pendientes la lógica de minijuegos, confirmación del interior de E y
-distribución actual, material autorizado y pruebas con jugadores/otros equipos.
-
-## 31 de octubre: terminal interior continua y desintegración del menú
-
-**Estado:** cambios de esta entrega sin commit creado.
-
-Se eliminó la prolongación derecha de la terminal. El mismo fondo del inicio
-escribe la orden y simula una salida masiva de `tree`, alternando Linux y
-Windows. Los botones conservan dimensiones y acciones, con relleno y sombreado
-translúcidos que dejan pasar las líneas verdes. La cabecera queda despejada.
-
-La abertura negra usa una silueta irregular sin el patrón periódico anterior.
-Al permanecer en el inicio, pierde bloques en etapas y desprende fragmentos
-hasta desintegrar el fondo; las etiquetas y áreas de interacción siguen
-disponibles. Los símbolos de Sistemas e Informática se dibujan en dos mallas
-reutilizadas y flotan con desplazamientos pequeños sobre píxeles enteros.
-Escritura, erosión y emblema comparten reloj y se detienen con movimiento
-reducido o bajo consumo. La salida genera solo filas visibles y limita los
-fragmentos: no crea un historial ilimitado ni un control por línea.
-
-Se añadió la regla acumulativa 20. Los cambios principales están en
-`menu_cave.gd`, `pixel_style_box.gd`, `fracture_animator.gd`, `game.gd` y
-`procedural_career_logo.gd`; se retiraron `terminal_cave.gd` y su UID.
-No se cambiaron reglas académicas, backend ni datos institucionales.
-
-Ocho suites completaron **4.771 comprobaciones sin fallos**. Se generaron
-32 capturas reales, se inspeccionaron la transparencia, lectura, rotura y
-texto ampliado, y se preparó una vista animada de los primeros seis segundos.
-Se actualizó la exportación de Windows. Matriz, registros y límites en
-[Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md).
-Quedan sin medir FPS comparativos y uso en otros equipos o con jugadores.
-
-## 2 de noviembre: minijuegos funcionales y rivales locales
-
-**Estado:** cambios de esta entrega sin commit creado.
-
-La sala E tenía cuatro presentaciones y el botón de partida deshabilitado.
-Por encargo del usuario se implementaron billar de seis bolas, ping-pong
-arcade, ajedrez sin reloj y Ruta del campus, variante propia del Monopolio
-solicitado. Todas las mesas abren partidas contra rivales automáticos y
-conservan pausa, final, reinicio y recuperación. Las reglas concretas y sus
-límites están en [Sala de juegos](JUEGOS_BLOQUE_E.md).
-
-Los motores nuevos son recreation_game.gd, chess_game.gd, pool_game.gd,
-pong_game.gd y campus_property_game.gd. minigame_board.gd y
-minigame_session_ui.gd conectan dibujo, controles y sesiones. Se actualizó
-campus_exploration_ui.gd y se conservó minigame_preview.gd como arte usado
-por las mesas físicas. Las sesiones se almacenan en minigames, separado de
-simulation; no se cambiaron reglas académicas ni la API Django.
-
-Se eligieron variantes breves como decisión técnica para el alcance local.
-Los rivales tienen límites explícitos: ajedrez busca dos medias jugadas con
-poda alfa-beta y hasta 2.400 nodos, billar calcula recorridos y fuerza con
-error angular, ping-pong limita reacción/velocidad y mantiene un error de
-previsión por intercambio, y Ruta del campus conserva una reserva al invertir.
-La búsqueda de ajedrez se reparte por candidato entre fotogramas y utiliza
-una caché de hasta 128 posiciones legales, con copias aisladas. La física usa
-pasos de 1/120 s. Los juegos pausados/finalizados no mantienen el bucle activo
-y el billar en reposo no solicita redibujos por fotograma.
-
-Se detectó otro coste concreto: campus_map.gd reconstruía los 40 bloques en
-cada consulta por ID. Ahora construye un índice una vez y devuelve la copia
-del bloque solicitado. La prueba de aislamiento y los recorridos por puertas
-y pasillos verifican que la optimización conserva el contrato de datos.
-
-Cinco suites completaron **12.004 comprobaciones y cero fallos finales**:
-
-| Suite | Comprobaciones |
-|---|---:|
-| test_recreation_models.gd | 9.246 |
-| test_recreation_ui.gd | 172 |
-| test_games_room.gd | 2.095 |
-| test_building_interiors.gd | 470 |
-| test_game_integration.gd | 21 |
-
-Las pruebas incluyen perft inicial 20/400/8.902, mate, enroque, captura al paso
-con rey clavado, subpromoción y repetición; presupuesto de búsqueda, cachés,
-física, faltas y capacidad del rival de billar para embocar y del rival de
-ping-pong para perder puntos. Se simularon 30 partidas económicas completas,
-se probaron revisiones antiguas, JSON/RNG de 64 bits, recuperación y separación
-del estado académico. La interfaz verifica clic de origen/destino, W para
-paleta, pausa/reinicio y nueve combinaciones de tamaño/escala de las mesas.
-
-Un diagnóstico aislado tras e2–e4 informó 474 nodos y 210 ms en la última
-ejecución del test de modelos. No es una medición de FPS ni una garantía para
-otros equipos o posiciones. Se generaron once capturas con el renderizador
-real en game/.test-artifacts/minigames/; se inspeccionaron las cuatro mesas,
-coordenadas de ajedrez y contraste en 900×640 al 120%. El equipo utilizó ANGLE.
-La exportación Windows se completó y el arranque aislado headless de SIS-INF
-terminó con salida 0 y sin errores de scripts.
-
-Quedan sin verificar la dificultad percibida con jugadores, sesiones largas
-y otros equipos. No se implementaron reloj/protocolo arbitral completo ni
-todos los casos de posición muerta de ajedrez. Continúan pendientes las
-fuentes académicas, fotos/croquis interiores y plano de la sede del centro.
-El responsable y criterio de cierre de cada asunto están en la guía de juegos
-y los documentos de datos enlazados. No se añadieron recursos gráficos ni
-dependencias de terceros para estos minijuegos.
+Esta revisión todavía no tiene commit. Las fuentes institucionales, el interior de la sala E, la sede del centro y las pruebas con jugadores continúan pendientes según [Estado actual](ESTADO_ACTUAL.md).

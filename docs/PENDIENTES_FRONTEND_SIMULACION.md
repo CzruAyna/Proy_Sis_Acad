@@ -1,5 +1,10 @@
 # Integración gráfica de SIS-INF
 
+Revisión documental: 2 de noviembre de 2026. Las mesas son jugables desde
+`b122e96`. Los contratos de las actualizaciones antiguas se conservan debajo
+como antecedentes. El resumen vigente está en [Estado actual](ESTADO_ACTUAL.md)
+y los resultados de cada versión en [Verificaciones](VERIFICACIONES.md).
+
 Actualización del 02/11/2026: los cuatro minijuegos de E tienen motores locales
 y rivales automáticos, con pausa, reinicio y guardado independiente. El encargo
 del usuario habilitó completar el funcionamiento antes pendiente. El estado
@@ -24,7 +29,12 @@ y del logo, las decisiones de adaptación y los criterios para cerrar tareas.
 
 Actualizado: 29 de octubre de 2026. Las tareas temporales del contrato original se consumieron e implementaron. Este archivo conserva el punto de coordinación con la sesión del motor. Leer primero `REGLAS_USUARIO.txt` y, para datos institucionales, `docs/PARA_BACKEND_DATOS_Y_FUENTES.txt`.
 
-## Estado implementado
+## Registro de integración de octubre de 2026
+
+Las secciones restantes describen la integración original y sus verificaciones.
+Las menciones a una plantilla desplazable, ficha bajo el grafo o exportación con
+el nombre anterior son históricas. Para navegación vigente se aplica
+`REGLAS_USUARIO.txt` y [Diseño visual](DISENO_VISUAL_CAMPUS.md).
 
 | Área | Interfaz disponible |
 |---|---|

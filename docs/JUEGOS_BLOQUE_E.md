@@ -1,7 +1,7 @@
 # Sala de juegos del bloque E
 
 Actualizado: 2 de noviembre de 2026. Estado: cuatro minijuegos locales jugables
-contra rivales automáticos. Esta entrega no tiene un commit creado. La
+contra rivales automáticos, incorporados en `b122e96`. La
 presentación del 31/10 y su contrato propuesto se conservan como antecedente
 en [la bitácora](BITACORA_DESARROLLO.md).
 
@@ -128,4 +128,4 @@ desplazadores y conservación del snapshot académico.
 
 capture_minigames.gd genera once capturas con perfiles ficticios en
 game/.test-artifacts/minigames/, incluyendo 900×640 con texto al 120%.
-Los resultados ejecutados figuran en [la bitácora](BITACORA_DESARROLLO.md).
+Los resultados registrados por esa entrega figuran en [Verificaciones](VERIFICACIONES.md).

@@ -1,16 +1,40 @@
-# Roadmap inicial
+# Roadmap y trabajo pendiente
 
-Las fases ordenan el trabajo y permiten validar el dominio antes de ampliar el sistema.
+Revisado: 2 de noviembre de 2026. Referencia: `b122e96`.
 
-| Fase | Alcance | Progreso |
+La planificación inicial era la del sistema académico web. El proyecto pasó a
+priorizar SIS-INF en Godot. Esta revisión separa ambos recorridos para no
+presentar una función del juego como una implementación de la API.
+
+## Juego de escritorio
+
+| Área | Estado en el código | Siguiente revisión |
 |---|---|---|
-| 0. Base | Repositorio, configuración local, backend y frontend mínimos, documentación y control de versiones. | Base preparada. |
-| 1. Núcleo académico | Carreras, planes, materias, prerrequisitos y periodos académicos. | Modelos, admin, migraciones, API de consulta y catálogo conectado a la interfaz. |
-| 2. Oferta académica | Aulas, docentes habilitados, paralelos, sesiones semanales y validaciones de capacidad/solapamiento. | Modelos, admin y consulta pública de paralelos implementados. |
-| 3. Inscripción y horarios | Cupos transaccionales, prioridades R1–R8 y planificación de horarios. | API autenticada y panel de estudiante para consultar, inscribirse y retirarse; control de cupo concurrente y salto al siguiente paralelo (base R4). Límites por carga, prerrequisitos, prioridades, advertencias de choque y generador de horario pendientes. |
-| 4. Notas | Actas, calificaciones, cierre y correcciones auditadas (R9). | Actas por paralelo, carga y cierre docente, bloqueo de notas cerradas y corrección administrativa con auditoría implementados. |
-| 5. Auxiliaturas y permisos | Postulaciones, selección y permisos temporales (R10–R13). | Pendiente. |
-| 6. Documentos | Plantillas LaTeX y generación de PDF. | Pendiente. |
-| 7. Experiencia y optimización | Interfaz completa, generación de horarios y mejoras de rendimiento. | Pendiente. |
+| Motor del estudiante | Inscripción, resultados, historial, trámites, auxiliatura y titulación. | Revisar los datos y las reglas con fuentes originales. |
+| Presentación | Pixel art, navegación explícita, malla interactiva y terminal interior del inicio. | Usabilidad y rendimiento en otros equipos. |
+| Historia demostrativa | Generador aislado y reproducible por semilla. | Decisiones narrativas y actividades adicionales, si se solicitan. |
+| Exploración | Campus, interiores y vínculos al expediente; posición y visitas guardadas. | Validar distribución e interiores y recibir el plano de la sede del centro. |
+| Minijuegos | Cuatro mesas jugables con motores y rivales propios. | Pruebas con jugadores y alcance adicional del ajedrez. |
+| Distribución | Preset y procedimiento de exportación de Windows. | Paquete accesible para terceros y validación por plataforma. |
 
-El alcance de cada fase se detallará antes de implementarla. Las reglas vigentes están en `REGLAS_NEGOCIO.md`.
+## Sistema académico web
+
+| Fase original | Implementación identificada | Alcance todavía pendiente |
+|---|---|---|
+| Base | Configuración local de Django y Next.js, usuario y autenticación. | Preparación y validación de un despliegue público. |
+| Núcleo académico | Carreras, planes, materias, requisitos, periodos, admin y consultas. | Datos institucionales y versiones revisados. |
+| Oferta | Aulas, docentes habilitados, paralelos y sesiones. | Verificación de casos de capacidad y horario con datos de referencia. |
+| Inscripción y horarios | Cupos transaccionales, retiro, requisitos y carga de seis/siete materias en el servicio desde `122d1d3`; consulta de elegibilidad y horario. | Prioridades completas, generación automática de horarios y pruebas de casos límite. |
+| Notas | Actas, carga, cierre y corrección auditada. | Revisión de permisos y concurrencia con una batería ejecutada de backend. |
+| Auxiliaturas y permisos | Carpetas previstas; la simulación de Godot tiene su propio flujo. | Implementación de los módulos de la API. |
+| Documentos | Directorio inicial para plantillas institucionales. | Plantillas y generación de documentos del sistema web. |
+
+La antigua tabla marcaba requisitos y carga como pendientes aunque el servicio
+ya los incorporaba. Esta corrección documenta su presencia, no certifica todas
+sus condiciones. La elección del periodo anterior, las notas cerradas,
+la carga y las solicitudes concurrentes necesitan pruebas de backend antes
+de considerar cerrada toda la fase.
+
+La memoria LaTeX externa es un informe del desarrollo, no el generador de PDF
+institucional pendiente en la API. Fuentes, responsables y criterios de cierre
+están en [Estado actual](ESTADO_ACTUAL.md) y [Datos y fuentes](PARA_BACKEND_DATOS_Y_FUENTES.txt).

@@ -9,6 +9,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 
 | Documento | Contenido |
 |---|---|
+| [Estado actual](ESTADO_ACTUAL.md) | Funciones disponibles al corte `b122e96` y límites por verificar. |
 | [Arquitectura](ARQUITECTURA.md) | Organización del repositorio, separación de componentes y responsabilidades principales del código. |
 | [Desarrollo local](DESARROLLO_LOCAL.md) | Requisitos, ejecución y exportación de Godot, API Django e interfaz Next.js. |
 | [Simulación individual](SIMULACION_ESTUDIANTE.md) | Reglas y estados del recorrido individual en Godot. |
@@ -19,7 +20,9 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Exploración FNI](EXPLORACION_FNI.md) | Campus pixel art de SIS-INF, personaje, controles, aulas, guardado y recordatorios de ambientación. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
 | [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Cuatro minijuegos jugables contra rivales, variantes, controles, guardado, optimizaciones y pendientes. |
-| [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Avances por fecha, commits de referencia y cambios todavía sin commit. |
+| [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Relato de las 15 jornadas, con sus commits y decisiones confirmadas. |
+| [Historial técnico por commit](HISTORIAL_COMMITS.md) | Los 32 commits revisados, títulos originales, cambios y archivos de referencia. |
+| [Verificaciones](VERIFICACIONES.md) | Resultados registrados por versión y comprobaciones de esta revisión. |
 
 ## Especificación y coordinación
 

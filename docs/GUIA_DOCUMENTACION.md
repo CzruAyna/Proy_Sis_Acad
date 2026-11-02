@@ -1,6 +1,6 @@
 # Guía de documentación del proyecto
 
-Actualizada: 30 de octubre de 2026.
+Actualizada: 2 de noviembre de 2026.
 
 ## Para qué se mantiene esta documentación
 
@@ -76,6 +76,14 @@ Usar lenguaje sencillo y técnico, nombres reales de archivos y ejemplos breves.
 Explicar primero el comportamiento y después el mecanismo que lo produce.
 Evitar repetir el mensaje del commit sin describir el cambio.
 
+La memoria del autor usa frases directas y primera persona, con el detalle que
+explique el avance. Se pueden conservar notas personales breves de los mensajes
+originales, identificadas como citas; no inventar recuerdos, copiar las mismas
+muletillas en cada entrada ni introducir faltas para aparentar una voz.
+El detalle por commit se mantiene en `HISTORIAL_COMMITS.md`; la bitácora agrupa
+las jornadas sin repetir todos sus archivos. Los resultados de otras entregas
+se fechan en `VERIFICACIONES.md` y se distinguen de una ejecución nueva.
+
 En las guías operativas describir el estado actual. En la bitácora se puede
 redactar en primera persona para la memoria del autor, conservando trazabilidad
 con el historial y las explicaciones recibidas.
@@ -119,7 +127,7 @@ están registradas en `LICENCIA_CODIGO_LIBRE.md`.
 
 | Área responsable | Evidencia | Revisión necesaria | Criterio de cierre |
 |---|---|---|---|
-| Backend y documentación de API | `ROADMAP.md` mantiene como pendientes límites de carga y prerrequisitos; el commit `122d1d3` los incorpora en el servicio de inscripción. | Contrastar los casos cubiertos y actualizar el estado del roadmap sin declarar completa toda la fase. | Planificación y comportamiento del servicio descritos de forma consistente, con las limitaciones restantes identificadas. |
+| Backend y documentación de API | `122d1d3` incorpora requisitos y carga en el servicio de inscripción. | El roadmap ya reconoce esa implementación; falta ejecutar los casos límite y contrastar el resto de la fase. | Casos de periodos, cupos y carga verificados sobre PostgreSQL y pendientes restantes delimitados. |
 
 ## Cierre de una entrega
 

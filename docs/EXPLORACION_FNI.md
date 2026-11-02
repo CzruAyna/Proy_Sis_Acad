@@ -1,7 +1,7 @@
 # SIS-INF: exploración de la FNI
 
-Actualizado: 31 de octubre de 2026. Estado: implementación local, sin commit
-creado por esta entrega. El nombre anterior del juego era CAMPUS EN JUEGO.
+Revisado: 2 de noviembre de 2026. La exploración comenzó en `389dc82` y fue
+ampliada hasta `b122e96`. El nombre anterior del juego era CAMPUS EN JUEGO.
 
 ## Uso actual
 
