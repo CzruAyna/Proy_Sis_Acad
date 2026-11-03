@@ -5,6 +5,12 @@ Revisada: 2 de noviembre de 2026. Código de referencia: `b122e96`.
 Actualización local del 03/11/2026: terminal demostrativa independiente,
 transiciones de exploración diferidas al terminar la entrada e icono pixel art.
 
+La ampliación posterior del campus separa paisaje (`campus_landscape.gd`),
+dibujo de terreno (`campus_terrain.gd`), índice de árboles (`campus_foliage.gd`),
+arte procedural de monumentos y personajes, planos y fichas superpuestas.
+El [contrato de campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md) identifica
+las señales y el trabajo de motor todavía pendiente, sin cambiar sus reglas.
+
 ## Alcance
 
 El repositorio contiene tres componentes relacionados con la vida académica,
@@ -57,6 +63,8 @@ interfaz invente resultados.
 | `game/scripts/career_presentation.gd`, `career_presentation_view.gd` | Guion de orientación y terminal automática en bucle, de sólo lectura, con señal para animaciones laterales. Véase [Modo demostrativo](MODO_DEMOSTRATIVO.md). |
 | `game/scripts/pixel_app_icon.gd`, `game/tools/prepare_pixel_icon.gd` | Dibujo compacto y generación reproducible de PNG/ICO para ejecutable y ventana. |
 | `game/scripts/recreation_game.gd`, `chess_game.gd`, `pool_game.gd`, `pong_game.gd`, `campus_property_game.gd` | Motores recreativos locales, reglas, física y rivales, independientes del expediente académico. |
+| `game/scripts/legacy_pool_game.gd` | Recupera sesiones anteriores de seis bolas; las nuevas usan ocho bolas. |
+| `game/scripts/chess_piece_art.gd` | Siluetas propias de 32×40 para seis piezas, generadas una vez en dos colores. |
 | `game/scripts/minigame_board.gd`, `minigame_session_ui.gd` | Controles, representación y sesiones de las cuatro mesas. Detalle en [Sala de juegos](JUEGOS_BLOQUE_E.md). |
 | `game/scripts/curriculum_graph.gd`, `graph_routing.gd` | Dibujo, interacción, disposición y comprobación geométrica de los grafos curriculares. |
 | `game/scripts/study_demo.gd`, `study_model.gd` | Controles didácticos y dibujos de demostración para las materias. |

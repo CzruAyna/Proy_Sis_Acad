@@ -67,6 +67,13 @@ derechos que el autor no tenga sobre ese material.
 
 ## Revisiones pendientes
 
+La ampliación de las mesas del 03/11/2026 incluye siluetas de ajedrez y dibujos
+de bolas/tableros creados por código original; no incorpora sprites ni código
+de 8 Ball Pool o de una edición comercial de Monopolio. Las referencias de
+controles de Miniclip están enlazadas en [Sala E](JUEGOS_BLOQUE_E.md). El arte de
+los personajes de pausa todavía no existe: frontend debe aportar recursos
+originales o con condiciones compatibles y registrar su procedencia.
+
 El 03/11/2026 se añadió un icono geométrico simplificado de 32 píxeles, con PNG
 y archivo ICO multirresolución generados por `game/tools/prepare_pixel_icon.gd`.
 Su código de dibujo es original y conserva GPL-3.0-or-later. La interpretación
@@ -87,6 +94,15 @@ autor, entidad emisora y condiciones de redistribución pública.
 | Backend y datos | Verificar reproducción de mallas, formularios e imágenes institucionales. | Originales, entidad emisora, versión, permiso o licencia y páginas utilizadas. | Datos trazables y condiciones de reproducción documentadas. |
 | Empaquetado | Inventariar las licencias de dependencias incluidas en cada distribución. | Versiones exactas, archivos de licencia y avisos del motor y bibliotecas. | Paquete revisado con sus avisos y condiciones correspondientes. |
 | Empaquetado y autor | Comprobar la entrega del código fuente correspondiente junto con el binario o por una modalidad admitida por GPL. | Contenido del paquete, fuentes de esa versión y método de entrega. | Distribución concreta revisada; no basta con la existencia de un repositorio. |
+
+## Material del campus ampliado
+
+La ampliación del campus del 03/11/2026 añade arte procedural original de
+estatuas y personajes, sin copiar las fotografías al juego. El plano marcado
+aportado por el usuario sí se conserva como referencia de terceros. Su hash,
+procedencia y derechos pendientes están en
+[Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md); no se relicencia bajo GPL
+ni se atribuye al autor del código la propiedad de esculturas o identidad FNI.
 
 ## Referencias oficiales
 

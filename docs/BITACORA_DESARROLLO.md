@@ -126,3 +126,58 @@ reproducido y los límites están en [Verificaciones](VERIFICACIONES.md). Falta
 evaluar una exposición prolongada, integrar las animaciones de frontend y
 contrastar el contenido con programas y normas vigentes según
 [Modo demostrativo](MODO_DEMOSTRATIVO.md).
+
+### Ampliación: jugar sobre el tablero
+
+**Estado:** cambios locales del mismo día, sin commit nuevo.
+
+El usuario confirmó que los juegos funcionan y pidió piezas de ajedrez sin
+letras, billar más cercano a las mecánicas de ocho bolas, ping-pong más dinámico
+y una Ruta del campus que dependa menos de botones exteriores. Amplié el lienzo
+de los juegos y trasladé al tablero los dados, las propiedades, la promoción y
+los controles de billar. Las piezas tienen siluetas propias de 32×40; los
+tableros comparten la ruptura negra del inicio. La economía de Ruta del campus
+conserva su variante de veinte casillas, ahora con consulta, casas y recorrido
+visual de las fichas.
+
+El billar pasó a dieciséis cuerpos, grupos, faltas, bola en mano, efectos arcade
+y negra en tronera elegida. El tiro se prepara retirando el taco y se ejecuta
+al soltar; no añadí una barra deslizante. Guardé el motor de seis bolas como
+compatibilidad para las sesiones existentes: sólo Reiniciar las cambia a ocho.
+En ping-pong añadí impulso con recuperación y una devolución sensible al
+movimiento de la paleta. La pausa de la terminal prepara un personaje aleatorio
+y emite un contrato; su diseño y la abertura siguen para frontend, como pidió
+el usuario.
+
+La matriz de esta ampliación reúne siete suites y 14.422 aserciones sin fallos,
+con doce capturas gráficas. Los casos nuevos comprueban reglas de ocho bolas,
+gestos del taco, colocación, dados, compras y mensajes de pausa. El alcance y
+los resultados se registran por separado en [Verificaciones](VERIFICACIONES.md).
+Faltan sesiones humanas para ajustar puntería y ritmo, el arte de pausa y
+pruebas en otros equipos. No cambié reglas académicas ni servicios web.
+
+### 3 de noviembre de 2026: campus ampliado y diseños de vida del campus
+
+Cambios locales sin commit propio. El usuario entregó un plano marcado y pidió
+un mapa mucho mayor, con las distancias, áreas verdes, caminos, fuentes y
+elementos del campus. Se amplió a 12288 × 8704 unidades de juego y se separó
+el bosque del ingreso de los jardines. Se añadieron estacionamientos, laguna
+de Civil, asientos FNI y quirquinchos diferenciados. El terreno, los árboles
+y los detalles de las cubiertas se dibujan según la región visible; el arte
+procedural se conserva en caché.
+
+Las fotos aportadas sirven de referencia para el Chivato de piedra y Piedritas
+de bronce. E abre sus fichas mediante ruptura central y conserva el recorrido
+al cerrarlas. La fecha del 3 de julio de 1906 procede de FNI-UTO; la organización
+en recuerdo de Piedritas se identifica como relato pendiente de respaldar.
+Se prepararon planos de dos niveles para el bloque 100 y cinco para el bloque
+en cruz, más profesionales, estudiantes y perros variados. Los paseos, clases,
+caricias, logros, encuentro raro y cambio de planta se dejaron como contratos
+de motor/backend, sin simular que ya estuvieran funcionando.
+
+Cuatro suites de esta ampliación sumaron 3.664 aserciones sin fallos; se
+generaron veinte capturas y se exportó Windows. El arranque aislado del binario
+terminó con salida cero. Los registros y límites reales están en
+[Verificaciones](VERIFICACIONES.md); las fuentes, IDs y tareas de cada área,
+en [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md). Se mantuvieron los
+cambios paralelos de minijuegos y terminal. No se modificó el motor académico.

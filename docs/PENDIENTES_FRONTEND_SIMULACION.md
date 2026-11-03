@@ -1,5 +1,20 @@
 # Integración gráfica de SIS-INF
 
+Ampliación de exploración del 03/11/2026: hay paisaje ampliado, estatuas con
+fichas, diseños de personajes y planos por piso. **Motor/backend** debe conectar
+recorridos, clases, caricias, rareza de Piedritas, logros y cambio de planta.
+Los IDs, señales, criterios de cierre y fuentes pendientes están en
+[Campus ampliado y vida del campus](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md).
+Los diseños estáticos y los planos no se presentan como esas funciones ya activas.
+
+Ampliación del 03/11/2026: se preparó `pause_scene_requested` para la rotura y
+el personaje aleatorio que espera al pausar la terminal. **Frontend debe hacer
+su diseño y animación**, según el apartado Personaje al pausar de
+[Modo demostrativo](MODO_DEMOSTRATIVO.md). Los comentarios temporales de esa
+integración se eliminan después de aplicarlos. Los tableros jugables ahora
+incluyen piezas sin letras, billar de ocho bolas y controles dentro del lienzo;
+su funcionamiento se detalla en [Sala E](JUEGOS_BLOQUE_E.md).
+
 Actualización del 03/11/2026: disponible el modo de terminal automática con
 resumen y recorrido completo, independiente de partidas. Frontend debe integrar
 las animaciones laterales mediante `animation_cue` y el reloj del modelo.

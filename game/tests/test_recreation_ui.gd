@@ -28,10 +28,10 @@ func _run() -> void:
 			var click := InputEventMouseButton.new()
 			click.button_index = MOUSE_BUTTON_LEFT
 			click.pressed = true
-			click.position = ui._board._origin + Vector2(320, 260) * ui._board._scale
+			click.position = ui._board._origin + ui._board.chess_cell_centre(Chess.square("e2")) * ui._board._scale
 			ui._board._gui_input(click)
 			_check(ui._board.destinations.has(Chess.square("e4")), "Interfaz muestra destinos legales")
-			click.position = ui._board._origin + Vector2(320, 180) * ui._board._scale
+			click.position = ui._board._origin + ui._board.chess_cell_centre(Chess.square("e4")) * ui._board._scale
 			ui._board._gui_input(click)
 			_check(model.board[Chess.square("e4")] == Chess.PAWN and model.turn == -1, "Clic de origen/destino juega una pieza")
 		elif id == "billar":

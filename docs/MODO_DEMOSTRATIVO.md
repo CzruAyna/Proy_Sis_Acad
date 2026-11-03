@@ -82,6 +82,66 @@ la animación. Limitar partículas/nodos y liberar tweens al salir. El comentari
 `FRONTEND TEMPORAL` de la vista se elimina cuando se integre y compruebe esta
 parte, conservando aquí el contrato vigente.
 
+## Personaje al pausar: contrato preparado, arte pendiente
+
+Ampliación del 03/11/2026: el motor prepara un personaje aleatorio en cada
+pausa nueva. `model.set_paused(true)` elige uno de los seis arquetipos, detiene
+el reloj y emite `pause_changed`. La vista reenvía el evento como
+`pause_scene_requested(cue)`. **No se dibujó todavía el personaje ni la rotura
+de aparición**: el usuario pidió dejar este diseño a frontend. Se conserva el
+botón Pausa/Continuar que ya funciona.
+
+Una segunda notificación de foco perdido no cambia de personaje ni incrementa
+su secuencia. La siguiente pausa elige otro arquetipo; no repite el anterior.
+No se usan el nombre, notas ni perfil del estudiante para esta elección. Para
+una conexión tardía se puede consultar `model.pause_cue()`.
+
+```json
+{
+  "version": 1,
+  "paused": true,
+  "sequence": 1,
+  "actor": {
+    "id": "systems_engineer",
+    "name": "Ingeniería de Sistemas",
+    "theme": "sistemas",
+    "prop": "diagrama de procesos"
+  },
+  "facing": "viewer",
+  "action": "idle_wait",
+  "opening": "screen_fracture"
+}
+```
+
+| ID estable | Referencia para el diseño original |
+|---|---|
+| `systems_engineer` | Ingeniería de Sistemas; diagrama de procesos, acento azul. |
+| `informatics_engineer` | Ingeniería Informática; terminal y código, acento rojo. |
+| `arch_linux` | Entusiasta de Arch Linux con portátil; personaje propio, sin suponer que un logo ajeno tenga permiso de uso. |
+| `cybersecurity` | Especialista en seguridad defensiva con escudo geométrico y registros. |
+| `network_engineer` | Especialista en redes con equipos y conexiones. |
+| `data_analyst` | Analista con gráficos y libreta. |
+
+Frontend debe preparar una abertura negra irregular que rompa una parte del
+panel, reutilizando el lenguaje geométrico del inicio. Desde ella aparece el
+personaje pixel art, de frente, mirando al espectador, y queda esperando.
+Puede respirar o parpadear lentamente si las animaciones están habilitadas.
+Su zona de dibujo debe reservar espacio sin tapar la explicación, la identidad,
+Pausa/Continuar, navegación o salida. La aparición no debe capturar las teclas
+ni bloquear el botón para continuar.
+
+Al recibir `paused: false`, retirar personaje y abertura, cancelar los tweens
+de espera y reanudar desde el mismo punto de la explicación. Con movimiento
+reducido o bajo consumo, usar aparición estática y silueta quieta; no ejecutar
+partículas ni bucles de tweens invisibles. Al salir o reiniciar, liberar la
+escena. Cambiar de capítulo durante una pausa no debe crear otro personaje.
+No añadir un tiempo de espera que reanude automáticamente: continúa el usuario.
+
+El comentario temporal de `_pause_scene()` se elimina al integrar el arte.
+La prueba de cierre debe cubrir las seis identidades con recursos originales,
+pausas repetidas, pérdida de foco, reanudación, salida y texto 80/100/120 %.
+El alcance no incluye voz ni retratos generados ni insignias oficiales.
+
 ## Contenido y verificación institucional
 
 Se reutilizan `Catalog.PROGRAMS`, menciones y `Catalog.semesters_for()`, cuyo

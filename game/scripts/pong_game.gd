@@ -11,6 +11,9 @@ var reaction := 0.0
 var accumulator := 0.0
 var rallies := 0
 var aim_error := 0.0
+var boost_left := 0.0
+var boost_cooldown := 0.0
+var paddle_speed := 0.0
 
 
 func _init(seed_value: int = 1) -> void:
@@ -21,10 +24,18 @@ func _init(seed_value: int = 1) -> void:
 
 
 func _action(action: Dictionary) -> bool:
+	if action.get("type") == "boost" and phase == "PLAY" and boost_cooldown <= 0:
+		boost_left = 0.28
+		boost_cooldown = 3.0
+		return true
 	if action.get("type") == "serve" and phase == "SERVE":
 		serve()
 		return true
 	return false
+
+
+func _human_turn(action: Dictionary) -> bool:
+	return turn == 1 or (action.get("type") == "boost" and phase == "PLAY")
 
 
 func serve() -> void:
@@ -52,7 +63,11 @@ func advance(delta: float) -> void:
 
 
 func _tick(dt: float) -> void:
-	paddles[0] = move_toward(float(paddles[0]), target, 250 * dt)
+	boost_left = maxf(0, boost_left - dt)
+	boost_cooldown = maxf(0, boost_cooldown - dt)
+	var previous_paddle := float(paddles[0])
+	paddles[0] = move_toward(previous_paddle, target, (390 if boost_left > 0 else 250) * dt)
+	paddle_speed = (float(paddles[0]) - previous_paddle) / dt
 	reaction -= dt
 	if reaction <= 0:
 		reaction = 0.18
@@ -83,7 +98,8 @@ func _tick(dt: float) -> void:
 			rallies += 1
 			if index == 0:
 				aim_error = random.randf_range(-44, 44)
-			velocity = Vector2(1 if index == 0 else -1, offset * 1.15).normalized() * minf(360, 240 + rallies * 12)
+			var motion := clampf(paddle_speed / 390, -1, 1) * 0.3 if index == 0 else 0.0
+			velocity = Vector2(1 if index == 0 else -1, clampf(offset * 1.15 + motion, -1.4, 1.4)).normalized() * minf(400, 240 + rallies * 12)
 			ball.x = x
 	if ball.x < -8 or ball.x > 608:
 		point(0 if ball.x > 608 else 1)
@@ -103,7 +119,7 @@ func point(index: int) -> void:
 
 
 func _data() -> Dictionary:
-	return {"ball": [ball.x, ball.y], "velocity": [velocity.x, velocity.y], "paddles": paddles.duplicate(), "scores": scores.duplicate(), "rallies": rallies, "target": target, "aim_error": aim_error, "ai_target": ai_target, "reaction": reaction, "ai_wait": ai_wait}
+	return {"ball": [ball.x, ball.y], "velocity": [velocity.x, velocity.y], "paddles": paddles.duplicate(), "scores": scores.duplicate(), "rallies": rallies, "target": target, "aim_error": aim_error, "ai_target": ai_target, "reaction": reaction, "ai_wait": ai_wait, "boost_left": boost_left, "boost_cooldown": boost_cooldown, "paddle_speed": paddle_speed}
 
 
 func allowed_phases() -> Array:
@@ -117,7 +133,6 @@ func _load_data(data: Dictionary) -> bool:
 	velocity = Vector2(data["velocity"][0], data["velocity"][1])
 	paddles = data["paddles"].duplicate()
 	scores = [int(data["scores"][0]), int(data["scores"][1])]
-	target = clampf(float(paddles[0]), 34, 266)
 	rallies = clampi(int(data.get("rallies", 0)), 0, 1000)
 	if not numbers([data.get("aim_error", 0), data.get("ai_target", 150), data.get("reaction", 0), data.get("ai_wait", 0)], 4, 300):
 		return false
@@ -125,4 +140,10 @@ func _load_data(data: Dictionary) -> bool:
 	ai_target = clampf(float(data.get("ai_target", 150)), 34, 266)
 	reaction = clampf(float(data.get("reaction", 0)), 0, 0.18)
 	ai_wait = clampf(float(data.get("ai_wait", 0)), 0, 0.7)
+	if not numbers([data.get("boost_left", 0), data.get("boost_cooldown", 0), data.get("paddle_speed", 0), data.get("target", paddles[0])], 4, 400):
+		return false
+	target = clampf(float(data.get("target", paddles[0])), 34, 266)
+	boost_left = clampf(float(data.get("boost_left", 0)), 0, 0.28)
+	boost_cooldown = clampf(float(data.get("boost_cooldown", 0)), 0, 3)
+	paddle_speed = clampf(float(data.get("paddle_speed", 0)), -390, 390)
 	return scores[0] >= 0 and scores[1] >= 0

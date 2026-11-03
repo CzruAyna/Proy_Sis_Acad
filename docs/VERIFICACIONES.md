@@ -111,7 +111,126 @@ de documentación, uno por suite. No se ejecutaron las otras 18 suites,
 las capturas del juego ni pruebas de backend o frontend web en esta revisión.
 Esto verifica un alcance concreto, no todas las funciones del producto.
 
-## Límites que siguen abiertos
+## Ampliación de tableros del 3 de noviembre de 2026
+
+Cambios locales posteriores a la primera corrección del día; sin commit nuevo.
+No sumar este total al de otras entregas: se repiten suites de regresión.
+Comando base desde la raíz, con Godot 4.7.2 para Windows:
+
+```powershell
+.\game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --script res://tests/NOMBRE.gd
+```
+
+| `NOMBRE` | Aserciones | Fallos |
+|---|---:|---:|
+| `test_eight_ball` | 179 | 0 |
+| `test_recreation_surface` | 291 | 0 |
+| `test_recreation_ui` | 154 | 0 |
+| `test_games_room` | 1.737 | 0 |
+| `test_career_presentation` | 2.781 | 0 |
+| `test_exploration_handoff` | 34 | 0 |
+| `test_recreation_models` | 9.246 | 0 |
+| Total de esta ampliación | 14.422 | 0 |
+
+La prueba de modelos conserva el motor antiguo de seis bolas y comprueba el
+nuevo mediante la fábrica de sesiones; los casos específicos de ocho bolas
+están en `test_eight_ball`. Esta última cubre grupos, apertura, negra legal,
+negra anticipada, tronera equivocada, blanca embocada, colocación, contactos,
+bandas, JSON y reanudación de un tiro. La prueba de superficie usa eventos de
+ratón y teclado en las acciones principales, además de comprobar piezas
+distintas, caché, casillas sin superposición e impulso humano con saque rival.
+
+La prueba de presentación comprueba elección y persistencia del personaje de
+pausa, ausencia de repetición inmediata y los mensajes de pausa/continuación a
+frontend. Esto **no verifica el diseño del personaje**: todavía está pendiente.
+
+`capture_recreation_surface.gd` produjo doce capturas reales en
+`game/.test-artifacts/recreation-v2/`: cuatro tableros, apertura física, impulso,
+dados animados, cuatro vistas a 900×640/120 % y ajedrez a 1600×900. Se revisaron
+visualmente piezas, bolas, troneras, texto, propiedades y marco. El controlador
+gráfico informa el cambio automático de AMD/OpenGL a ANGLE. No se usaron
+partidas personales. Los registros de las tres suites nuevas/ampliadas se
+conservan como `.log` en esa carpeta local ignorada.
+
+El primer intento de registrar las suites usó una ruta `res://` en `--log-file`,
+que Godot rechaza antes de iniciar. Se corrigió a ruta absoluta de Windows;
+las aserciones del primer intento también terminaron sin fallos. Un ensayo
+anterior detectó la conversión de enteros a decimales en JSON para los grupos;
+el cargador ahora valida y normaliza los identificadores antes de compararlos.
+
+La exportación `Windows Desktop` terminó con salida cero; su registro es
+`game/.test-artifacts/recreation-v2/export.log`. El ejecutable se abrió con
+renderizador gráfico y perfil aislado y finalizó con salida cero. Esa prueba
+confirma arranque/cierre: el intento de cargar un script externo mediante
+`--script` no ejecutó el arnés en la plantilla release, por lo que **no se
+contabiliza como prueba de las cuatro mesas dentro del binario**. Las mesas
+se comprobaron con las suites y las capturas del proyecto. No se conservó
+ese arnés externo sin uso. Los cambios paralelos del campus aparecidos después
+de esa exportación quedan fuera de esta comprobación de minijuegos.
+
+## Campus ampliado: ejecución del 03/11/2026
+
+Cambios locales sin commit propio, posteriores a la exportación de minijuegos
+registrada arriba. Se ejecutaron estas cuatro suites con Godot 4.7.2, sobre el
+checkout compartido y usando perfiles ficticios. Los registros están bajo
+`game/.test-artifacts/`, excluidos del control de versiones.
+
+| Script en `game/tests/` | Aserciones | Fallos | Registro |
+|---|---:|---:|---|
+| `test_large_campus.gd` | 1.735 | 0 | `large-test.log` |
+| `test_exploration.gd` | 518 | 0 | `large-regression-exploration.log` |
+| `test_building_interiors.gd` | 479 | 0 | `large-regression-interiors.log` |
+| `test_exploration_navigation.gd` | 932 | 0 | `large-regression-navigation.log` |
+
+Total de esta ejecución: **3.664 aserciones sin fallos**; no se suman con los
+totales históricos ni con las suites paralelas de minijuegos. Cubren accesos,
+interiores, guardado, migración del mapa anterior, colisiones del agua y bases,
+diseños, planos, apertura con E, pausa, regreso, foco y fichas completas a
+900 × 640 y 1152 × 720 con texto al 100 % y 120 %. No se hallaron errores de
+script en esos cuatro registros. La prueba de accesibilidad global usa una
+rejilla de 16 unidades para mantener acotada la búsqueda en el mapa ampliado;
+los interiores y puertas mantienen sus comprobaciones puntuales.
+
+`capture_large_campus.gd` produjo veinte capturas de 1152 × 720 en
+`game/.test-artifacts/large-campus/`. Se revisaron visualmente el ingreso,
+las fichas y retratos de las dos estatuas, bosque, laguna, catálogo, planos y
+laboratorios. Las capturas usan un perfil aislado, con animaciones desactivadas.
+El controlador de esta GPU cambió automáticamente a ANGLE; no hubo errores de
+script en la captura. El efecto animado de ruptura no se midió fotograma a
+fotograma ni se hizo una sesión humana completa del campus.
+
+La importación y la exportación `Windows Desktop` terminaron con salida cero.
+Se actualizaron `game/build/SIS-INF.exe` y `SIS-INF.pck`; el arranque headless
+del ejecutable, con perfil aislado y `--quit-after 5`, terminó con salida cero.
+Registros: `large-import.log`, `large-export.log` y `large-smoke.log`. Godot
+informó `Failed to read the root certificate store` durante esas operaciones;
+no impidió importar, exportar ni arrancar el juego local. No se verificaron
+funciones de red ni el almacén de certificados del equipo. El arranque del
+binario no sustituye una prueba interactiva de todas sus pantallas.
+
+Pendientes de esta ampliación: verificación de plantas y datos institucionales,
+fuentes originales de Piedritas y su organización, recorridos y horarios de
+NPC, caricias/logros, rareza y cambio de planta del motor. Los contratos están
+en [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md). No se ejecutaron
+Django ni Next.js ni se modificaron partidas personales.
+
+## Láminas por cuadrantes del 03/11/2026
+
+Se comprobó la sintaxis de `tools/export_campus_quadrants.gd` y se ejecutó su
+renderizador gráfico con perfil aislado. Produjo cuatro láminas de 3200 × 2760,
+un mapa unido de 6144 × 4352, un índice de 1632 × 1272 y un JSON de referencias.
+Los cuatro cuadrantes incluyen 15, 15, 19 y 25 marcadores respectivamente, con
+repetición de los elementos que atraviesan el corte. Se revisaron visualmente
+los rótulos, leyendas y correspondencia del mapa. Una comprobación de los
+archivos validó los seis tamaños PNG, 67 códigos únicos, porcentajes válidos,
+ausencia de códigos duplicados en cada cuadrante y enlaces locales existentes.
+No se ejecutaron otra vez las
+suites de juego ni se exportó un binario nuevo para esta entrega de imágenes.
+El script queda fuera del paquete del juego mediante la exclusión de `tools/*`.
+Los registros y límites se explican en
+[Mapa para correcciones](MAPA_PARA_CORRECCIONES.md).
+
+## Límites generales que siguen abiertos
 
 - Dificultad percibida y sesiones prolongadas con jugadores.
 - Rendimiento comparado, otros equipos, GPU y sistemas operativos.

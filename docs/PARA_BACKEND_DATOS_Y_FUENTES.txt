@@ -127,3 +127,12 @@ RESPUESTA ESPERADA DE BACKEND PARA EL USUARIO
 Por cada pendiente: prioridad, pregunta concreta, documento/imagen que debe
 conseguir, fuente recomendada, campos que resuelve y qué puede implementarse
 con seguridad mientras tanto. Registrar dudas y contradicciones entre fuentes.
+
+AMPLIACIÓN DEL CAMPUS, 03/11/2026
+Leer docs/CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md: contiene los contratos de NPC,
+perros, caricias, rareza de Piedritas y pisos, además de las fuentes originales
+pendientes. Pedir placas y fechas de los monumentos; respaldo del nombre y
+creación de la organización; plantas, códigos de aulas, baños y accesos de los
+bloques 100 y en cruz; procedencia y permiso del plano marcado. No dar por
+verificadas la biografía, la organización, las plantas o la oferta de carreras
+por existir sus diseños. La fecha 3 de julio de 1906 procede del sitio FNI-UTO.

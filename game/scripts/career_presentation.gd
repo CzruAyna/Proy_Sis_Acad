@@ -1,10 +1,19 @@
 extends RefCounted
 ## Read-only curriculum presentation. Virtual commands never execute a shell.
 signal chapter_changed(cue: Dictionary)
+signal pause_changed(cue: Dictionary)
 
 const Catalog = preload("res://scripts/catalog.gd")
 const COMMAND := "sis-inf demo --loop"
 const NOTICE := "Orientación didáctica · planes de referencia 2011; vigencia pendiente de verificación."
+const PAUSE_ACTORS := [
+	{"id": "systems_engineer", "name": "Ingeniería de Sistemas", "theme": "sistemas", "prop": "diagrama de procesos"},
+	{"id": "informatics_engineer", "name": "Ingeniería Informática", "theme": "informatica", "prop": "terminal de programación"},
+	{"id": "arch_linux", "name": "Entusiasta de Arch Linux", "theme": "linux", "prop": "portátil y terminal propia"},
+	{"id": "cybersecurity", "name": "Especialista en ciberseguridad", "theme": "security", "prop": "análisis defensivo y escudo geométrico"},
+	{"id": "network_engineer", "name": "Especialista en redes", "theme": "network", "prop": "conexiones y equipos de red"},
+	{"id": "data_analyst", "name": "Analista de datos", "theme": "data", "prop": "gráfico y libreta"}
+]
 const SCENES := {
 	"gestion_sistemas": "systems_flow", "gestion_informacion": "information",
 	"modelamiento_optimizacion": "optimization", "desarrollo_sw": "software",
@@ -20,9 +29,17 @@ var speed := 1.0
 var phase := "IDLE"
 var detailed := false
 var overview: Array[int] = []
+var pause_actor: Dictionary = {}
+var pause_sequence := 0
+var _pause_random := RandomNumberGenerator.new()
+var _last_actor := -1
 
 
-func _init() -> void:
+func _init(seed_value: int = -1) -> void:
+	if seed_value < 0:
+		_pause_random.randomize()
+	else:
+		_pause_random.seed = seed_value
 	_add("inicio", "SIS-INF", "Bienvenido al recorrido automático. Conocerás las dos carreras, sus cinco menciones, materias y ejemplos de aplicación. Puedes pausar, avanzar o volver al modo interactivo en cualquier momento.", "overview", "", "", COMMAND)
 	_add("alcance", "Una guía para explorar", NOTICE + " Las explicaciones y ejemplos orientan; no certifican competencias ni sustituyen programas analíticos oficiales.", "overview")
 	for program in Catalog.PROGRAMS:
@@ -81,7 +98,7 @@ func execute(command: String) -> bool:
 		return false
 	index = 0
 	cycle = 1
-	paused = false
+	set_paused(false)
 	_select()
 	return true
 
@@ -94,6 +111,22 @@ func _select() -> void:
 
 func current() -> Dictionary:
 	return chapters[index].duplicate(true)
+
+
+func set_paused(value: bool) -> void:
+	if paused == value:
+		return
+	paused = value
+	if paused:
+		var chosen := _pause_random.randi_range(0, PAUSE_ACTORS.size() - 1) if _last_actor < 0 else (_last_actor + _pause_random.randi_range(1, PAUSE_ACTORS.size() - 1)) % PAUSE_ACTORS.size()
+		_last_actor = chosen
+		pause_actor = PAUSE_ACTORS[chosen].duplicate(true)
+		pause_sequence += 1
+	pause_changed.emit(pause_cue())
+
+
+func pause_cue() -> Dictionary:
+	return {"version": 1, "paused": paused, "sequence": pause_sequence, "actor": pause_actor.duplicate(true), "facing": "viewer", "action": "idle_wait", "opening": "screen_fracture"}
 
 
 func next() -> void:

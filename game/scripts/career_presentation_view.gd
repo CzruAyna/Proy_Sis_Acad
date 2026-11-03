@@ -1,6 +1,7 @@
 extends HBoxContainer
 ## Presentation adapter. The read-only model owns sequencing and timing.
 signal animation_cue(cue: Dictionary)
+signal pause_scene_requested(cue: Dictionary)
 
 const Presentation = preload("res://scripts/career_presentation.gd")
 var model := Presentation.new()
@@ -43,6 +44,7 @@ func build(ui: Control, parent: Control) -> void:
 	visual.add_child(_example)
 	visual.add_child(ui._label("Ejemplos didácticos. No representan resultados de tu partida.", 12, Color("#9fb4bd")))
 	model.chapter_changed.connect(_chapter)
+	model.pause_changed.connect(_pause_scene)
 	model.execute(Presentation.COMMAND)
 	var controls := HFlowContainer.new()
 	controls.name = "DemoControls"
@@ -102,8 +104,14 @@ func _sync() -> void:
 
 
 func toggle_pause() -> void:
-	model.paused = not model.paused
+	model.set_paused(not model.paused)
 	_sync()
+
+
+func _pause_scene(cue: Dictionary) -> void:
+	# FRONTEND TEMPORAL: build the fractured opening + waiting pixel character
+	# from docs/MODO_DEMOSTRATIVO.md. Remove this note once the art is integrated.
+	pause_scene_requested.emit(cue)
 
 
 func toggle_speed() -> void:
@@ -117,5 +125,5 @@ func restart() -> void:
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_OUT]:
-		model.paused = true
+		model.set_paused(true)
 		_sync()

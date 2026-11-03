@@ -6,11 +6,21 @@ signal map_requested
 signal activity_requested(building: Dictionary, room: String)
 signal minigame_requested(id: String)
 signal context_changed(text: String)
+signal landmark_requested(id: String)
+signal actor_requested(id: String)
+signal stairs_requested(id: String)
 
 const Map = preload("res://scripts/campus_map.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
 const Architecture = preload("res://scripts/campus_architecture.gd")
 const GameTables = preload("res://scripts/minigame_preview.gd")
+const Land = preload("res://scripts/campus_landscape.gd")
+const Terrain = preload("res://scripts/campus_terrain.gd")
+const Foliage = preload("res://scripts/campus_foliage.gd")
+const LandmarkArt = preload("res://scripts/campus_landmark_art.gd")
+const Cast = preload("res://scripts/campus_cast.gd")
+const Floors = preload("res://scripts/campus_floor_plan.gd")
+const RoomArt = preload("res://scripts/campus_room_art.gd")
 const SPEED := 112.0
 const PLAYER_RADIUS := 7.0
 const SPRITE := [
@@ -37,6 +47,11 @@ var _outside := Map.SPAWN
 var _tree_positions: Array[Vector2] = []
 var _interior_key := ""
 var _interior_walls: Array[Rect2] = []
+var animations_enabled := true
+var _ambient_phase := 0.0
+var _ambient_tick := 0.0
+var _landscape_obstacles: Array[Rect2] = Land.obstacles()
+var cast_instances: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -45,33 +60,18 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_take_focus.call_deferred()
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 81030
-	for index in range(170):
-		var point := Vector2(rng.randf_range(30, Map.SIZE.x - 30), rng.randf_range(40, Map.SIZE.y - 60)).snapped(Vector2(8, 8))
-		if _can_plant(point) and point.distance_to(Map.SPAWN) > 80 and not _near_road(point):
-			_tree_positions.append(point)
-	# An avenue and small groves, rather than repeating one tree everywhere.
-	for y in range(784, 1384, 52):
-		for x in [1164, 1310]:
-			var point := Vector2(x + posmod(y, 3) * 4, y)
-			if _can_plant(point):
-				_tree_positions.append(point)
-	_tree_positions.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.y < b.y)
+	_tree_positions = Foliage.all()
+	for row in Cast.PROFESSIONS:
+		cast_instances.append({"id": row[0], "point": Map.building(row[4])["door"] + Vector2(60, 28)})
+	for index in range(6):
+		cast_instances.append({"id": "estudiante_%d" % index, "point": Map.building("fis_mat" if index % 2 == 0 else "basicas")["door"] + Vector2(-88 + index * 25, 40)})
+	for index in range(3):
+		cast_instances.append({"id": Cast.DOGS[index][0], "point": Land.landmarks()[0]["point"] + Vector2(-100 + index * 100, 120)})
 	set_process(true)
 
 
 func _can_plant(point: Vector2) -> bool:
-	# Planting always uses outdoor bounds, including when resuming an interior.
-	if not point.is_finite() or not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
-		return false
-	for block in buildings:
-		if Rect2(block["rect"]).grow(32).has_point(point):
-			return false
-	for row in Map.COURTS:
-		if Architecture.court_rect(row).grow(28).has_point(point):
-			return false
-	return true
+	return Foliage.can_plant(point, buildings)
 
 
 func _take_focus() -> void:
@@ -84,12 +84,14 @@ func restore(saved: Dictionary) -> void:
 	room_id = ""
 	room_name = ""
 	visited.clear()
-	if saved.get("map_id", "") != Map.ID or int(saved.get("version", 0)) != 1:
+	if saved.get("map_id", "") not in [Map.ID, Map.LEGACY_ID] or int(saved.get("version", 0)) != 1:
 		camera = player
 		return
 	var stored: Variant = saved.get("position", [])
 	if stored is Array and stored.size() == 2 and (stored[0] is float or stored[0] is int) and (stored[1] is float or stored[1] is int):
 		var point := Vector2(float(stored[0]), float(stored[1]))
+		if saved.get("map_id", "") == Map.LEGACY_ID:
+			point = (point * Map.SIZE / Map.LEGACY_SIZE).snapped(Vector2(2, 2))
 		if point.is_finite() and _can_stand(point):
 			player = point
 	var previous: Variant = saved.get("visited", [])
@@ -136,6 +138,16 @@ func _process(delta: float) -> void:
 		context_changed.emit(current)
 	if moving or was_moving:
 		queue_redraw()
+	if animations_enabled and room_id.is_empty():
+		_ambient_tick += delta
+		_ambient_phase += delta
+		if _ambient_tick > 0.2:
+			_ambient_tick = 0
+			for fountain in Land.fountains():
+				if player.distance_to(fountain["point"]) < 420:
+					queue_redraw()
+			if Terrain._bounds(Land.polygon(Land.POND)).grow(420).has_point(player):
+				queue_redraw()
 
 
 func _pressed(key: Key) -> bool:
@@ -207,6 +219,11 @@ func _can_stand(point: Vector2) -> bool:
 			for index in range(outline.size()):
 				if point.distance_to(Geometry2D.get_closest_point_to_segment(point, outline[index], outline[(index + 1) % outline.size()])) <= PLAYER_RADIUS:
 					return false
+		for obstacle in _landscape_obstacles:
+			if obstacle.grow(PLAYER_RADIUS).has_point(point):
+				return false
+		if Land.water_blocks(point, PLAYER_RADIUS):
+			return false
 	else:
 		var bounds := Rect2(Vector2(22, 30), Map.hall_size(room_id) - Vector2(44, 50)) if room_name.is_empty() else Rect2(22, 30, 436, 270)
 		if not bounds.grow(-PLAYER_RADIUS).has_point(point):
@@ -237,6 +254,8 @@ func interaction_text() -> String:
 		if room_name.is_empty():
 			if player.distance_to(Map.hall_exit(room_id)) < 36:
 				return "E · Salir al campus · Camina por el pasillo para elegir aula"
+			if _near_stairs():
+				return "E · Ver distribución de pisos y escaleras"
 			var space := nearby_room()
 			return "E · Entrar a " + str(space["name"]) if not space.is_empty() else "Pasillo · Acércate a una puerta iluminada y pulsa E"
 		if player.distance_to(Vector2(240, 286)) < 36:
@@ -250,7 +269,12 @@ func interaction_text() -> String:
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
 	var building := nearby_building()
-	return "E · Entrar: " + str(building["name"]) if not building.is_empty() else "WASD / flechas · Camina hacia una puerta iluminada"
+	if not building.is_empty():
+		return "E · Entrar: " + str(building["name"])
+	var feature := nearby_feature()
+	if not feature.is_empty():
+		return "E · " + str(feature.get("title", "Conocer este diseño"))
+	return "WASD / flechas · Recorre caminos, jardines y edificios"
 
 
 func interact() -> void:
@@ -260,6 +284,10 @@ func interact() -> void:
 		if room_name.is_empty():
 			if player.distance_to(Map.hall_exit(room_id)) < 36:
 				leave_room()
+			elif _near_stairs():
+				paused = true
+				_held.clear()
+				stairs_requested.emit(room_id)
 			else:
 				var space := nearby_room()
 				if not space.is_empty():
@@ -281,6 +309,31 @@ func interact() -> void:
 		var building := nearby_building()
 		if not building.is_empty():
 			enter_building(str(building["id"]))
+		else:
+			var feature := nearby_feature()
+			if not feature.is_empty():
+				paused = true
+				_held.clear()
+				if feature["kind"] == "statue":
+					landmark_requested.emit(feature["id"])
+				else:
+					actor_requested.emit(feature["id"])
+
+
+func nearby_feature() -> Dictionary:
+	if not room_id.is_empty():
+		return {}
+	for item in Land.landmarks():
+		if player.distance_to(item["approach"]) < 34:
+			return item
+	for item in cast_instances:
+		if player.distance_to(item["point"]) < 25:
+			return {"kind": "actor", "id": item["id"], "title": "Conocer este diseño"}
+	return {}
+
+
+func _near_stairs() -> bool:
+	return not room_id.is_empty() and room_name.is_empty() and Map.floor_count(room_id) > 1 and player.distance_to(Vector2(360, Map.hall_size(room_id).y - 108)) < 32
 
 
 func nearby_room() -> Dictionary:
@@ -380,16 +433,7 @@ func _draw() -> void:
 
 
 func _draw_campus(view: Rect2) -> void:
-	draw_rect(Rect2(Vector2.ZERO, Map.SIZE), Color("#74886b"))
-	for x in range(maxi(0, int(view.position.x / 32)) * 32, mini(int(Map.SIZE.x), int(view.end.x) + 32), 32):
-		for y in range(maxi(0, int(view.position.y / 32)) * 32, mini(int(Map.SIZE.y), int(view.end.y) + 32), 32):
-			var h := posmod(x * 17 + y * 31, 13)
-			draw_rect(Rect2(x + h, y + 8, 3, 2), Color("#879674"))
-	for route in Map.routes():
-		draw_polyline(route, Color("#50616b"), 38, false)
-		draw_polyline(route, Color("#8d9695"), 28, false)
-	if view.intersects(Rect2(1160, 760, 160, 630)):
-		Architecture.plaza(self)
+	Terrain.draw(self, view, _ambient_phase if animations_enabled else 0)
 	for row in Map.COURTS:
 		var rect := Architecture.court_rect(row)
 		if not view.intersects(rect):
@@ -400,29 +444,31 @@ func _draw_campus(view: Rect2) -> void:
 		var rect: Rect2 = building["rect"]
 		if not view.grow(80).intersects(rect):
 			continue
-		_draw_building(building)
-	for point in _tree_positions:
-		if view.grow(48).has_point(point):
-			Architecture.tree(self, point)
+		_draw_building(building, view)
+	for point in Foliage.visible(view):
+		Architecture.tree(self, point)
+	for item in Land.landmarks():
+		if view.grow(90).has_point(item["point"]):
+			draw_texture_rect(LandmarkArt.texture(item["id"]), Rect2(item["point"] - Vector2(28, 63), Vector2(56, 68)), false)
+	for item in cast_instances:
+		if view.grow(32).has_point(item["point"]):
+			var dog := str(item["id"]).begins_with("perro_")
+			var extent := Vector2(12, 16) if dog else Vector2(16, 22)
+			draw_texture_rect(Cast.texture(item["id"]), Rect2(item["point"] - Vector2(extent.x * 0.5, extent.y - 2), extent), false)
 	# Wayfinding stays readable above canopies and roof details.
 	for block in buildings:
 		if view.grow(80).intersects(block["rect"]):
 			_sign(Rect2(block["rect"]).position + Vector2(3, -8), str(block["name"]), 10)
-	for point in [Vector2(1136, 832), Vector2(1264, 1360)]:
-		draw_rect(Rect2(point - Vector2(24, 16), Vector2(48, 32)), Color("#c6c8b8"))
-		draw_rect(Rect2(point - Vector2(18, 10), Vector2(36, 20)), Color("#537e94"))
-		draw_rect(Rect2(point - Vector2(4, 6), Vector2(8, 12)), Color("#b3ddda"))
-	_sign(Map.SPAWN + Vector2(-48, 32), "INGRESO FNI", 12)
-	_sign(Vector2(1088, 1604), "AVENIDA DEHENE", 12)
-	_sign(Vector2(1296, 792), "PLAZA FNI", 10)
 
 
-func _draw_building(building: Dictionary) -> void:
-	Architecture.building(self, building)
+func _draw_building(building: Dictionary, view: Rect2) -> void:
+	Architecture.building(self, building, view)
 	var door: Vector2 = building["door"]
 	draw_rect(Rect2(door - Vector2(10, 18), Vector2(20, 17)), Color("#223a40"))
 	draw_rect(Rect2(door - Vector2(6, 15), Vector2(12, 14)), Color("#6ddab9"))
 	draw_rect(Rect2(door - Vector2(14, 0), Vector2(28, 4)), Color("#d4c7a0"))
+	if view.grow(100).has_point(door):
+		_sign(door + Vector2(-48, -24), str(building["name"]), 10)
 	if player.distance_to(door) < 29:
 		draw_rect(Rect2(door - Vector2(13, 20), Vector2(26, 24)), Color("#fff1a6"), false, 2)
 
@@ -460,6 +506,7 @@ func _draw_room() -> void:
 			draw_rect(Rect2(desk.position + Vector2(20, 4), Vector2(12, 3)), Color("#c9dac9"))
 		elif kind == "classroom":
 			draw_rect(Rect2(desk.position + Vector2(6, 4), Vector2(10, 8)), Color("#e2dbc0"))
+	RoomArt.draw(self, kind)
 	for x in [112, 352]:
 		draw_rect(Rect2(x, 38, 36, 3), Color("#eff0c8"))
 	if kind == "computer_lab":
@@ -526,6 +573,9 @@ func _draw_hall() -> void:
 		draw_rect(Rect2(351, y, 18, 3), Color("#eeedcb"))
 	draw_rect(Rect2(340, extent.y - 26, 40, 8), Color("#6ddab9"))
 	_sign(Vector2(342, extent.y - 30), "SALIDA", 9)
+	if Map.floor_count(room_id) > 1:
+		Floors._stairs(self, Vector2(329, extent.y - 130))
+		_sign(Vector2(312, extent.y - 137), "E: VER PISOS", 9)
 
 
 func _sign(point: Vector2, text: String, font_size: int) -> void:

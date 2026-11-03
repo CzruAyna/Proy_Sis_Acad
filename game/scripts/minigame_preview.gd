@@ -2,7 +2,7 @@ extends Control
 ## Shared table art; gameplay belongs to the recreation engines.
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 const CATALOG := {
-	"billar": {"title": "Billar", "description": "Duelo de seis bolas contra un rival que calcula ángulos y deja margen de error."},
+	"billar": {"title": "Billar", "description": "Ocho bolas: lisas/rayadas, negra final, bola en mano y tiro al retirar el taco."},
 	"ping_pong": {"title": "Ping-pong", "description": "Duelo arcade con paletas, servicio y rival de reacción limitada."},
 	"ajedrez": {"title": "Ajedrez", "description": "Blancas contra un rival que estudia dos medias jugadas. Sin reloj."},
 	"monopolio": {"title": "Monopolio", "description": "Ruta del campus: variante propia breve con compras, rentas, mejoras y un rival prudente."}

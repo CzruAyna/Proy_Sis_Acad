@@ -19,6 +19,8 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
 | [Demostración automática](MODO_DEMOSTRATIVO.md) | Terminal explicativa en bucle, resumen y recorrido por materias; contrato de animaciones para frontend. |
 | [Exploración FNI](EXPLORACION_FNI.md) | Campus pixel art de SIS-INF, personaje, controles, aulas, guardado y recordatorios de ambientación. |
+| [Campus ampliado y personajes](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md) | Plano marcado, bosque, estatuas, pisos, catálogo de personajes y contratos pendientes para backend. |
+| [Mapa por cuadrantes](MAPA_PARA_CORRECCIONES.md) | Láminas del mapa actual con códigos, rejilla, leyendas y orientación para señalar correcciones. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
 | [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Cuatro minijuegos jugables contra rivales, variantes, controles, guardado, optimizaciones y pendientes. |
 | [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Relato de las 15 jornadas, con sus commits y decisiones confirmadas. |

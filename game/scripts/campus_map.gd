@@ -1,8 +1,11 @@
 extends RefCounted
 
-const ID := "fni_ciudad_v1"
-const SIZE := Vector2(2304, 1664)
-const SPAWN := Vector2(1280, 1536)
+const Landscape = preload("res://scripts/campus_landscape.gd")
+const ID := "fni_ciudad_v2"
+const LEGACY_ID := "fni_ciudad_v1"
+const LEGACY_SIZE := Vector2(2304, 1664)
+const SIZE := Landscape.SIZE
+const SPAWN := Vector2(6784, 8144)
 const ROOM_SIZE := Vector2(480, 320)
 const HALL_SIZE := Vector2(720, 480)
 const COMPUTING_SOURCE := "https://www.sisinf.fni.uto.edu.bo/computacion/"
@@ -18,7 +21,10 @@ const FOOTPRINTS := {
 	"minas": [[0, 0.25], [0.2, 0.25], [0.2, 0], [0.55, 0], [0.55, 0.15], [1, 0.15], [1, 0.85], [0.75, 0.85], [0.75, 1], [0.35, 1], [0.35, 0.85], [0, 0.85]],
 	"electrica_aulas": [[0, 0.25], [0.3, 0.25], [0.3, 0], [0.7, 0], [0.7, 0.25], [1, 0.25], [1, 1], [0, 1]],
 	"civil": [[0, 0.2], [0.25, 0.2], [0.25, 0], [0.6, 0], [0.6, 0.25], [1, 0.25], [1, 0.7], [0.75, 0.7], [0.75, 1], [0.4, 1], [0.4, 0.8], [0, 0.8]],
-	"admin_geo": [[0, 0.35], [0.35, 0.35], [0.35, 0], [0.7, 0], [0.7, 0.35], [1, 0.35], [1, 0.7], [0.65, 0.7], [0.65, 1], [0.35, 1], [0.35, 0.7], [0, 0.7]]
+	"admin_geo": [[0, 0.35], [0.35, 0.35], [0.35, 0], [0.7, 0], [0.7, 0.35], [1, 0.35], [1, 0.7], [0.65, 0.7], [0.65, 1], [0.35, 1], [0.35, 0.7], [0, 0.7]],
+	"quirquincho_quimica": [[0.2, 0], [0.8, 0], [1, 0.3], [1, 0.75], [0.75, 1], [0.2, 1], [0, 0.7], [0, 0.25]],
+	"quirquincho_fisica": [[0.22, 0], [0.78, 0], [1, 0.28], [1, 0.82], [0.65, 1], [0.1, 0.85], [0, 0.25]],
+	"quirquincho_matem": [[0.15, 0], [0.85, 0], [1, 0.25], [0.95, 0.8], [0.75, 1], [0.25, 1], [0, 0.65], [0, 0.25]]
 }
 const ROWS := [
 	["metalurgia", "METALURGIA", 5, 16, 12, 7, "lab", ["MET-1"]],
@@ -53,7 +59,7 @@ const ROWS := [
 	["quimica_aulas", "AULAS QUÍMICA", 48, 74, 5, 7, "classroom", ["Aulas Química"]],
 	["mecanica", "ADM. MECÁNICA", 18, 77, 7, 4, "office", ["Administración Mecánica"]],
 	["biblioteca", "BIBLIOTECA MEC.", 7, 79, 3, 5, "library", ["MEC-5", "MEC-7", "MEC-8"]],
-	["fis_mat", "FÍSICA / MATEMÁTICAS", 73, 72, 4, 8, "classroom", ["CU-100", "CU-101", "CU-102", "CU-103", "CU-104", "CU-105", "CU-106"]],
+	["fis_mat", "BLOQUE 100", 73, 72, 4, 8, "classroom", ["CU-100", "CU-101", "CU-102", "CU-103", "CU-104", "CU-105", "CU-106"]],
 	["basicas", "AULAS BÁSICAS 300", 83, 66, 7, 7, "classroom", ["BAS-Q1", "BAS-Q2", "BAS-Q4", "CB-F4", "CU-F1", "LAF-FIS", "CB-AUD"]],
 	["quirquincho_matem", "QUIRQUINCHO MAT.", 58, 83, 5, 4, "classroom", ["CU-64"]],
 	["civil", "AULAS CIVIL", 83, 85, 5, 7, "classroom", ["CIV-DID", "LAB.NTI", "Aulas Civil"]],
@@ -90,9 +96,7 @@ static func buildings() -> Array[Dictionary]:
 
 
 static func routes() -> Array[PackedVector2Array]:
-	return [PackedVector2Array([Vector2(1280, 1600), Vector2(1280, 1400), Vector2(1248, 1080), Vector2(1232, 736), Vector2(1184, 592), Vector2(1056, 448), Vector2(736, 336), Vector2(384, 304), Vector2(80, 384), Vector2(48, 1408), Vector2(1280, 1504)]),
-		PackedVector2Array([Vector2(1280, 1408), Vector2(1456, 1296), Vector2(1536, 1008), Vector2(1584, 784), Vector2(1568, 576), Vector2(1376, 560), Vector2(1184, 592)]),
-		PackedVector2Array([Vector2(1280, 1440), Vector2(2016, 1552), Vector2(2096, 1312), Vector2(2192, 832), Vector2(2256, 336)])]
+	return Landscape.routes()
 
 
 static func building(id: String) -> Dictionary:
@@ -107,7 +111,7 @@ static func room_obstacles(kind: String) -> Array[Rect2]:
 	if kind == "games_room":
 		for station in game_stations():
 			result.append(station["rect"])
-	elif kind in ["classroom", "lab"]:
+	elif kind in ["classroom", "lab", "physics_lab", "chemistry_lab", "physics_virtual"]:
 		for y in [112, 168, 224]:
 			for x in [72, 168, 288, 384]:
 				result.append(Rect2(x, y, 40, 20))
@@ -126,9 +130,35 @@ static func game_stations() -> Array[Dictionary]:
 
 
 static func room_kind(id: String, room: String) -> String:
+	if id == "fisica":
+		return "physics_lab"
+	if id == "quimica_lab":
+		return "chemistry_lab"
+	if id == "fis_mat" and room == "CU-106":
+		return "physics_virtual"
 	if SYSTEMS_ROOMS.has(id) and SYSTEMS_ROOMS[id].has(room):
 		return "computer_lab"
 	return str(building(id).get("kind", "classroom"))
+
+
+static func floor_count(id: String) -> int:
+	return 2 if id == "fis_mat" else (5 if id == "basicas" else 1)
+
+
+static func floor_rooms(id: String, level: int) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if id == "fis_mat":
+		for index in range(3):
+			result.append({"label": "Aula %d" % (index + 1), "kind": "classroom", "provisional": true})
+		if level == 0:
+			result.append({"label": "Laboratorio de física virtual", "kind": "physics_virtual", "provisional": true})
+	elif id == "basicas":
+		for wing in ["norte", "este", "sur", "oeste"]:
+			result.append({"label": "Aula · ala " + wing, "kind": "classroom", "provisional": true})
+		if level in [0, 2, 4]:
+			result.append({"label": "Baño · mujeres", "kind": "restroom_women", "provisional": true})
+			result.append({"label": "Baño · varones", "kind": "restroom_men", "provisional": true})
+	return result
 
 
 static func hall_rooms(id: String) -> Array[Dictionary]:

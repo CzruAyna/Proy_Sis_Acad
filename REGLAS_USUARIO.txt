@@ -184,3 +184,35 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     sus menciones, una por una, repitiéndose indefinidamente. Dejar el contrato
     y recordatorios para las animaciones laterales a cargo de frontend;
     retirar los comentarios temporales cuando ese trabajo quede integrado.
+
+24. TABLEROS Y PERSONAJE DE PAUSA, indicada el 03/11/2026.
+    Mejorar las interfaces de los cuatro minijuegos: piezas de ajedrez pixel
+    art reconocibles sin letras; billar completo de ocho bolas con troneras
+    y control directo, tomando como referencia las mecánicas de 8 Ball Pool;
+    ping-pong más dinámico; Ruta del campus con más detalle y acciones sobre
+    el propio tablero, reduciendo la dependencia de botones exteriores.
+    Los fondos conservarán la ruptura pixel art del inicio. Al pausar la
+    demostración, preparar un personaje aleatorio de Sistemas, Informática,
+    Arch Linux, ciberseguridad u otros temas afines, mirando al espectador
+    mientras espera que se continúe. Dejar su diseño y la ruptura de aparición
+    al responsable de frontend, con notas y contrato de funcionamiento.
+
+25. CAMPUS AMPLIADO Y VIDA DEL CAMPUS, indicada el 03/11/2026.
+    Usar MAPA DETECTADO.jpg y sus marcas para ampliar mucho el mapa y las
+    distancias: negro caminos, verde pasto y bosque grande a la derecha del
+    ingreso, gris estacionamientos, morado quirquinchos distintos, amarillo
+    laboratorios de Física y Química. Añadir fuentes de agua, laguna de Civil
+    y asientos con forma de FNI. En las X rojas, representar a Piedritas junto
+    al ingreso y al Chivato más al norte, con interacción que abra el centro
+    mediante ruptura pixel art y muestre un retrato más detallado e información.
+    Incorporar el aniversario del 3 de julio y la frase «¡Salud!», distinguiendo
+    la historia verificada del relato del usuario sobre Piedritas y la
+    organización que cuida animales. Preparar perros acariciables, una variante
+    muy rara de Piedritas, profesionales de distintas ingenierías y estudiantes
+    variados. Frontend prepara arte e interfaces; backend/motor resolverá paseos,
+    clases, caricias, probabilidades y logros. Dejar contratos y fuentes pendientes.
+    El bloque 100 tendrá dos niveles: tres aulas y laboratorio de Física virtual
+    abajo, tres aulas arriba. El bloque en cruz tendrá PB y cuatro pisos, baños
+    separados de mujeres y varones cada dos niveles y escalera central de dos
+    tramos con descanso y retorno, sin caracol. Dibujar sus escaleras y dejar
+    el cambio de nivel para backend; la distribución final se aportará después.

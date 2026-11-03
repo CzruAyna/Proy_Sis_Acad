@@ -1002,7 +1002,8 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	_page_style = _home_panel_style()
 	_effects.register(self, _page_style)
 	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios", "Grafo de la historia", "Explorar FNI", "Mapa del campus", "Plano aportado"]
-	var maximum_width := 1100.0 if graph_workspace else 880.0
+	var game_workspace := title in ["Billar", "Ping-pong", "Ajedrez", "Monopolio · Ruta del campus"]
+	var maximum_width := 1100.0 if graph_workspace or game_workspace else 880.0
 	_page_width = maximum_width
 	var resize_page := func() -> void:
 		var side := maxi(24, int((size.x - maximum_width) * 0.5))
@@ -1026,7 +1027,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		layout.add_child(identity)
 	if not title.is_empty():
 		layout.add_child(_label(title, 24, _current_theme.get("text", INK)))
-	if not subtitle.is_empty() and not graph_workspace:
+	if not subtitle.is_empty() and not graph_workspace and not game_workspace:
 		layout.add_child(_label(subtitle, 13, _current_theme.get("sub", INK)))
 	if not current_profile.is_empty() and simulation != null and not menu_backdrop and not graph_workspace and campus_navigation:
 		_add_campus_navigation(layout)

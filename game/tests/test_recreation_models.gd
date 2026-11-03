@@ -1,7 +1,7 @@
 extends SceneTree
 
 const Chess = preload("res://scripts/chess_game.gd")
-const Pool = preload("res://scripts/pool_game.gd")
+const Pool = preload("res://scripts/legacy_pool_game.gd") # Regression of preserved six-ball saves.
 const Pong = preload("res://scripts/pong_game.gd")
 const Property = preload("res://scripts/campus_property_game.gd")
 const Sessions = preload("res://scripts/minigame_session_ui.gd")

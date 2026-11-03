@@ -2,6 +2,11 @@
 
 Consulta: 31 de octubre de 2026. Área: frontend y datos de ambientación.
 
+Ampliación del 03/11/2026: el plano marcado, las fotos de Piedritas y el
+Chivato, la fecha institucional y las plantas provisionales se registran en
+[Campus ampliado y vida del campus](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md).
+La ampliación no convierte las plantas recreadas en planos verificados.
+
 ## Evidencia utilizada
 
 | ID | Fuente | Qué permite representar | Límites |

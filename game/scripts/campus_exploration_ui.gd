@@ -6,6 +6,8 @@ const Overview = preload("res://scripts/campus_overview.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
 const MinigamePreview = preload("res://scripts/minigame_preview.gd")
 const MinigameSessions = preload("res://scripts/minigame_session_ui.gd")
+const Inspection = preload("res://scripts/campus_inspection_overlay.gd")
+const Land = preload("res://scripts/campus_landscape.gd")
 
 var host: WeakRef
 var world_ref: WeakRef
@@ -137,10 +139,12 @@ func show_world() -> void:
 	world.name = "CampusWorld"
 	world.custom_minimum_size = Vector2(0, 200)
 	world.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	world.animations_enabled = bool(_ui().settings["animations"]) and not bool(_ui().settings.get("low_performance", false))
 	world.restore(saved)
 	world_ref = weakref(world)
 	_ui()._add_button(actions, "Interactuar [E]", world.interact, true, 36)
 	_ui()._add_button(actions, "Ayuda", show_help, false, 36)
+	_ui()._add_button(actions, "Personajes", show_designs, false, 36)
 	for button in actions.get_children():
 		if button is Button:
 			var font_size := int(14 * float(_ui().settings["font_scale"]))
@@ -149,6 +153,8 @@ func show_world() -> void:
 			button.autowrap_mode = TextServer.AUTOWRAP_OFF
 	if not target_id.is_empty():
 		var destination := Map.building(target_id)
+		if destination.is_empty():
+			destination = Land.destination(target_id)
 		if not destination.is_empty():
 			_text(workspace, "Destino señalado: " + str(destination["name"]) + " · pulsa M para localizarlo", 13)
 	workspace.add_child(world)
@@ -164,6 +170,9 @@ func show_world() -> void:
 	world.map_requested.connect(show_map, CONNECT_DEFERRED)
 	world.activity_requested.connect(show_room, CONNECT_DEFERRED)
 	world.minigame_requested.connect(show_minigame, CONNECT_DEFERRED)
+	world.landmark_requested.connect(show_monument, CONNECT_DEFERRED)
+	world.actor_requested.connect(show_actor, CONNECT_DEFERRED)
+	world.stairs_requested.connect(show_floors, CONNECT_DEFERRED)
 	var pager = _ui().find_child("PageNavigator", true, false)
 	pager.space_changed.connect(func(available: Vector2) -> void:
 		var other := workspace.get_combined_minimum_size().y - world.custom_minimum_size.y
@@ -229,6 +238,9 @@ func show_map() -> void:
 	var row := _actions(page)
 	_ui()._add_button(row, "Volver a caminar", show_world, true, 40)
 	_ui()._add_button(row, "Ver plano aportado", show_reference, false, 40)
+	var points := _actions(page)
+	for item in [["piedritas", "Piedritas"], ["chivato", "Chivato"], ["bosque", "Bosque"], ["laguna", "Laguna de Civil"], ["fis_mat", "Bloque 100"], ["basicas", "Bloque en cruz"]]:
+		_ui()._add_button(points, item[1], _select_target.bind(item[0]), false, 36)
 	for building in Map.buildings():
 		var card: VBoxContainer = _ui()._card(page)
 		_text(card, str(building["name"]), 18)
@@ -251,6 +263,55 @@ func show_reference() -> void:
 	picture.custom_minimum_size = Vector2(0, 360)
 	page.add_child(picture)
 	_text(page, "Los rótulos se consultan también en el directorio del mapa. El recuadro de Aulas Básicas se ha adaptado a una zona jugable: su enlace espacial exacto requiere confirmación.", 15)
+	_ui()._add_button(page, "Ver plano marcado", show_marked_reference, false, 40)
+
+
+func show_marked_reference() -> void:
+	var page: VBoxContainer = _ui()._make_page("Plano marcado", "Leyenda aportada por el usuario · interpretación jugable, sin escala topográfica", show_reference)
+	var picture := TextureRect.new()
+	picture.texture = load("res://assets/reference/fni_plan_annotated.jpg")
+	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	picture.custom_minimum_size = Vector2(0, 300)
+	page.add_child(picture)
+	_text(page, "Negro: caminos · verde: jardines y bosque del ingreso · morado: quirquinchos · amarillo: laboratorios · azul: bloques de aulas · gris: estacionamientos.", 15)
+
+
+func _inspect(content: Array[Dictionary]) -> void:
+	if _ui().find_child("CampusInspection", true, false) != null:
+		return
+	capture()
+	var world = world_ref.get_ref() if world_ref != null else null
+	if is_instance_valid(world):
+		world.paused = true
+		world._held.clear()
+	var overlay := Inspection.new()
+	overlay.closed.connect(func() -> void:
+		if is_instance_valid(world) and world.is_inside_tree():
+			world.paused = false
+			world._take_focus.call_deferred())
+	overlay.open(_ui(), content, _name() + " · Ciudad universitaria FNI")
+
+
+func show_monument(id: String) -> void:
+	_inspect(Inspection.monument_pages(id))
+
+
+func show_designs() -> void:
+	_inspect(Inspection.catalog_pages())
+
+
+func show_actor(id: String) -> void:
+	var pages := Inspection.catalog_pages()
+	for page in pages:
+		for item in page.get("items", []):
+			if item["id"] == id:
+				_inspect([page])
+				return
+
+
+func show_floors(id: String) -> void:
+	_inspect(Inspection.floor_pages(id))
 
 
 func show_room(building: Dictionary, room: String) -> void:
@@ -269,6 +330,8 @@ func show_room(building: Dictionary, room: String) -> void:
 	else:
 		_ui()._add_button(actions, "Ver visita y progreso", show_progress, true, 42)
 	_text(page, "Otros espacios de este bloque", 20)
+	if Map.floor_count(str(building["id"])) > 1:
+		_ui()._add_button(page, "Ver planos de pisos y escaleras", show_floors.bind(str(building["id"])), false, 40)
 	if building["rooms"].size() > 1:
 		_ui()._add_button(page, "Recorrer pasillo del bloque", _choose_hall.bind(str(building["id"])), false, 40)
 	var rooms := _actions(page)

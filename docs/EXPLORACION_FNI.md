@@ -1,7 +1,15 @@
 # SIS-INF: exploración de la FNI
 
-Revisado: 2 de noviembre de 2026. La exploración comenzó en `389dc82` y fue
+Revisado: 3 de noviembre de 2026. La exploración comenzó en `389dc82` y fue
 ampliada hasta `b122e96`. El nombre anterior del juego era CAMPUS EN JUEGO.
+
+La ampliación del 03/11/2026 incorpora el plano marcado, un mundo de
+12288 × 8704 unidades, bosque, jardines, fuentes, laguna de Civil y
+estacionamientos. Piedritas y el Chivato abren fichas con ruptura central;
+**Personajes** muestra los diseños de profesionales, estudiantes y perros.
+Los bloques 100 y en cruz tienen escaleras y planos de dos y cinco niveles.
+Los detalles, fuentes y límites de funcionamiento están en
+[Campus ampliado y vida del campus](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md).
 
 ## Uso actual
 
@@ -69,7 +77,8 @@ centro, cuyo plano todavía no se recibió.
 La cámara sigue al personaje. No se usa rueda, barras ni deslizadores. Las
 paredes, los edificios y las mesas impiden atravesarlos; los árboles exteriores
 son decoración y no bloquean accesos. Se liberan las teclas al perder el foco.
-Cambiar de menú retira el mundo activo y detiene el movimiento.
+Cambiar de página retira el mundo activo y detiene el movimiento. Las fichas
+superpuestas de estatuas, personajes y pisos lo pausan sin retirarlo.
 
 ## Progreso y actividades
 
@@ -96,8 +105,8 @@ En una partida se añade `campus_exploration` al perfil, separado de `simulation
 ```json
 {
   "version": 1,
-  "map_id": "fni_ciudad_v1",
-  "position": [1280, 1536],
+  "map_id": "fni_ciudad_v2",
+  "position": [6784, 8144],
   "room_id": "",
   "room_name": "",
   "visited": []
@@ -117,6 +126,9 @@ El formato espacial sigue en versión 1. Un `room_id` válido con `room_name`
 vacío identifica ahora el pasillo de un bloque con varias aulas. Se recupera
 en su entrada segura. Las antiguas salas genéricas `sis_a/SIS A` y
 `sis_b/SIS B` se retoman en ese pasillo y conservan sus visitas históricas.
+El mapa `fni_ciudad_v1` se adapta proporcionalmente al mapa ampliado; si la
+posición queda bloqueada se recupera en el ingreso. Los planos de pisos aún
+no añaden un campo de planta al guardado ni simulan un cambio de nivel.
 
 El título de ventana, portada, icono y exportación ahora usan SIS-INF. En
 Windows se conserva explícitamente la ruta anterior de datos de Godot,

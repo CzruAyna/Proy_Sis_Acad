@@ -4,7 +4,7 @@ const Map = preload("res://scripts/campus_map.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 
 
-static func building(canvas: CanvasItem, data: Dictionary) -> void:
+static func building(canvas: CanvasItem, data: Dictionary, view: Rect2 = Rect2()) -> void:
 	var rect: Rect2 = data["rect"]
 	var id := str(data["id"])
 	var points: PackedVector2Array = data["footprint"]
@@ -12,12 +12,17 @@ static func building(canvas: CanvasItem, data: Dictionary) -> void:
 	var roof: Color = roof_colors[posmod(id.hash(), roof_colors.size())]
 	if id.begins_with("sis_"):
 		roof = Color("#4d6b7a")
+	elif id in ["fis_mat", "basicas"]:
+		roof = Color("#557f94")
+	elif id.begins_with("quirquincho"):
+		roof = Color("#99795b") if id.ends_with("quimica") else (Color("#668b96") if id.ends_with("fisica") else Color("#82728c"))
 	# Extruded silhouette, facade and roof all follow the same footprint.
 	canvas.draw_colored_polygon(_offset(points, Vector2(7, 18)), Color("#425447"))
 	canvas.draw_colored_polygon(_offset(points, Vector2(0, 12)), Color("#bb8662"))
 	canvas.draw_colored_polygon(points, roof.darkened(0.25))
-	for y in range(int(rect.position.y + 4), int(rect.end.y - 2), 6):
-		for x in range(int(rect.position.x + 4), int(rect.end.x - 2), 8):
+	var visible := rect if not view.has_area() else rect.intersection(view.grow(12))
+	for y in range(maxi(int(rect.position.y + 4), floori(visible.position.y / 6) * 6), mini(int(rect.end.y - 2), ceili(visible.end.y)), 6):
+		for x in range(maxi(int(rect.position.x + 4), floori(visible.position.x / 8) * 8), mini(int(rect.end.x - 2), ceili(visible.end.x)), 8):
 			var point := Vector2(x, y)
 			if Geometry2D.is_point_in_polygon(point, points):
 				canvas.draw_rect(Rect2(point, Vector2(6, 3)), roof.lightened(0.08 if posmod(x + y, 3) else 0.18))
@@ -31,7 +36,22 @@ static func building(canvas: CanvasItem, data: Dictionary) -> void:
 				canvas.draw_rect(Rect2(x, a.y + 3, 11, 7), Color("#29444c"))
 				canvas.draw_rect(Rect2(x + 4, a.y + 3, 2, 7), Color("#c8baa0"))
 	var center := rect.get_center().snapped(Vector2(2, 2))
-	if id == "sis_a":
+	if id in ["fis_mat", "basicas"]:
+		var levels := Map.floor_count(id)
+		for level in range(levels):
+			for x in range(int(rect.position.x + 12), int(rect.end.x - 12), 36):
+				var point := Vector2(x, rect.end.y + 2 + level * 2)
+				if not view.has_area() or view.grow(16).has_point(point):
+					canvas.draw_rect(Rect2(point, Vector2(22, 2)), Color("#d2ba6c") if level % 2 == 0 else Color("#88b4be"))
+		for index in range(1, 4):
+			var y := rect.position.y + rect.size.y * index / 4
+			var a := Vector2(rect.position.x + 4, y)
+			var b := Vector2(rect.end.x - 4, y)
+			for x in range(int(a.x), int(b.x), 24):
+				var p := Vector2(x, y)
+				if Geometry2D.is_point_in_polygon(p, points) and (not view.has_area() or view.has_point(p)):
+					canvas.draw_rect(Rect2(p, Vector2(16, 5)), Color("#d8c273"))
+	elif id == "sis_a":
 		# Staggered wings, network roof equipment, covered entry.
 		canvas.draw_rect(Rect2(center - Vector2(10, 16), Vector2(20, 8)), Color("#bac5b9"))
 		canvas.draw_line(center - Vector2(0, 8), center - Vector2(0, 26), Color("#c6d1c0"), 2)
@@ -54,7 +74,15 @@ static func building(canvas: CanvasItem, data: Dictionary) -> void:
 		canvas.draw_rect(Rect2(center - Vector2(14, 14), Vector2(28, 20)), Color("#cbb78d"))
 		canvas.draw_rect(Rect2(center - Vector2(9, 10), Vector2(18, 12)), Color("#6d9197"))
 	elif id.begins_with("quirquincho"):
-		canvas.draw_rect(Rect2(center - Vector2(rect.size.x * 0.3, 3), Vector2(rect.size.x * 0.6, 6)), roof.lightened(0.4))
+		for rib in range(7):
+			var line := PackedVector2Array()
+			var x := rect.position.x + rect.size.x * (0.14 + rib * 0.12)
+			for step in range(17):
+				var t := step / 16.0
+				line.append(Vector2(x + sin(t * PI) * (rib - 3) * 5, rect.position.y + rect.size.y * (0.15 + t * 0.7)).snapped(Vector2(2, 2)))
+			canvas.draw_polyline(line, roof.lightened(0.28), 3, false)
+		var symbol := "pH" if id.ends_with("quimica") else ("F=ma" if id.ends_with("fisica") else "x+y")
+		canvas.draw_string(FONT, center - Vector2(18, 0), symbol, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#e9dfb9"))
 	elif data["kind"] == "lab":
 		# Industrial vents and skylights vary with the building's stable ID.
 		for index in range(1 + posmod(id.hash(), 3)):

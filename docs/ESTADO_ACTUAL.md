@@ -1,5 +1,12 @@
 # Estado actual de SIS-INF
 
+Ampliación del campus del 03/11/2026, sin commit propio: mapa de 12288 × 8704,
+bosque, jardines, fuentes, estacionamientos, laguna de Civil, estatuas de
+Piedritas y el Chivato con fichas, planos de dos y cinco niveles y catálogo
+de personajes. Movimiento autónomo, caricias, encuentros raros, logros y
+cambio de planta siguen para motor/backend. Fuentes y contratos en
+[Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md).
+
 Revisión: 2 de noviembre de 2026. Código de referencia: `b122e96`.
 
 Actualización local del 03/11/2026, sin commit nuevo: se corrigieron el anclaje
@@ -8,6 +15,14 @@ al abrir mesas. Se añadió el icono pixel art y la
 [demostración automática](MODO_DEMOSTRATIVO.md). Las animaciones laterales
 ilustradas siguen pendientes de frontend; ya existe el contrato y una columna
 con esquemas explicativos. Las entradas restantes conservan el corte anterior.
+
+Ampliación posterior del mismo día: tableros más amplios con piezas de ajedrez
+sin letras, billar de ocho bolas, impulso en ping-pong y controles de dados,
+casillas, compras y construcción en Ruta del campus. Se conservan las sesiones
+antiguas de seis bolas con su motor original. El detalle vigente está en
+[Sala de juegos](JUEGOS_BLOQUE_E.md). La pausa demostrativa ya selecciona un
+arquetipo y emite su contrato; dibujar el personaje y la abertura corresponde
+a frontend según [Modo demostrativo](MODO_DEMOSTRATIVO.md).
 
 ## Qué se puede utilizar
 

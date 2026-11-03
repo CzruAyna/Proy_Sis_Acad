@@ -4,6 +4,7 @@ const World = preload("res://scripts/campus_world.gd")
 const Map = preload("res://scripts/campus_map.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const Store = preload("res://scripts/simulation_save_store.gd")
+const GRID_STEP := 16
 
 var assertions := 0
 var failures: Array[String] = []
@@ -20,19 +21,19 @@ func _check(value: bool, message: String) -> void:
 
 
 func _reachable() -> PackedByteArray:
-	var width := int(Map.SIZE.x / 8)
-	var height := int(Map.SIZE.y / 8)
+	var width := int(Map.SIZE.x / GRID_STEP)
+	var height := int(Map.SIZE.y / GRID_STEP)
 	var blocked := PackedByteArray()
 	blocked.resize(width * height)
 	for building in Map.buildings():
 		var rect: Rect2 = Rect2(building["rect"]).grow(World.PLAYER_RADIUS)
-		for y in range(maxi(0, int(rect.position.y / 8)), mini(height, ceili(rect.end.y / 8))):
-			for x in range(maxi(0, int(rect.position.x / 8)), mini(width, ceili(rect.end.x / 8))):
-				if rect.has_point(Vector2(x, y) * 8):
+		for y in range(maxi(0, int(rect.position.y / GRID_STEP)), mini(height, ceili(rect.end.y / GRID_STEP))):
+			for x in range(maxi(0, int(rect.position.x / GRID_STEP)), mini(width, ceili(rect.end.x / GRID_STEP))):
+				if rect.has_point(Vector2(x, y) * GRID_STEP):
 					blocked[y * width + x] = 1
 	var seen := PackedByteArray()
 	seen.resize(width * height)
-	var start := Vector2i(Map.SPAWN / 8)
+	var start := Vector2i(Map.SPAWN / GRID_STEP)
 	var queue: Array[Vector2i] = [start]
 	seen[start.y * width + start.x] = 1
 	var cursor := 0
@@ -52,7 +53,7 @@ func _reachable() -> PackedByteArray:
 
 func _run() -> void:
 	_check(ProjectSettings.get_setting("application/config/name") == "SIS-INF", "Nombre nuevo aplicado")
-	_check(ProjectSettings.get_setting("application/config/icon") == "res://assets/branding/sis_inf_logo.png", "Logo aportado como icono")
+	_check(ProjectSettings.get_setting("application/config/icon") == "res://assets/branding/sis_inf_pixel.png", "Síntesis pixel art del emblema como icono")
 	_check(OS.get_user_data_dir().replace("\\", "/").ends_with("Godot/app_userdata/CAMPUS EN JUEGO"), "Conserva el directorio de partidas anterior en Windows")
 	var world := World.new()
 	root.add_child(world)
@@ -60,14 +61,14 @@ func _run() -> void:
 	world.size = Vector2(1000, 460)
 	_check(world._can_stand(Map.SPAWN), "Ingreso libre de obstáculos")
 	var seen := _reachable()
-	var width := int(Map.SIZE.x / 8)
+	var width := int(Map.SIZE.x / GRID_STEP)
 	var ids := {}
 	for building in Map.buildings():
 		_check(not ids.has(building["id"]), "Identificador único")
 		ids[building["id"]] = true
 		var door: Vector2 = building["door"]
 		_check(world._can_stand(door), "Puerta libre: " + str(building["id"]))
-		var grid := Vector2i((door / 8).round())
+		var grid := Vector2i((door / GRID_STEP).round())
 		_check(seen[grid.y * width + grid.x] == 1, "Puerta accesible a pie desde el ingreso: " + str(building["id"]))
 		_check(not world._can_stand(Rect2(building["rect"]).get_center()), "El edificio bloquea caminar a través")
 		for room in building["rooms"]:

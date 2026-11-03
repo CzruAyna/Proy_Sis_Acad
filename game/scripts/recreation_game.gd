@@ -25,7 +25,7 @@ func command(action: Dictionary, expected_revision: int = -1) -> Dictionary:
 		paused = not paused
 	elif kind == "resign" and phase != "FINISHED":
 		finish(-1, "Abandonaste la partida. Gana el rival.")
-	elif paused or phase == "FINISHED" or turn != 1:
+	elif paused or phase == "FINISHED" or not _human_turn(action):
 		return {"ok": false, "message": "La acción no está disponible en este momento."}
 	elif not _action(action):
 		return {"ok": false, "message": "Acción no válida para el estado actual."}
@@ -35,6 +35,10 @@ func command(action: Dictionary, expected_revision: int = -1) -> Dictionary:
 
 func _action(_action_data: Dictionary) -> bool:
 	return false
+
+
+func _human_turn(_action_data: Dictionary) -> bool:
+	return turn == 1
 
 
 func advance(_delta: float) -> void:

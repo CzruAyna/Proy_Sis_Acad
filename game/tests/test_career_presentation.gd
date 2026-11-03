@@ -27,11 +27,22 @@ func _run() -> void:
 				_check(subjects.has(str(mention["id"]) + "/" + str(subject["sigla"])), "Recorre cada materia de cada mención")
 	model.advance(0.25)
 	_check(model.visible_command() > 0 and model.visible_text() == 0, "Escribe comando antes de explicación")
-	model.paused = true
+	model.set_paused(true)
+	var actor_id := str(model.pause_actor["id"])
+	var sequence := model.pause_sequence
+	model.set_paused(true)
+	_check(model.pause_sequence == sequence and model.pause_actor["id"] == actor_id, "Notificaciones repetidas conservan el personaje de esa pausa")
+	var pause_payload := model.pause_cue()
+	pause_payload["actor"]["id"] = "no modificar"
+	_check(model.pause_actor["id"] != "no modificar", "Contrato de pausa devuelve una copia aislada")
+	_check(pause_payload["facing"] == "viewer" and pause_payload["action"] == "idle_wait", "Pausa pide personaje mirando al espectador y esperando")
 	var time := model.elapsed
 	model.advance(0.25)
 	_check(model.elapsed == time, "Pausa detiene escritura y avance")
-	model.paused = false
+	model.set_paused(false)
+	model.set_paused(true)
+	_check(model.pause_actor["id"] != actor_id, "Nueva pausa elige otro arquetipo sin repetir el anterior")
+	model.set_paused(false)
 	while model.cycle < 2:
 		model.advance(0.25)
 	_check(model.index == 0, "Resumen repite carreras, menciones y procesos automáticamente")
@@ -83,6 +94,16 @@ func _run() -> void:
 			_check(pager.page_offsets.size() == 1, "Terminal y controles juntos a 120%")
 		view.toggle_speed()
 		_check(view.model.speed == 2, "Velocidad por botón")
+		view.model.set_paused(false)
+		var pause_events: Array = []
+		view.pause_scene_requested.connect(func(cue: Dictionary) -> void: pause_events.append(cue))
+		view.toggle_pause()
+		var frozen: float = view.model.elapsed
+		view._process(0.1)
+		_check(pause_events.size() == 1 and pause_events[0]["paused"] and pause_events[0]["actor"].has("id"), "Vista envía contrato del personaje a frontend al pausar")
+		_check(view.model.elapsed == frozen, "Personaje en espera no avanza demostración")
+		view.toggle_pause()
+		_check(pause_events.size() == 2 and not pause_events[1]["paused"], "Continuar pide retirar personaje y ruptura")
 		view.restart()
 		_check(view.model.index == 0 and view.model.cycle == 1 and not view.model.paused, "Reinicio controlado")
 		_check(JSON.stringify(game.current_profile) == academic, "Demo no modifica perfil, notas o logros")

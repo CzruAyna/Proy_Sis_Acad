@@ -2,14 +2,15 @@ extends RefCounted
 
 const Chess = preload("res://scripts/chess_game.gd")
 const Pool = preload("res://scripts/pool_game.gd")
+const LegacyPool = preload("res://scripts/legacy_pool_game.gd")
 const Pong = preload("res://scripts/pong_game.gd")
 const Property = preload("res://scripts/campus_property_game.gd")
 const Board = preload("res://scripts/minigame_board.gd")
 const CATALOG := {
-	"billar": {"title": "Billar", "rules": "Duelo de seis bolas. Cada bola vale un punto; si embocas, sigues tirando. Sin contacto o blanca embocada: pierdes turno y las bolas de ese tiro cuentan al rival. Termina al vaciar la mesa o en 40 tiros.", "controls": "Clic en el paño para apuntar · botones para fuerza/giro · Espacio o Tirar."},
-	"ping_pong": {"title": "Ping-pong", "rules": "Duelo arcade. Gana quien llegue a 7 con dos de ventaja; a 11 se decide sin ventaja. Servicio alterno cada dos puntos. El rival tiene velocidad limitada, reacción y error de previsión.", "controls": "Haz clic en la mesa: W/S, ↑/↓ o ratón mueven tu paleta. Espacio o Sacar inicia el punto."},
-	"ajedrez": {"title": "Ajedrez", "rules": "Juegas con blancas, sin reloj. Jaque, mate, ahogado, enroque, captura al paso y promoción. Puedes reclamar tablas por tres repeticiones o 50 movimientos; cinco repeticiones/75 movimientos son automáticas. El rival busca dos medias jugadas, con presupuesto limitado.", "controls": "Selecciona origen y destino con ratón o flechas/Enter. P peón · N caballo · B alfil · R torre · Q dama · K rey."},
-	"monopolio": {"title": "Monopolio · Ruta del campus", "rules": "Variante propia: 600 créditos iniciales, 20 casillas, dos dados, compras, rentas y dos mejoras de 70. Pasar Inicio da 100; servicios cuestan 45. Descanso salta un turno. Se venden propiedades por la mitad para cubrir deudas; bancarrota pierde. A los 40 turnos gana el mayor patrimonio.", "controls": "Lanzar dados → comprar, mejorar o pasar → finalizar turno. El rival conserva una reserva antes de invertir."}
+	"billar": {"title": "Billar", "rules": "Ocho bolas: quince numeradas y la blanca. Tras la apertura, una embocada legal asigna lisas/rayadas. Embocar una propia conserva turno. Sin contacto, primer contacto incorrecto, blanca embocada o falta de banda/embocada tras contacto: bola en mano para el rival. Primero limpia tu grupo y luego elige tronera para la negra. Negra prematura, con falta o en otra tronera pierde. Negra en apertura se repone; apertura sin embocada exige cuatro bolas en banda. Efectos arcade, sin saltos ni tiros elevados.", "controls": "Clic apunta; mantén, retira el taco y suelta para tirar. Clic derecho/Escape cancela. Flechas afinan ángulo/fuerza; Espacio tira. Arrastra la blanca cuando esté en mano; en apertura sólo detrás de la línea. Elige efecto en el diagrama de blanca y tronera haciendo clic en su agujero."},
+	"ping_pong": {"title": "Ping-pong", "rules": "Duelo arcade. Gana quien llegue a 7 con dos de ventaja; a 11 se decide sin ventaja. Servicio alterno cada dos puntos. El rival tiene velocidad limitada, reacción y error. Mover la paleta al contactar influye en la devolución. Impulso dura 0,28 s y se recupera en 3 s.", "controls": "W/S, ↑/↓ o ratón mueven tu paleta. Espacio o clic en la mesa saca. Shift, clic derecho o Impulso acelera brevemente la paleta."},
+	"ajedrez": {"title": "Ajedrez", "rules": "Juegas con blancas, sin reloj. Jaque, mate, ahogado, enroque, captura al paso y promoción. Puedes reclamar tablas por tres repeticiones o 50 movimientos; cinco repeticiones/75 movimientos son automáticas. El rival busca dos medias jugadas, con presupuesto limitado.", "controls": "Selecciona origen y destino con ratón o flechas/Enter. Las seis piezas tienen siluetas propias y una leyenda visual. Elige la promoción junto al tablero."},
+	"monopolio": {"title": "Monopolio · Ruta del campus", "rules": "Variante propia: 600 créditos iniciales, 20 casillas, dos dados, compras, rentas y dos mejoras de 70. Pasar Inicio da 100; servicios cuestan 45. Descanso salta un turno. Se venden propiedades por la mitad para cubrir deudas; bancarrota pierde. A los 40 turnos gana el mayor patrimonio.", "controls": "Haz clic en los dados del tablero para lanzar; consulta cualquier casilla con clic. Compra/construye o finaliza desde la tarjeta central. Espacio/Enter lanza o pasa. Los peones muestran el recorrido; el rival conserva una reserva antes de invertir."}
 }
 
 var host: WeakRef
@@ -21,7 +22,6 @@ var selected := -1
 var promotion := Chess.QUEEN
 var _status: Label
 var _board: Control
-var _actions: HFlowContainer
 var _saved_revision := -1
 var _saved_session := ""
 
@@ -40,9 +40,13 @@ func _key() -> String:
 	return "guest" if profile.is_empty() else "%s/%s/%s" % [profile.get("slot", 0), profile.get("created_at", ""), profile.get("player_name", "")]
 
 
-static func create(id: String, seed_value: int) -> RefCounted:
+static func create(id: String, seed_value: int, saved: Dictionary = {}) -> RefCounted:
 	match id:
-		"billar": return Pool.new(seed_value)
+		"billar":
+			var data: Variant = saved.get("data", {})
+			if data is Dictionary and data.get("positions") is Array and data["positions"].size() == 7 and not data.has("rules"):
+				return LegacyPool.new(seed_value)
+			return Pool.new(seed_value)
 		"ping_pong": return Pong.new(seed_value)
 		"ajedrez": return Chess.new(seed_value)
 		"monopolio": return Property.new(seed_value)
@@ -59,7 +63,7 @@ func _ensure() -> void:
 		return
 	for id in CATALOG:
 		if saved["sessions"].get(id) is Dictionary:
-			var model := create(id, 1)
+			var model := create(id, 1, saved["sessions"][id])
 			if model.restore(saved["sessions"][id]):
 				sessions[id] = model
 
@@ -109,14 +113,16 @@ func open(id: String) -> void:
 	_board = Board.new()
 	_board.name = "MinigameBoard"
 	_board.model = model
+	_board.animations = bool(_ui().settings["animations"]) and not bool(_ui().settings["low_performance"])
+	_board.text_scale = float(_ui().settings["font_scale"])
 	_board.custom_minimum_size = Vector2(0, 220)
 	_board.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	workspace.add_child(_board)
 	_board.cell_selected.connect(_select_cell)
 	_board.state_changed.connect(_refresh)
 	_board.pause_requested.connect(_pause)
-	_actions = owner._actions(workspace)
-	_actions.name = "MinigameActions"
+	_board.action_requested.connect(action)
+	_board.promotion_selected.connect(_promotion)
 	var general: HFlowContainer = owner._actions(workspace)
 	_button(general, "Pausa [P]", _pause)
 	_button(general, "Reglas", rules)
@@ -154,47 +160,18 @@ func _refresh() -> void:
 		return
 	var model: RefCounted = sessions[current_id]
 	_status.text = ("EN PAUSA · " if model.paused else "") + str(model.message)
-	if model.game_id == "billar":
-		_status.text += " · Fuerza %d%% · Ángulo %d°" % [int(model.power), int(rad_to_deg(model.angle))]
+	if model.game_id == "billar" and model.positions.size() == 7:
+		_status.text += " · Partida antigua de seis bolas; Reiniciar abre ocho bolas."
 	if model.game_id == "ajedrez" and selected >= 0:
 		_status.text += " · Selección " + Chess.coordinate(selected)
-	for child in _actions.get_children():
-		_actions.remove_child(child)
-		child.queue_free()
-	var can_play: bool = model.turn == 1 and not model.paused and model.phase != "FINISHED"
-	match current_id:
-		"ping_pong":
-			_button(_actions, "Sacar", action.bind({"type": "serve"}), can_play and model.phase == "SERVE")
-			_button(_actions, "Paleta ↑", _paddle.bind(-40), not model.paused and model.phase != "FINISHED")
-			_button(_actions, "Paleta ↓", _paddle.bind(40), not model.paused and model.phase != "FINISHED")
-		"billar":
-			for value in [-10, 10]:
-				_button(_actions, "Giro %+d°" % value, action.bind({"type": "aim", "angle": model.angle + deg_to_rad(value), "power": model.power}), can_play and model.phase == "READY")
-				_button(_actions, "Fuerza %+d" % value, action.bind({"type": "aim", "angle": model.angle, "power": model.power + value}), can_play and model.phase == "READY")
-			_button(_actions, "Tirar", action.bind({"type": "shoot"}), can_play and model.phase == "READY")
-		"ajedrez":
-			_button(_actions, "Reclamar tablas", action.bind({"type": "claim_draw"}), can_play and (model.halfmoves >= 100 or int(model.repetitions.get(model.position_key(), 0)) >= 3))
-			_button(_actions, "Abandonar", action.bind({"type": "resign"}), can_play)
-			for option in [[Chess.QUEEN, "Q"], [Chess.ROOK, "R"], [Chess.BISHOP, "B"], [Chess.KNIGHT, "N"]]:
-				_button(_actions, "Prom. " + str(option[1]) + (" ✓" if promotion == option[0] else ""), _promotion.bind(int(option[0])), can_play)
-		"monopolio":
-			_button(_actions, "Dados", action.bind({"type": "roll"}), can_play and model.phase == "READY")
-			_button(_actions, "Comprar", action.bind({"type": "buy"}), can_play and model.phase == "BUY" and model.cash[0] >= int(model.PRICES.get(model.positions[0], 100000)))
-			_button(_actions, "Mejorar 70", action.bind({"type": "upgrade"}), can_play and model.phase == "UPGRADE" and model.cash[0] >= 70)
-			_button(_actions, "Pasar turno", action.bind({"type": "end"}), can_play and model.phase in ["BUY", "UPGRADE", "END"])
 	_board.selected = selected
+	_board.promotion = promotion
 	_board.set_process(not model.paused and model.phase != "FINISHED")
 	_board.queue_redraw()
 	if _saved_revision != model.revision or _saved_session != model.session_id:
 		_saved_revision = model.revision
 		_saved_session = model.session_id
 		_save()
-
-
-func _paddle(offset: int) -> void:
-	var model: RefCounted = sessions[current_id]
-	model.set_target(float(model.paddles[0]) + offset)
-	_ui()._focus_control.call_deferred(weakref(_board))
 
 
 func _promotion(value: int) -> void:
@@ -236,7 +213,7 @@ func rules() -> void:
 	suspend()
 	var owner = campus.get_ref()
 	var page: VBoxContainer = _ui()._make_page("Reglas · " + str(CATALOG[current_id]["title"]), "Partida pausada", open.bind(current_id), false, false)
-	owner._text(page, str(CATALOG[current_id]["rules"]), 17)
+	owner._text(page, "Partida conservada de seis bolas: cada embocada puntúa; faltas cambian turno y conceden las bolas al rival. Reiniciar comienza la variante de ocho bolas." if current_id == "billar" and sessions[current_id].positions.size() == 7 else str(CATALOG[current_id]["rules"]), 17)
 	owner._text(page, str(CATALOG[current_id]["controls"]), 16)
 	owner._text(page, "P o Pausa detiene también al rival. Reiniciar crea una partida nueva. Las partidas se conservan en el perfil académico, sin alterar materias, notas ni logros; en visita libre duran la sesión.", 15)
 	_button(page, "Volver a jugar", open.bind(current_id))
