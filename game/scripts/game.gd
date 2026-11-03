@@ -13,7 +13,8 @@ const SimulationProcedures = preload("res://scripts/simulation_procedures.gd")
 const SimulationSaveStore = preload("res://scripts/simulation_save_store.gd")
 const CareerStoryUI = preload("res://scripts/career_story_ui.gd")
 const ExplorationUI = preload("res://scripts/campus_exploration_ui.gd")
-const APP_ICON = preload("res://assets/branding/sis_inf_logo.png")
+const CareerPresentationView = preload("res://scripts/career_presentation_view.gd")
+const APP_ICON = preload("res://assets/branding/sis_inf_pixel.png")
 const SAVE_DIR := "user://partidas"
 const SAVE_COUNT := 3
 const GLOBAL_PROFILE_PATH := "user://perfil_global.json"
@@ -1278,7 +1279,7 @@ func _show_main() -> void:
 	_effects.register(menu_panel, menu_style)
 	var menu := VBoxContainer.new()
 	menu.name = "PageContent"
-	menu.add_theme_constant_override("separation", 6)
+	menu.add_theme_constant_override("separation", 4)
 	menu_panel.add_child(menu)
 	menu.add_child(_label("SISTEMAS · INFORMÁTICA", 12, Color("#8ff5ff")))
 	var branding := HBoxContainer.new()
@@ -1309,6 +1310,7 @@ func _show_main() -> void:
 	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 34)
 	_add_menu_button(menu, "Explorar la facultad", _show_exploration, false, 34).name = "ExplorationEntry"
 	_add_menu_button(menu, "Historia de una carrera", _show_career_story, false, 34).name = "CareerStoryEntry"
+	_add_menu_button(menu, "Demostración automática", _show_career_presentation, false, 34).name = "CareerPresentationEntry"
 	_add_menu_button(menu, "Opciones", _show_options, false, 34)
 	_add_menu_button(menu, "Logros globales", _show_global_achievements.bind(Callable(self, "_show_main")), false, 34)
 	_add_button(menu, "Salir", Callable(self, "_exit_game"), false, 34)
@@ -1368,6 +1370,19 @@ func _show_exploration() -> void:
 	if exploration_ui == null:
 		exploration_ui = ExplorationUI.new(self)
 	exploration_ui.open()
+
+
+func _show_career_presentation() -> void:
+	if exploration_ui != null:
+		exploration_ui.capture()
+		if exploration_ui.minigames != null:
+			exploration_ui.minigames.suspend()
+	_use_neutral_theme()
+	var page := _make_page("Demostración automática", "Sistemas e Informática · recorrido explicativo en bucle", _show_main, false, false)
+	page.add_child(_label(CareerPresentationView.Presentation.NOTICE, 12, Color("#a2b7c1")))
+	var presentation := CareerPresentationView.new()
+	presentation.reduced_motion = not bool(settings["animations"]) or bool(settings["low_performance"])
+	presentation.build(self, page)
 
 
 func _show_career_story() -> void:

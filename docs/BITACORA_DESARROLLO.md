@@ -99,3 +99,30 @@ Implementé las partidas contra rivales locales: ajedrez, billar, ping-pong y Ru
 Relacioné las entradas que todavía decían «sin commit» con sus versiones reales. Separé la memoria por jornada del detalle técnico y actualicé las guías al nombre SIS-INF, la exploración y los minijuegos ya jugables. Los resultados registrados por entregas anteriores quedan fechados en [Verificaciones](VERIFICACIONES.md); no son una ejecución nueva.
 
 Esta revisión todavía no tiene commit. Las fuentes institucionales, el interior de la sala E, la sede del centro y las pruebas con jugadores continúan pendientes según [Estado actual](ESTADO_ACTUAL.md).
+
+## 3 de noviembre de 2026: Entrada a las mesas y demostración automática
+
+**Estado:** cambios locales, sin commit nuevo.
+
+El usuario reportó que el personaje se separaba de su sombra al mirar a la
+izquierda y que entrar a una mesa cerraba el juego. Corregí el anclaje del
+reflejo y reproduje un acceso al viewport después de retirar el campus durante
+la entrada de teclado. Ahora la entrada se consume primero y las señales que
+cambian de pantalla se atienden de forma diferida. Las pruebas anteriores
+llamaban a `interact()` directamente; añadí eventos reales de E, Enter y ratón
+para cubrir ese camino. No se obtuvo un registro nativo del cierre completo.
+
+Añadí una terminal de presentación separada: resumen de ambas carreras y cinco
+menciones, recorrido completo por materias, escritura progresiva y repetición.
+El guion usa el catálogo existente y no modifica una partida. Dejé una columna
+de esquemas y el contrato para que frontend incorpore las animaciones. El icono
+del EXE y la ventana pasó a una síntesis geométrica pixel art del emblema, con
+PNG e ICO generados desde código. Ajusté la separación del inicio para mantener
+todas las acciones visibles al añadir el nuevo modo.
+
+Ejecuté cinco suites: 5.553 aserciones y cero fallos en la matriz final; generé
+ocho capturas y exporté/arranqué el ejecutable actualizado. La matriz, el fallo
+reproducido y los límites están en [Verificaciones](VERIFICACIONES.md). Falta
+evaluar una exposición prolongada, integrar las animaciones de frontend y
+contrastar el contenido con programas y normas vigentes según
+[Modo demostrativo](MODO_DEMOSTRATIVO.md).

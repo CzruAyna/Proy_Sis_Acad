@@ -143,6 +143,8 @@ func _pressed(key: Key) -> bool:
 
 
 func _input(event: InputEvent) -> void:
+	if paused or not is_visible_in_tree():
+		return
 	if event is InputEventKey:
 		var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 		if key in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SHIFT]:
@@ -150,16 +152,18 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		if event.pressed and not event.echo:
 			if key in [KEY_E, KEY_ENTER]:
-				interact()
 				get_viewport().set_input_as_handled()
+				interact()
 			elif key in [KEY_P, KEY_TAB]:
 				_held.clear()
-				menu_requested.emit()
+				paused = true
 				get_viewport().set_input_as_handled()
+				menu_requested.emit()
 			elif key == KEY_M:
 				_held.clear()
-				map_requested.emit()
+				paused = true
 				get_viewport().set_input_as_handled()
+				map_requested.emit()
 
 
 func _notification(what: int) -> void:
@@ -266,8 +270,12 @@ func interact() -> void:
 			else:
 				leave_room()
 		elif Map.room_kind(room_id, room_name) == "games_room" and not nearby_game().is_empty():
+			paused = true
+			_held.clear()
 			minigame_requested.emit(str(nearby_game()["id"]))
 		elif player.y < 92:
+			paused = true
+			_held.clear()
 			activity_requested.emit(Map.building(room_id), room_name)
 	else:
 		var building := nearby_building()
@@ -547,11 +555,15 @@ func _draw_player() -> void:
 			picture.set_pixel(7, 3, Color("#263445"))
 		_textures[key] = ImageTexture.create_from_image(picture)
 	draw_rect(Rect2(player.round() + Vector2(-6, -2), Vector2(12, 4)), Color("#304a46"))
+	draw_texture_rect(_textures[key], player_sprite_rect(), false)
+
+
+func player_sprite_rect() -> Rect2:
+	# Godot mirrors negative texture widths inside the same destination bounds.
 	var rect := Rect2(player.round() - Vector2(6, 14), Vector2(12, 16))
 	if facing.x < -0.4:
-		rect.position.x += rect.size.x
 		rect.size.x *= -1
-	draw_texture_rect(_textures[key], rect, false)
+	return rect
 
 
 func _near_road(point: Vector2) -> bool:

@@ -1,5 +1,9 @@
 # SIS-INF
 
+El inicio incluye **Demostración automática**: terminal explicativa de ambas
+carreras y sus cinco menciones, en bucle, con resumen o recorrido completo por
+materias. No altera partidas. Ver [contrato y pendientes de animación](../docs/MODO_DEMOSTRATIVO.md).
+
 Juego de escritorio para Windows hecho con Godot 4.7.2 (GDScript). Simula el recorrido individual de un estudiante por la carrera: materias, trámites, auxiliatura y graduación.
 
 El sistema académico Django/Next.js de este repositorio queda separado y no se modifica por este juego.

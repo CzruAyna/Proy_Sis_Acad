@@ -1,5 +1,13 @@
 # Integración gráfica de SIS-INF
 
+Actualización del 03/11/2026: disponible el modo de terminal automática con
+resumen y recorrido completo, independiente de partidas. Frontend debe integrar
+las animaciones laterales mediante `animation_cue` y el reloj del modelo.
+El contrato, nueve tipos de escena, accesibilidad, fuentes pendientes y criterio
+para retirar el comentario temporal están en
+[Modo demostrativo](MODO_DEMOSTRATIVO.md). Los esquemas laterales actuales son
+una presentación de referencia, no las animaciones finales.
+
 Revisión documental: 2 de noviembre de 2026. Las mesas son jugables desde
 `b122e96`. Los contratos de las actualizaciones antiguas se conservan debajo
 como antecedentes. El resumen vigente está en [Estado actual](ESTADO_ACTUAL.md)

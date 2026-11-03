@@ -67,6 +67,13 @@ derechos que el autor no tenga sobre ese material.
 
 ## Revisiones pendientes
 
+El 03/11/2026 se añadió un icono geométrico simplificado de 32 píxeles, con PNG
+y archivo ICO multirresolución generados por `game/tools/prepare_pixel_icon.gd`.
+Su código de dibujo es original y conserva GPL-3.0-or-later. La interpretación
+del emblema aportado no resuelve los derechos pendientes de la identidad
+institucional que representa; no se incorporaron fuentes, imágenes o paquetes
+externos nuevos para este icono.
+
 El 30/10/2026 se incorporaron el logo `images (3).jfif` (convertido a PNG)
 y el plano `AULAS-FNI.jpg` por encargo expreso del usuario para SIS-INF.
 Su procedencia inmediata, hashes, preparación y derechos pendientes se

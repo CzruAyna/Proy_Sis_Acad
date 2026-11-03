@@ -2,6 +2,13 @@
 
 Revisión: 2 de noviembre de 2026. Código de referencia: `b122e96`.
 
+Actualización local del 03/11/2026, sin commit nuevo: se corrigieron el anclaje
+del personaje hacia la izquierda y la retirada del campus durante la entrada
+al abrir mesas. Se añadió el icono pixel art y la
+[demostración automática](MODO_DEMOSTRATIVO.md). Las animaciones laterales
+ilustradas siguen pendientes de frontend; ya existe el contrato y una columna
+con esquemas explicativos. Las entradas restantes conservan el corte anterior.
+
 ## Qué se puede utilizar
 
 SIS-INF es el juego de escritorio Godot. Conserva la simulación del estudiante,

@@ -17,6 +17,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md) | Terminal interior, botones translúcidos, erosión progresiva, emblema animado y verificaciones. |
 | [Tareas de frontend](ALCANCE_FRONTEND.md) | Qué puede asumir interfaz, ejemplos de encargos y coordinación con motor/backend. |
 | [Historia demostrativa](MODULO_HISTORIA_CARRERA.md) | Funcionamiento y límites de la historia simulada de una carrera. |
+| [Demostración automática](MODO_DEMOSTRATIVO.md) | Terminal explicativa en bucle, resumen y recorrido por materias; contrato de animaciones para frontend. |
 | [Exploración FNI](EXPLORACION_FNI.md) | Campus pixel art de SIS-INF, personaje, controles, aulas, guardado y recordatorios de ambientación. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
 | [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Cuatro minijuegos jugables contra rivales, variantes, controles, guardado, optimizaciones y pendientes. |

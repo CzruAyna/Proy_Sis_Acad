@@ -159,10 +159,11 @@ func show_world() -> void:
 		var place := world.room_name if not world.room_name.is_empty() else str(Map.building(world.room_id).get("name", "")) + " · pasillo"
 		location.text = _name() + " · " + (place + " · recreación" if not world.room_id.is_empty() else "Ciudad universitaria FNI"))
 	world.progress_changed.connect(_update)
-	world.menu_requested.connect(show_progress)
-	world.map_requested.connect(show_map)
-	world.activity_requested.connect(show_room)
-	world.minigame_requested.connect(show_minigame)
+	# Finish input dispatch before removing its Control hierarchy.
+	world.menu_requested.connect(show_progress, CONNECT_DEFERRED)
+	world.map_requested.connect(show_map, CONNECT_DEFERRED)
+	world.activity_requested.connect(show_room, CONNECT_DEFERRED)
+	world.minigame_requested.connect(show_minigame, CONNECT_DEFERRED)
 	var pager = _ui().find_child("PageNavigator", true, false)
 	pager.space_changed.connect(func(available: Vector2) -> void:
 		var other := workspace.get_combined_minimum_size().y - world.custom_minimum_size.y

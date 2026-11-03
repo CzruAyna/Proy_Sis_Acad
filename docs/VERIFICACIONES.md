@@ -34,6 +34,52 @@ es una medición de FPS ni una garantía de rendimiento general.
 
 ## Alcance de esta revisión
 
+### Ejecución nueva del 3 de noviembre de 2026
+
+Cambios locales sin commit nuevo; no sumar estos resultados a los de versiones
+anteriores. Motor: Godot 4.7.2, Windows. Comando desde la raíz:
+
+```powershell
+.\game\.tools\Godot_v4.7.2-stable_win64_console.exe --headless --path game --script res://tests/NOMBRE.gd
+```
+
+| `NOMBRE` | Aserciones | Fallos |
+|---|---:|---:|
+| `test_exploration_handoff` | 34 | 0 |
+| `test_career_presentation` | 2.771 | 0 |
+| `test_building_interiors` | 479 | 0 |
+| `test_games_room` | 2.097 | 0 |
+| `test_recreation_ui` | 172 | 0 |
+| Total de esta ejecución | 5.553 | 0 |
+
+Se inspeccionaron también las salidas: el primer ensayo de entrada reprodujo
+`Cannot call method 'set_input_as_handled' on a null value` en
+`campus_world.gd`, aunque el proceso devolvía cero. La ejecución final de la
+nueva prueba no contiene ese error y cubre E, Enter, botón, mapa y progreso.
+El primer ensayo del menú detectó altura excesiva al 120 % con una partida
+reciente; se redujo su separación y la matriz final quedó sin fallos.
+
+`capture_exploration_presentation.gd` produjo ocho capturas reales a 900×640,
+texto 120 %, en `game/.test-artifacts/presentation/`: menú, terminal, personaje
+en ambas direcciones y apertura de cuatro mesas mediante entrada de teclado.
+Se revisaron visualmente terminal, anclaje e icono; el resto acredita que se
+generaron las vistas, no una evaluación prolongada de dificultad. La ejecución
+gráfica final sólo informa el cambio automático del controlador AMD a ANGLE.
+
+La exportación release de `Windows Desktop` terminó con código cero y generó
+`game/build/SIS-INF.exe` y su `.pck`. El ejecutable arrancó en modo headless,
+con perfil de prueba aislado y `--quit-after 5`, sin errores, salida cero.
+Se extrajo del EXE su icono nativo y se comprobó el diseño pixel art. Los ICO
+incluyen tamaños 16, 24, 32, 48, 64, 128 y 256; el icono de ventana se asigna
+también con `DisplayServer.set_icon()`.
+
+No se realizó una exhibición durante horas, una auditoría de normas vigentes
+ni una comprobación en otros equipos/cachés de la barra de tareas de Windows.
+El bucle se verificó en tiempo simulado. El contrato pendiente de animaciones
+y de contenidos institucionales está en [Modo demostrativo](MODO_DEMOSTRATIVO.md).
+
+### Revisión documental del 2 de noviembre
+
 Se contrastan mensajes completos, diferencias, rutas, reglas y documentación.
 El detalle de cada commit está en [Historial](HISTORIAL_COMMITS.md). Los
 resultados nuevos, si se ejecuta alguna suite, deben registrarse por separado

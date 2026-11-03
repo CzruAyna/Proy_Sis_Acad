@@ -174,3 +174,13 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     explicaciones ni añadir relleno. Acercar la bitácora a la forma directa
     de escribir del autor; las notas personales deben proceder de mensajes
     o explicaciones reales, sin inventar experiencias, resultados o decisiones.
+
+23. CORRECCIONES Y PRESENTACIÓN AUTOMÁTICA, indicada el 03/11/2026.
+    Corregir el desplazamiento del sprite al mirar a la izquierda y el fallo
+    al abrir minijuegos desde las mesas. El icono del ejecutable, ventana y
+    barra de tareas será una síntesis pixel art del emblema de SIS-INF.
+    Añadir un modo demostrativo separado del modo interactivo: terminal con
+    escritura de comandos y explicaciones automáticas de ambas carreras y
+    sus menciones, una por una, repitiéndose indefinidamente. Dejar el contrato
+    y recordatorios para las animaciones laterales a cargo de frontend;
+    retirar los comentarios temporales cuando ese trabajo quede integrado.

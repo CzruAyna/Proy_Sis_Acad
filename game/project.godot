@@ -5,7 +5,8 @@ config_version=5
 config/name="SIS-INF"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="Godot/app_userdata/CAMPUS EN JUEGO"
-config/icon="res://assets/branding/sis_inf_logo.png"
+config/icon="res://assets/branding/sis_inf_pixel.png"
+config/windows_native_icon="res://assets/branding/sis_inf_pixel.ico"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 

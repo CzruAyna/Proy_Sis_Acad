@@ -1,5 +1,12 @@
 # Sala de juegos del bloque E
 
+Corrección del 03/11/2026: la apertura desde el mundo se difiere hasta terminar
+el evento de teclado/ratón. El manejador consume la entrada antes de emitir la
+señal y detiene el movimiento. Se reproducía un acceso a viewport nulo después
+de retirar el campus; ahora se comprueban E, Enter y el botón en las cuatro
+mesas con eventos reales de viewport. Este hallazgo explica un fallo de entrada;
+no se obtuvo un registro nativo del cierre completo reportado por el usuario.
+
 Actualizado: 2 de noviembre de 2026. Estado: cuatro minijuegos locales jugables
 contra rivales automáticos, incorporados en `b122e96`. La
 presentación del 31/10 y su contrato propuesto se conservan como antecedente
