@@ -1,5 +1,10 @@
 # Arquitectura
 
+Actualización del 04/11/2026: `campus_grid.gd` define las 64 celdas;
+`campus_scale.gd`, tamaños, radios y velocidades; `campus_ambient_cast.gd`,
+paseos visuales temporales separados del expediente. Las referencias originales
+se consultan fuera del proyecto. [Contrato y límites](MAPA_8X8_Y_PERSONAJES.md).
+
 Revisada: 2 de noviembre de 2026. Código de referencia: `b122e96`.
 
 Actualización local del 03/11/2026: terminal demostrativa independiente,

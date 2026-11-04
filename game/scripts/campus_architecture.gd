@@ -11,14 +11,15 @@ static func building(canvas: CanvasItem, data: Dictionary, view: Rect2 = Rect2()
 	var roof_colors := [Color("#9a5e49"), Color("#796653"), Color("#59747a"), Color("#8b7456")]
 	var roof: Color = roof_colors[posmod(id.hash(), roof_colors.size())]
 	if id.begins_with("sis_"):
-		roof = Color("#4d6b7a")
+		# Metallic/ochre roofs seen in the campus satellite view, not career UI colour.
+		roof = Color("#ad996e") if id in ["sis_a", "sis_b"] else Color("#89948d")
 	elif id in ["fis_mat", "basicas"]:
 		roof = Color("#557f94")
 	elif id.begins_with("quirquincho"):
-		roof = Color("#99795b") if id.ends_with("quimica") else (Color("#668b96") if id.ends_with("fisica") else Color("#82728c"))
+		roof = Color("#a49d82") if id.ends_with("quimica") else (Color("#8a9b98") if id.ends_with("fisica") else Color("#9c9f91"))
 	# Extruded silhouette, facade and roof all follow the same footprint.
 	canvas.draw_colored_polygon(_offset(points, Vector2(7, 18)), Color("#425447"))
-	canvas.draw_colored_polygon(_offset(points, Vector2(0, 12)), Color("#bb8662"))
+	canvas.draw_colored_polygon(_offset(points, Vector2(0, 12)), Color("#c7ac77") if id.begins_with("sis_") else Color("#bb8662"))
 	canvas.draw_colored_polygon(points, roof.darkened(0.25))
 	var visible := rect if not view.has_area() else rect.intersection(view.grow(12))
 	for y in range(maxi(int(rect.position.y + 4), floori(visible.position.y / 6) * 6), mini(int(rect.end.y - 2), ceili(visible.end.y)), 6):
@@ -74,6 +75,13 @@ static func building(canvas: CanvasItem, data: Dictionary, view: Rect2 = Rect2()
 		canvas.draw_rect(Rect2(center - Vector2(14, 14), Vector2(28, 20)), Color("#cbb78d"))
 		canvas.draw_rect(Rect2(center - Vector2(9, 10), Vector2(18, 12)), Color("#6d9197"))
 	elif id.begins_with("quirquincho"):
+		for strip in range(12):
+			var x := rect.position.x + rect.size.x * strip / 12
+			var shade := absf((strip + 0.5) / 12 - 0.5) * 0.6
+			for y in range(int(rect.position.y + 8), int(rect.end.y - 8), 12):
+				var p := Vector2(x + 4, y)
+				if Geometry2D.is_point_in_polygon(p, points) and (not view.has_area() or view.grow(12).has_point(p)):
+					canvas.draw_rect(Rect2(p, Vector2(rect.size.x / 12 - 3, 9)), roof.lightened(0.2 - shade))
 		for rib in range(7):
 			var line := PackedVector2Array()
 			var x := rect.position.x + rect.size.x * (0.14 + rib * 0.12)
@@ -172,6 +180,12 @@ static func court(canvas: CanvasItem, row: Array) -> void:
 		canvas.draw_polyline(ridge, Color("#b8bcae"), 5, false)
 		for x in [rect.position.x - 4, rect.end.x + 4]:
 			canvas.draw_rect(Rect2(x, rect.position.y + 6, 3, rect.size.y), Color("#536a72"))
+		if name == "POLIF. CIVIL":
+			# Covered blue barrel visible in Google Maps; exact measurements pending.
+			for strip in range(12):
+				var amount := absf((strip + 0.5) / 12 - 0.5)
+				var p := rect.position + Vector2(strip * rect.size.x / 12, 0)
+				canvas.draw_rect(Rect2(p, Vector2(rect.size.x / 12 - 2, rect.size.y)), Color("#566b89").lightened(0.2 - amount * 0.5))
 
 
 static func plaza(canvas: CanvasItem) -> void:

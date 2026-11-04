@@ -3,19 +3,19 @@ extends SceneTree
 const Map = preload("res://scripts/campus_map.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Terrain = preload("res://scripts/campus_terrain.gd")
+const Grid = preload("res://scripts/campus_grid.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
-const OUTPUT := "res://.test-artifacts/mapa-cuadrantes/"
-const PAGE_SIZE := Vector2i(3200, 2760)
-const MAP_ORIGIN := Vector2(64, 144)
-const FACTOR := 0.5
-const HALF := Map.SIZE / 2
-const QUADRANTS := ["Q1 · superior izquierdo", "Q2 · superior derecho", "Q3 · inferior izquierdo", "Q4 · inferior derecho"]
+const OUTPUT := "res://.test-artifacts/mapa-8x8/"
+const PAGE_SIZE := Vector2i(1600, 1520)
+const MAP_ORIGIN := Vector2(32, 100)
+const FACTOR := 1.0
+const HALF := Grid.CELL_SIZE
 var viewport: SubViewport
 var sheet: Control
 
 
 class AtlasCanvas extends "res://scripts/campus_world.gd":
-	var region := Rect2(Vector2.ZERO, Map.SIZE / 2)
+	var region := Grid.bounds(0, 0)
 	var quadrant := 0
 	var features: Array[Dictionary] = []
 	var preview: Texture2D
@@ -39,8 +39,8 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 		var edge := MAP_ORIGIN + region.size * FACTOR
 		for mask in [Rect2(0, 0, size.x, MAP_ORIGIN.y), Rect2(0, edge.y, size.x, size.y - edge.y), Rect2(0, 0, MAP_ORIGIN.x, size.y), Rect2(edge.x, 0, size.x - edge.x, size.y)]:
 			draw_rect(mask, Color("#10191f"))
-		draw_string(FONT, Vector2(64, 58), "SIS-INF / " + QUADRANTS[quadrant], HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("#e7efdc"))
-		draw_string(FONT, Vector2(64, 102), "Mapa actual del juego · 03/11/2026 · esquema por corregir, sin escala topográfica", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Color("#acc4bd"))
+		draw_string(FONT, Vector2(32, 36), "SIS-INF / CELDA " + Grid.code(quadrant / 8, quadrant % 8) + " / MATRIZ 8×8", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("#e7efdc"))
+		draw_string(FONT, Vector2(32, 69), "1536 × 1088 unidades por celda · 04/11/2026 · diseño por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#acc4bd"))
 		_draw_grid()
 		occupied.clear()
 		for item in features:
@@ -50,20 +50,20 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 
 	func _draw_grid() -> void:
 		var area := Rect2(MAP_ORIGIN, region.size * FACTOR)
-		for step in range(6):
-			var x := area.position.x + area.size.x * step / 5
-			var y := area.position.y + area.size.y * step / 5
+		for step in range(5):
+			var x := area.position.x + area.size.x * step / 4
+			var y := area.position.y + area.size.y * step / 4
 			draw_line(Vector2(x, area.position.y), Vector2(x, area.end.y), Color(1, 1, 1, 0.17), 2)
 			draw_line(Vector2(area.position.x, y), Vector2(area.end.x, y), Color(1, 1, 1, 0.17), 2)
-			var px := int(round((region.position.x + region.size.x * step / 5) / Map.SIZE.x * 100))
-			var py := int(round((region.position.y + region.size.y * step / 5) / Map.SIZE.y * 100))
+			var px := int(region.position.x + region.size.x * step / 4)
+			var py := int(region.position.y + region.size.y * step / 4)
 			var label_x := clampf(x - 25, area.position.x, area.end.x - 75)
 			draw_rect(Rect2(label_x - 3, area.position.y + 4, 79, 27), Color(0, 0, 0, 0.8))
-			draw_string(FONT, Vector2(label_x, area.position.y + 25), "%d%%" % px, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
+			draw_string(FONT, Vector2(label_x, area.position.y + 25), str(px), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.WHITE)
 			if step > 0:
 				var label_y := minf(y, area.end.y - 5)
 				draw_rect(Rect2(area.position.x + 4, label_y - 25, 79, 27), Color(0, 0, 0, 0.8))
-				draw_string(FONT, Vector2(area.position.x + 8, label_y - 4), "%d%%" % py, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
+				draw_string(FONT, Vector2(area.position.x + 8, label_y - 4), str(py), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.WHITE)
 		draw_rect(area, Color("#a7c4bd"), false, 2)
 
 
@@ -92,28 +92,30 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 
 
 	func _draw_legend() -> void:
-		var top := MAP_ORIGIN.y + region.size.y * FACTOR + 40
-		draw_string(FONT, Vector2(64, top), "REFERENCIAS / indica el cuadrante y el código para corregirlo", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#e9efdb"))
+		var top := MAP_ORIGIN.y + region.size.y * FACTOR + 34
+		draw_string(FONT, Vector2(32, top), "REFERENCIAS / indica celda y código del elemento", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#e9efdb"))
 		for index in range(features.size()):
-			var column := index % 3
-			var row := index / 3
-			var p := Vector2(64 + column * 1024, top + 44 + row * 30)
-			draw_string(FONT, p, str(features[index]["code"]) + "  " + str(features[index]["label"]), HORIZONTAL_ALIGNMENT_LEFT, 1005, 21, Color("#cbd7c7"))
-		draw_string(FONT, Vector2(64, 2702), "X aumenta hacia la derecha; Y hacia abajo. Porcentajes del mapa. «continúa» cruza el corte.", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#a8beb8"))
-		draw_string(FONT, Vector2(64, 2736), "La orientación sigue tu plano en pantalla; arriba/abajo no indican norte/sur geográfico.", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#a8beb8"))
+			var column := index % 2
+			var row := index / 2
+			var p := Vector2(32 + column * 768, top + 38 + row * 24)
+			draw_string(FONT, p, str(features[index]["code"]) + "  " + str(features[index]["label"]), HORIZONTAL_ALIGNMENT_LEFT, 748, 17, Color("#cbd7c7"))
+		draw_string(FONT, Vector2(32, 1475), "Coordenadas en unidades de juego, no metros. X → derecha; Y → abajo.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
+		draw_string(FONT, Vector2(32, 1504), "«continúa» cruza el corte. Orientación del esquema, sin norte geográfico.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
 
 
 	func _draw_preview() -> void:
-		draw_string(FONT, Vector2(48, 52), "SIS-INF / MAPA ACTUAL POR CUADRANTES", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#e6eedc"))
+		draw_string(FONT, Vector2(48, 52), "SIS-INF / MAPA ACTUAL / MATRIZ 8×8", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#e6eedc"))
 		draw_string(FONT, Vector2(48, 84), "Misma orientación del plano aportado · distribución por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a9c2bb"))
 		draw_texture_rect(preview, Rect2(48, 108, 1536, 1088), false)
-		for index in range(4):
-			var p := Vector2(48 + index % 2 * 768, 108 + index / 2 * 544)
-			draw_rect(Rect2(p + Vector2(12, 12), Vector2(84, 43)), Color.BLACK)
-			draw_string(FONT, p + Vector2(24, 44), "Q%d" % (index + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 31, Color.WHITE)
-		draw_line(Vector2(816, 108), Vector2(816, 1196), Color("#ddedd5"), 2)
-		draw_line(Vector2(48, 652), Vector2(1584, 652), Color("#ddedd5"), 2)
-		draw_string(FONT, Vector2(48, 1234), "Q1/Q2: mitad superior · Q3/Q4: mitad inferior · ingreso en Q4", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#c3d4c8"))
+		for row in range(8):
+			for column in range(8):
+				var p := Vector2(48 + column * 192, 108 + row * 136)
+				draw_rect(Rect2(p + Vector2(5, 5), Vector2(56, 30)), Color.BLACK)
+				draw_string(FONT, p + Vector2(11, 29), Grid.code(row, column), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+		for index in range(9):
+			draw_line(Vector2(48 + index * 192, 108), Vector2(48 + index * 192, 1196), Color("#ddedd5"), 1)
+			draw_line(Vector2(48, 108 + index * 136), Vector2(1584, 108 + index * 136), Color("#ddedd5"), 1)
+		draw_string(FONT, Vector2(48, 1234), "A–H: arriba → abajo · 1–8: izquierda → derecha · 1536×1088 unidades/celda", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#c3d4c8"))
 
 
 func _initialize() -> void:
@@ -192,17 +194,19 @@ func _run() -> void:
 	sheet.size = PAGE_SIZE
 	sheet.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	viewport.add_child(sheet)
-	var full := Image.create(int(Map.SIZE.x * FACTOR), int(Map.SIZE.y * FACTOR), false, Image.FORMAT_RGBA8)
-	var manifest: Dictionary = {"map_id": Map.ID, "date": "2026-11-03", "size": [Map.SIZE.x, Map.SIZE.y], "orientation": "screen coordinates, not geographic north", "quadrants": []}
-	for index in range(4):
+	var full := Image.create(int(Map.SIZE.x / 2), int(Map.SIZE.y / 2), false, Image.FORMAT_RGBA8)
+	var manifest: Dictionary = {"map_id": Map.ID, "date": "2026-11-04", "grid": [8, 8], "cell_size": [HALF.x, HALF.y], "size": [Map.SIZE.x, Map.SIZE.y], "units": "game units, not metres", "orientation": "screen coordinates, not geographic north", "cells": []}
+	for index in range(64):
 		sheet.quadrant = index
-		sheet.region = Rect2(Vector2(index % 2, index / 2) * HALF, HALF)
+		sheet.region = Grid.bounds(index / 8, index % 8)
 		sheet.features = _features(sheet.region)
 		var output := await _render()
-		_save(output, "Q%d" % (index + 1))
+		var code := Grid.code(index / 8, index % 8)
+		_save(output, code)
 		var map_pixels := output.get_region(Rect2i(Vector2i(MAP_ORIGIN), Vector2i(HALF * FACTOR)))
-		full.blit_rect(map_pixels, Rect2i(Vector2i.ZERO, map_pixels.get_size()), Vector2i(Vector2(index % 2, index / 2) * HALF * FACTOR))
-		manifest["quadrants"].append({"id": "Q%d" % (index + 1), "title": QUADRANTS[index], "features": sheet.features})
+		map_pixels.resize(int(HALF.x / 2), int(HALF.y / 2), Image.INTERPOLATE_NEAREST)
+		full.blit_rect(map_pixels, Rect2i(Vector2i.ZERO, map_pixels.get_size()), Vector2i(Vector2(index % 8, index / 8) * HALF / 2))
+		manifest["cells"].append({"id": code, "bounds": [sheet.region.position.x, sheet.region.position.y, HALF.x, HALF.y], "features": sheet.features})
 	_save(full, "mapa-completo")
 	full.resize(1536, 1088, Image.INTERPOLATE_NEAREST)
 	sheet.preview = ImageTexture.create_from_image(full)

@@ -4,8 +4,10 @@ const Map = preload("res://scripts/campus_map.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
 const Architecture = preload("res://scripts/campus_architecture.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
+const Grid = preload("res://scripts/campus_grid.gd")
 var state: Dictionary = {}
 var target_id := ""
+var grid_font_size := 11
 
 
 func _draw() -> void:
@@ -40,6 +42,15 @@ func _draw() -> void:
 	if coordinates is Array and coordinates.size() == 2:
 		point = Vector2(float(coordinates[0]), float(coordinates[1]))
 	draw_set_transform(Vector2.ZERO)
+	for index in range(9):
+		var x := offset.x + Map.SIZE.x * scale_factor * index / 8
+		var y := offset.y + Map.SIZE.y * scale_factor * index / 8
+		draw_line(Vector2(x, offset.y), Vector2(x, offset.y + Map.SIZE.y * scale_factor), Color(1, 1, 1, 0.22), 1)
+		draw_line(Vector2(offset.x, y), Vector2(offset.x + Map.SIZE.x * scale_factor, y), Color(1, 1, 1, 0.22), 1)
+	for row in range(8):
+		for column in range(8):
+			var p := offset + Vector2(column, row) * Grid.CELL_SIZE * scale_factor + Vector2(3, grid_font_size + 2)
+			draw_string(Neon.PIXEL_FONT, p, Grid.code(row, column), HORIZONTAL_ALIGNMENT_LEFT, -1, grid_font_size, Color("#f1edcf"))
 	for item in Land.landmarks():
 		var marker: Vector2 = offset + Vector2(item["point"]) * scale_factor
 		draw_rect(Rect2(marker - Vector2.ONE * 3, Vector2.ONE * 6), Color("#d7ad72"))
@@ -49,4 +60,4 @@ func _draw() -> void:
 		draw_rect(Rect2(marker - Vector2.ONE * 6, Vector2.ONE * 12), Color("#64c8ff"), false, 2)
 	var player_point := offset + point * scale_factor
 	draw_rect(Rect2(player_point - Vector2.ONE * 4, Vector2.ONE * 8), Color("#fff49b"))
-	draw_string(Neon.PIXEL_FONT, Vector2(14, 20), "FNI · ESQUEMA DE EXPLORACIÓN", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#ecedcf"))
+	draw_string(Neon.PIXEL_FONT, Vector2(14, 20), "FNI · CUADRÍCULA 8×8 · " + Grid.at(point), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#ecedcf"))

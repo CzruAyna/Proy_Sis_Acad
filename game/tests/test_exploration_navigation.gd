@@ -38,7 +38,7 @@ func _run() -> void:
 			await _inspect("exploración-progreso")
 			ui.show_map()
 			await _inspect("exploración-mapa")
-			ui.show_reference()
+			ui.show_map_guide()
 			await _inspect("exploración-plano")
 			_check(game.current_profile.is_empty() and game.simulation == null, "Visita libre sin crear expediente académico")
 	game.draft_player_name = "Prueba compacta"

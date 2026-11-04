@@ -58,8 +58,12 @@ func _run() -> void:
 	overlay = game.find_child("CampusInspection", true, false)
 	overlay._change(3)
 	await _capture("14-estudiantes")
-	overlay._change(1)
+	overlay.page_index = overlay.pages.size() - 1
+	overlay._rebuild()
 	await _capture("15-perros")
+	overlay.page_index = overlay.pages.size() - 3
+	overlay._rebuild()
+	await _capture("15b-personal")
 	game._active_back.call()
 	await process_frame
 	for room in [["fisica", "CU-19", "16-lab-fisica"], ["quimica_lab", "CU-L-3", "17-lab-quimica"], ["fis_mat", "CU-106", "18-lab-virtual"]]:
@@ -68,8 +72,8 @@ func _run() -> void:
 		await _capture(room[2])
 	ui.show_map()
 	await _capture("19-mapa-campus")
-	ui.show_marked_reference()
-	await _capture("20-plano-marcado")
+	ui.show_map_guide()
+	await _capture("20-cuadricula-8x8")
 	game.queue_free()
 	await process_frame
 	quit(0)

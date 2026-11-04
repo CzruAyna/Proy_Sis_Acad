@@ -2,6 +2,13 @@ PARA BACKEND: INFORMACIÓN REAL Y MATERIAL ORIGINAL PARA SIS-INF
 Solicitud del usuario: 29/10/2026. Revisar también /REGLAS_USUARIO.txt.
 Este archivo solicita revisión y datos; NO confirma vigencia ni modifica reglas.
 
+PRECISIÓN DEL 04/11/2026
+Los mapas, fotos y demás originales aportados se consultan FUERA del proyecto.
+No copiarlos a los recursos del juego ni empaquetarlos. Mantener procedencia,
+fecha y estado de verificación en documentación. Ver la regla 26 y
+docs/MAPA_8X8_Y_PERSONAJES.md: referencias satelitales, fotos fechadas pendientes,
+escala sin conversión a metros y contrato de colisión/paseos para frontend.
+
 OBJETIVO
 El juego debe informar sobre Sistemas e Informática y sus menciones mediante
 datos trazables. La simulación actual contiene reglas acordadas para jugar;

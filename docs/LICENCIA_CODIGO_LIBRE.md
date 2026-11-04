@@ -1,5 +1,12 @@
 # Código libre y licencia
 
+Actualización del 04/11/2026: se retiraron los JPG de planos y el PNG original
+aportados, junto con su conversor y metadatos. Se conservan el código y arte
+procedural propios, el icono pixel art y la procedencia histórica documentada.
+Las futuras referencias se consultan externamente; no se empaquetaron fotos
+ni imágenes de Google Maps. Detalle en
+[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md).
+
 Actualizado: 30 de octubre de 2026.
 
 ## Licencia del proyecto

@@ -190,11 +190,17 @@ static func catalog_pages() -> Array[Dictionary]:
 	for row in Cast.PROFESSIONS:
 		people.append({"id": row[0], "label": row[1]})
 	for start in range(0, people.size(), 6):
-		result.append({"kind": "cast_grid", "title": "Diseños de profesionales", "items": people.slice(start, start + 6), "text": "Vestuario, herramientas y poses para la vida del campus.", "source": "Diseños ilustrativos, sin representar personas reales ni un inventario oficial de carreras. Paseos y clases en preparación."})
+		result.append({"kind": "cast_grid", "title": "Profesionales del campus", "items": people.slice(start, start + 6), "text": "Vestuario, herramientas y poses para la vida del campus.", "source": "Personajes ficticios con paseos ambientales. No representan personas reales ni una oferta oficial de carreras. Clases y horarios por integrar."})
 	var students: Array[Dictionary] = []
-	for index in range(6):
+	for index in range(Cast.STUDENT_COUNT):
 		students.append({"id": "estudiante_%d" % index, "label": "Estudiante %d" % (index + 1)})
-	result.append({"kind": "cast_grid", "title": "Estudiantes del campus", "items": students, "text": "Variaciones de ropa, piel, cabello, gafas y mochila. Cada diseño tiene pose frontal, de espalda y fotogramas de paso.", "source": "Personajes ficticios. Sus recorridos, horarios y entrada a clases están por integrar."})
+	for start in range(0, students.size(), 6):
+		result.append({"kind": "cast_grid", "title": "Estudiantes del campus", "items": students.slice(start, start + 6), "text": "Ropa, piel, cabello, gafas y mochilas variadas. Cada diseño tiene poses de frente, espalda y paso.", "source": "Personajes ficticios con paseos de ambientación. Sus horarios y entrada a clases están por integrar."})
+	var staff: Array[Dictionary] = []
+	for row in Cast.STAFF:
+		staff.append({"id": row[0], "label": row[1]})
+	for start in range(0, staff.size(), 6):
+		result.append({"kind": "cast_grid", "title": "Personal y visitantes", "items": staff.slice(start, start + 6), "text": "Biblioteca, docencia, laboratorios, mantenimiento, jardines, administración y visitas.", "source": "Diseños ficticios de ambientación; no identifican trabajadores reales ni puestos disponibles."})
 	var dogs: Array[Dictionary] = []
 	for row in Cast.DOGS:
 		dogs.append({"id": row[0], "label": row[1]})

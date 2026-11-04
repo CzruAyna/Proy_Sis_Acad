@@ -1,7 +1,13 @@
 # SIS-INF: exploración de la FNI
 
-Revisado: 3 de noviembre de 2026. La exploración comenzó en `389dc82` y fue
+Revisado: 4 de noviembre de 2026. La exploración comenzó en `389dc82` y fue
 ampliada hasta `b122e96`. El nombre anterior del juego era CAMPUS EN JUEGO.
+
+Actualización del 04/11/2026: las referencias originales se consultan fuera
+del proyecto y se retiraron de los recursos. La interfaz ofrece el esquema
+propio en 8×8, con personajes mayores, huella de pies ampliada y 51 personajes
+en paseos ambientales. Los tamaños, límites y referencias actuales están en
+[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md).
 
 La ampliación del 03/11/2026 incorpora el plano marcado, un mundo de
 12288 × 8704 unidades, bosque, jardines, fuentes, laguna de Civil y
@@ -95,8 +101,9 @@ horario y aula, ni entre cada oficina real y un paso del expediente.
 
 El mapa muestra edificios visitados en verde, la posición exterior en dorado y
 el destino señalado con borde azul. El directorio enumera bloques y aulas.
-Señalar un destino no teletransporta al personaje. **Ver plano aportado** muestra
-la referencia original, preservando la distinción con el esquema jugable.
+Señalar un destino no teletransporta al personaje. **Cuadrícula y coordenadas**
+explica las 64 celdas del esquema propio y las unidades de juego. Los originales
+aportados ya no se muestran ni se incluyen como recursos.
 
 ## Guardado y cambio de nombre
 
@@ -145,7 +152,7 @@ en otros sistemas operativos.
 | `game/scripts/campus_exploration_ui.gd` | Visita libre, menús, enlaces con la partida y conservación del estado espacial. |
 | `game/scripts/campus_overview.gd` | Esquema general del campus y marcas de posición, visitas y destino. |
 | `game/scripts/game.gd` | Entradas del menú, logo, integración con guardado y navegación existente. |
-| `game/tools/prepare_brand_assets.gd` | Conversión reproducible del JPEG aportado a PNG, sin redibujar el logo. |
+| Conversor histórico `prepare_brand_assets.gd` | Retirado el 04/11/2026: las referencias originales ya no se copian a los recursos del juego. |
 
 Los dibujos de terreno, árboles, edificios, mobiliario y personaje son código
 original del proyecto, con píxeles y escala entera. No se incorporaron paquetes
@@ -181,8 +188,8 @@ mantienen `GPL-3.0-or-later`.
 
 | ID | Original / recurso local | Preparación y estado |
 |---|---|---|
-| FNI-PLANO-01 | `AULAS-FNI.jpg` → `game/assets/reference/fni_plan.jpg` | Copia sin cambios. Entidad emisora, fecha, vigencia y condiciones de reproducción pendientes. |
-| SIS-INF-LOGO-01 | `images (3).jfif` → `game/assets/branding/sis_inf_logo.png` | JPEG decodificado y guardado como PNG de 554×554, sin redibujar ni cambiar dimensiones. Autor y condiciones de reproducción pendientes. |
+| FNI-PLANO-01 | `AULAS-FNI.jpg`; antigua copia `fni_plan.jpg`. | Copia retirada del proyecto el 04/11/2026. Entidad emisora, fecha y vigencia pendientes. |
+| SIS-INF-LOGO-01 | `images (3).jfif`; antiguo PNG de 554×554. | Conversión y copia retiradas el 04/11/2026. Se conserva el icono pixel art recreado con código. Autoría del emblema pendiente. |
 
 SHA-256:
 

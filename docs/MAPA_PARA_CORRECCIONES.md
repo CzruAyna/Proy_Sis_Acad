@@ -1,5 +1,9 @@
 # Mapa del campus para correcciones por cuadrantes
 
+**Histórico desde el 04/11/2026:** el exportador vigente genera la
+[matriz 8×8](MAPA_8X8_Y_PERSONAJES.md). Las láminas Q1–Q4 descritas debajo son
+el resultado del 03/11/2026 y no se regeneran con la herramienta actual.
+
 Generado: 3 de noviembre de 2026. Mapa `fni_ciudad_v2`, 12288 × 8704 unidades
 de juego. Las láminas muestran el estado dibujado por el juego y sirven para
 revisar posiciones, formas, distancias y contenido. No son planos institucionales

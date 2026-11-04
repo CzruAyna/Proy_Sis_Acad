@@ -1,5 +1,12 @@
 # Campus ampliado: paisaje, memoria y personajes
 
+Actualización del 04/11/2026: los originales de referencia se retiraron del
+proyecto; la matriz actual es 8×8. Los personajes tienen mayor tamaño y huella,
+con 51 paseantes ambientales. Las descripciones de muestras estáticas,
+seis estudiantes y cuatro perros que aparecen debajo corresponden al avance
+del 03/11/2026; el estado vigente y sus límites están en
+[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md).
+
 Estado: 3 de noviembre de 2026, cambios de trabajo sin commit propio. Área:
 frontend Godot. Este documento complementa [Exploración FNI](EXPLORACION_FNI.md)
 y concentra el contrato pendiente para motor/backend y datos institucionales.

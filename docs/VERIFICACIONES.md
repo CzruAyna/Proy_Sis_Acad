@@ -230,7 +230,62 @@ El script queda fuera del paquete del juego mediante la exclusión de `tools/*`.
 Los registros y límites se explican en
 [Mapa para correcciones](MAPA_PARA_CORRECCIONES.md).
 
-## Límites generales que siguen abiertos
+## Matriz 8×8, retirada de originales y personajes: 04/11/2026
+
+Cambios locales sin commit propio. Se ejecutaron estas siete suites con Godot
+4.7.2 y perfiles ficticios. Registros en `game/.test-artifacts/`:
+
+| Script en `game/tests/` | Aserciones | Fallos | Registro |
+|---|---:|---:|---|
+| `test_grid8_and_cast.gd` | 711 | 0 | `grid8-cast-tests.log` |
+| `test_exploration.gd` | 558 | 0 | `grid8-exploration-tests.log` |
+| `test_building_interiors.gd` | 479 | 0 | `grid8-interiors-tests.log` |
+| `test_large_campus.gd` | 2.075 | 0 | `grid8-large-tests.log` |
+| `test_exploration_navigation.gd` | 932 | 0 | `grid8-navigation-tests.log` |
+| `test_exploration_handoff.gd` | 34 | 0 | `grid8-handoff-tests.log` |
+| `test_games_room.gd` | 1.740 | 0 | `grid8-games-room-tests.log` |
+
+Total de esta matriz de pruebas: **6.529 aserciones sin fallos**. No se suman
+con ejecuciones anteriores. Los casos nuevos comprueban cobertura de las 64
+celdas, coordenadas, retirada de originales, aumento de sprite/radio/velocidad,
+ajuste local de un guardado, 24 estudiantes diferentes, 51 paseantes,
+obstáculos durante el paseo, pausa, movimiento reducido, regreso desde un
+interior y redibujado al detenerse. Las suites de interfaz recorren páginas
+y fichas al 100 % y 120 %, sin rueda ni deslizadores. El acceso a mesas sigue
+probando E, Enter y el botón visible.
+
+La primera ejecución de exploración detectó que redondear la puerta a una
+rejilla de 16 unidades situaba el punto de prueba dentro de la huella ampliada
+de la pared. Se comprueba ahora una celda exterior y el tramo libre hasta la
+puerta. La tolerancia diagonal pasó a 0,01 unidades para los redondeos de
+Vector2 a mayor velocidad y coordenadas grandes. También se corrigió un error
+de inferencia de tipo durante la implementación antes de repetir las suites.
+
+El exportador produjo 64 láminas de 1600×1520, un índice de 1632×1272 y el mapa
+completo de 6144×4352, con JSON y ZIP. La comprobación de archivos validó las
+dimensiones de los 66 PNG, 64 códigos de celda, cobertura sin huecos, 67
+referencias de elementos y enlaces de documentación. Se revisaron el índice
+y una lámina detallada. La captura de interfaz produjo 21 PNG: se revisaron
+el personaje y perros ampliados, la guía de coordenadas, retratos, personal,
+planos y laboratorios. Los registros son `grid8-map-export.log` y
+`grid8-capture.log`; las sesiones gráficas usaron ANGLE.
+
+La exportación Windows terminó con salida cero. Se montó el PCK con Godot:
+los dos planos y el PNG del logo original no estaban disponibles ni tenían
+sus metadatos de importación; el icono pixel art sí estaba presente. El
+ejecutable arrancó con perfil aislado y terminó con salida cero. Registros:
+`grid8-export.log`, `grid8-pack-audit.log` y `grid8-smoke.log`. La importación,
+exportación y arranque informaron el aviso del almacén de certificados del
+equipo, sin impedir esas operaciones locales; no se validaron funciones de red.
+
+La consulta de Google Maps sí permitió ver el campus en satélite; la fecha de
+la imagen no quedó confirmada. Falta validar fachadas, plantas, escala en
+metros y rendimiento en otros equipos. Los paseos son ambientales y no prueban
+horarios, asistencia a clases, caricias, rareza ni logros. Fuentes y contratos en
+[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md). No se modificaron partidas
+personales ni se ejecutaron servicios Django o Next.js.
+
+## Límites generales pendientes
 
 - Dificultad percibida y sesiones prolongadas con jugadores.
 - Rendimiento comparado, otros equipos, GPU y sistemas operativos.

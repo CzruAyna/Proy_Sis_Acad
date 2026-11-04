@@ -68,8 +68,11 @@ func _run() -> void:
 		ids[building["id"]] = true
 		var door: Vector2 = building["door"]
 		_check(world._can_stand(door), "Puerta libre: " + str(building["id"]))
-		var grid := Vector2i((door / GRID_STEP).round())
+		# Use an exterior grid cell: rounding the narrow door clearance can hit a wall.
+		var grid := Vector2i(((door + Vector2(0, GRID_STEP)) / GRID_STEP).round())
 		_check(seen[grid.y * width + grid.x] == 1, "Puerta accesible a pie desde el ingreso: " + str(building["id"]))
+		var approach := Vector2(grid) * GRID_STEP
+		_check(world._can_stand(approach) and world._can_stand(door.lerp(approach, 0.5)), "El tramo final desde la rejilla admite la huella ampliada")
 		_check(not world._can_stand(Rect2(building["rect"]).get_center()), "El edificio bloquea caminar a través")
 		for room in building["rooms"]:
 			_check(world.enter_room(str(building["id"]), str(room)), "Entrada a " + str(room))
@@ -89,7 +92,7 @@ func _run() -> void:
 	var distance := world.player.distance_to(start)
 	world.player = start
 	world.move_player(Vector2.ONE, 0.1)
-	_check(absf(world.player.distance_to(start) - distance) < 0.002, "Diagonal normalizada")
+	_check(absf(world.player.distance_to(start) - distance) < 0.01, "Diagonal normalizada, con precisión de Vector2 en el mapa grande")
 	world.player = start
 	world.move_player(Vector2.RIGHT, 0.1, true)
 	_check(world.player.distance_to(start) > distance, "Shift acelera")

@@ -1,5 +1,21 @@
 # Bitácora de desarrollo de SIS-INF
 
+## 4 de noviembre de 2026: matriz 8×8 y escala del campus
+
+Cambios locales sin commit propio. El usuario pidió retirar los originales
+de referencia del sistema, obtener una matriz mayor para corregir dimensiones
+y aumentar los personajes y su avance. Se retiraron los dos planos, la copia
+del logo original y el conversor, conservando los originales en Descargas.
+La consulta de Google Maps sí permitió ver la Ciudad Universitaria en satélite;
+su fecha de captura no quedó confirmada. Se ajustaron cubiertas y se registró
+qué fachadas y plantas todavía necesitan fotos fechadas.
+
+El mapa ahora se revisa en 64 celdas de 1536×1088 unidades. Se ampliaron sprites,
+huella de pies, puertas y velocidades; 51 personajes variados realizan paseos
+ambientales locales. Los horarios y la asistencia a aulas siguen para motor.
+Los contratos y referencias están en [Matriz 8×8](MAPA_8X8_Y_PERSONAJES.md),
+y las comprobaciones de esta entrega en [Verificaciones](VERIFICACIONES.md).
+
 Actualizada: 2 de noviembre de 2026. Corte: `b122e96`; 32 commits en 15 fechas.
 
 Esta es la memoria por jornada. El detalle de cada versión, con su mensaje original y archivos de referencia, está en [Historial por commit](HISTORIAL_COMMITS.md). Las fechas siguen Git (UTC−04:00), no horas de dedicación. Las notas personales citadas proceden de los mensajes; no completé jornadas sin registro con experiencias supuestas.

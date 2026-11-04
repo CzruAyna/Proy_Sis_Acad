@@ -216,3 +216,21 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     separados de mujeres y varones cada dos niveles y escalera central de dos
     tramos con descanso y retorno, sin caracol. Dibujar sus escaleras y dejar
     el cambio de nivel para backend; la distribución final se aportará después.
+
+26. REFERENCIAS EXTERNAS, MATRIZ Y ESCALA, indicada el 04/11/2026.
+    Los archivos originales de mapas, fotografías y demás referencias aportadas
+    por el usuario se consultan externamente: no copiarlos al proyecto ni
+    incluirlos como recursos del juego. Retirar las copias ya incorporadas,
+    conservando los originales del usuario fuera del repositorio y su trazabilidad
+    documental. Las recreaciones propias mediante código sí forman parte del juego.
+    Generar el mapa de revisión en una matriz de al menos 8×8, útil para comparar
+    dimensiones; distinguir unidades del juego de medidas físicas verificadas.
+    Aumentar el tamaño de los personajes y agilizar su avance. Ajustar también
+    la colisión y dejar notas para frontend sobre la coherencia entre sprite,
+    huella, accesos y distancias de interacción. Añadir más variedad de NPC.
+    Consultar fotografías actuales y Google Maps en satélite para mejorar la
+    infraestructura; si no se obtiene una referencia útil, explicar qué fotografía
+    o captura necesita aportar el usuario. No afirmar actualidad de una imagen
+    por su fecha de consulta o por el año de copyright del mapa.
+    Esta precisión actualiza la incorporación de archivos de las reglas 15,
+    16 y 25; conserva identidad, recreación pixel art y fuentes documentadas.

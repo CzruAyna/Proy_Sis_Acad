@@ -1,5 +1,11 @@
 # Referencias para los edificios e interiores de la FNI
 
+Estado del 04/11/2026: las referencias se consultan externamente y las copias
+de los originales fueron retiradas del proyecto. La revisión satelital, límites
+de actualidad y fotos de fachadas pendientes están en
+[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md). Las rutas locales antiguas
+del inventario siguiente documentan su incorporación histórica.
+
 Consulta: 31 de octubre de 2026. Área: frontend y datos de ambientación.
 
 Ampliación del 03/11/2026: el plano marcado, las fotos de Piedritas y el

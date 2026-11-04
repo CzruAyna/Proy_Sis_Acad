@@ -21,8 +21,10 @@ const LandmarkArt = preload("res://scripts/campus_landmark_art.gd")
 const Cast = preload("res://scripts/campus_cast.gd")
 const Floors = preload("res://scripts/campus_floor_plan.gd")
 const RoomArt = preload("res://scripts/campus_room_art.gd")
-const SPEED := 112.0
-const PLAYER_RADIUS := 7.0
+const Scale = preload("res://scripts/campus_scale.gd")
+const AmbientCast = preload("res://scripts/campus_ambient_cast.gd")
+const SPEED := Scale.WALK_SPEED
+const PLAYER_RADIUS := Scale.FOOT_RADIUS
 const SPRITE := [
 	"....hhhh....", "...hhhhhh...", "...hssssh...", "...hssssh...", "....ssss....",
 	"...bbbbbb...", "..sbbbbbbs..", "..sbbppbbs..", "..sbbppbbs..", "...bbbbbb...",
@@ -52,6 +54,8 @@ var _ambient_phase := 0.0
 var _ambient_tick := 0.0
 var _landscape_obstacles: Array[Rect2] = Land.obstacles()
 var cast_instances: Array[Dictionary] = []
+var ambient_cast := AmbientCast.new()
+var _cast_tick := 0.0
 
 
 func _ready() -> void:
@@ -61,12 +65,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_take_focus.call_deferred()
 	_tree_positions = Foliage.all()
-	for row in Cast.PROFESSIONS:
-		cast_instances.append({"id": row[0], "point": Map.building(row[4])["door"] + Vector2(60, 28)})
-	for index in range(6):
-		cast_instances.append({"id": "estudiante_%d" % index, "point": Map.building("fis_mat" if index % 2 == 0 else "basicas")["door"] + Vector2(-88 + index * 25, 40)})
-	for index in range(3):
-		cast_instances.append({"id": Cast.DOGS[index][0], "point": Land.landmarks()[0]["point"] + Vector2(-100 + index * 100, 120)})
+	ambient_cast.build(_can_stand_outside)
+	cast_instances = ambient_cast.actors
 	set_process(true)
 
 
@@ -92,8 +92,8 @@ func restore(saved: Dictionary) -> void:
 		var point := Vector2(float(stored[0]), float(stored[1]))
 		if saved.get("map_id", "") == Map.LEGACY_ID:
 			point = (point * Map.SIZE / Map.LEGACY_SIZE).snapped(Vector2(2, 2))
-		if point.is_finite() and _can_stand(point):
-			player = point
+		if point.is_finite():
+			player = _safe_outside_position(point)
 	var previous: Variant = saved.get("visited", [])
 	if previous is Array:
 		for id in previous:
@@ -139,6 +139,11 @@ func _process(delta: float) -> void:
 	if moving or was_moving:
 		queue_redraw()
 	if animations_enabled and room_id.is_empty():
+		_cast_tick += delta
+		if _cast_tick >= 0.1:
+			if ambient_cast.advance(minf(_cast_tick, 0.1), player):
+				queue_redraw()
+			_cast_tick = 0
 		_ambient_tick += delta
 		_ambient_phase += delta
 		if _ambient_tick > 0.2:
@@ -186,7 +191,8 @@ func _notification(what: int) -> void:
 func move_player(direction: Vector2, delta: float, running: bool = false) -> void:
 	if paused or not direction.is_finite() or not is_finite(delta) or delta <= 0:
 		return
-	var motion := direction.limit_length() * SPEED * (1.65 if running else 1.0) * minf(delta, 0.1)
+	var speed := SPEED if room_id.is_empty() else Scale.INDOOR_SPEED
+	var motion := direction.limit_length() * speed * (Scale.RUN_MULTIPLIER if running else 1.0) * minf(delta, 0.1)
 	moving = motion.length_squared() > 0.001
 	if moving:
 		facing = direction.normalized()
@@ -208,22 +214,7 @@ func _can_stand(point: Vector2) -> bool:
 	if not point.is_finite():
 		return false
 	if room_id.is_empty():
-		if not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
-			return false
-		for building in buildings:
-			if not Rect2(building["rect"]).grow(PLAYER_RADIUS).has_point(point):
-				continue
-			var outline: PackedVector2Array = building["footprint"]
-			if Geometry2D.is_point_in_polygon(point, outline):
-				return false
-			for index in range(outline.size()):
-				if point.distance_to(Geometry2D.get_closest_point_to_segment(point, outline[index], outline[(index + 1) % outline.size()])) <= PLAYER_RADIUS:
-					return false
-		for obstacle in _landscape_obstacles:
-			if obstacle.grow(PLAYER_RADIUS).has_point(point):
-				return false
-		if Land.water_blocks(point, PLAYER_RADIUS):
-			return false
+		return _can_stand_outside(point, PLAYER_RADIUS)
 	else:
 		var bounds := Rect2(Vector2(22, 30), Map.hall_size(room_id) - Vector2(44, 50)) if room_name.is_empty() else Rect2(22, 30, 436, 270)
 		if not bounds.grow(-PLAYER_RADIUS).has_point(point):
@@ -236,6 +227,36 @@ func _can_stand(point: Vector2) -> bool:
 			if obstacle.grow(PLAYER_RADIUS).has_point(point):
 				return false
 	return true
+
+
+func _can_stand_outside(point: Vector2, radius: float = PLAYER_RADIUS) -> bool:
+	if not point.is_finite() or not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
+		return false
+	for building in buildings:
+		if not Rect2(building["rect"]).grow(radius).has_point(point):
+			continue
+		var outline: PackedVector2Array = building["footprint"]
+		if Geometry2D.is_point_in_polygon(point, outline):
+			return false
+		for index in range(outline.size()):
+			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, outline[index], outline[(index + 1) % outline.size()])) <= radius:
+				return false
+	for obstacle in _landscape_obstacles:
+		if obstacle.grow(radius).has_point(point):
+			return false
+	return not Land.water_blocks(point, radius)
+
+
+func _safe_outside_position(point: Vector2) -> Vector2:
+	if _can_stand_outside(point):
+		return point
+	# An older, smaller footprint may have stood too close to a wall.
+	for radius in [8, 16, 24, 32, 48, 64]:
+		for index in range(8):
+			var candidate: Vector2 = (point + Vector2.from_angle(index * TAU / 8) * float(radius)).snapped(Vector2(2, 2))
+			if _can_stand_outside(candidate):
+				return candidate
+	return Map.SPAWN
 
 
 func nearby_building() -> Dictionary:
@@ -451,10 +472,15 @@ func _draw_campus(view: Rect2) -> void:
 		if view.grow(90).has_point(item["point"]):
 			draw_texture_rect(LandmarkArt.texture(item["id"]), Rect2(item["point"] - Vector2(28, 63), Vector2(56, 68)), false)
 	for item in cast_instances:
-		if view.grow(32).has_point(item["point"]):
+		if view.grow(44).has_point(item["point"]):
 			var dog := str(item["id"]).begins_with("perro_")
-			var extent := Vector2(12, 16) if dog else Vector2(16, 22)
-			draw_texture_rect(Cast.texture(item["id"]), Rect2(item["point"] - Vector2(extent.x * 0.5, extent.y - 2), extent), false)
+			var extent := Scale.DOG_SIZE if dog else Scale.HUMAN_SIZE
+			var destination := Rect2(item["point"] - Vector2(extent.x * 0.5, extent.y - 2), extent)
+			var direction: Vector2 = item.get("facing", Vector2.DOWN)
+			if direction.x < -0.4:
+				destination.size.x *= -1
+			var frame := int(item.get("stride", 0.0)) % 2 if item.get("moving", false) and animations_enabled else 0
+			draw_texture_rect(Cast.texture(item["id"], frame, direction.y < -0.4), destination, false)
 	# Wayfinding stays readable above canopies and roof details.
 	for block in buildings:
 		if view.grow(80).intersects(block["rect"]):
@@ -464,13 +490,13 @@ func _draw_campus(view: Rect2) -> void:
 func _draw_building(building: Dictionary, view: Rect2) -> void:
 	Architecture.building(self, building, view)
 	var door: Vector2 = building["door"]
-	draw_rect(Rect2(door - Vector2(10, 18), Vector2(20, 17)), Color("#223a40"))
-	draw_rect(Rect2(door - Vector2(6, 15), Vector2(12, 14)), Color("#6ddab9"))
-	draw_rect(Rect2(door - Vector2(14, 0), Vector2(28, 4)), Color("#d4c7a0"))
+	draw_rect(Rect2(door - Vector2(18, 36), Vector2(36, 35)), Color("#223a40"))
+	draw_rect(Rect2(door - Vector2(13, 32), Vector2(26, 30)), Color("#6ddab9"))
+	draw_rect(Rect2(door - Vector2(22, 0), Vector2(44, 6)), Color("#d4c7a0"))
 	if view.grow(100).has_point(door):
-		_sign(door + Vector2(-48, -24), str(building["name"]), 10)
+		_sign(door + Vector2(-48, -41), str(building["name"]), 10)
 	if player.distance_to(door) < 29:
-		draw_rect(Rect2(door - Vector2(13, 20), Vector2(26, 24)), Color("#fff1a6"), false, 2)
+		draw_rect(Rect2(door - Vector2(21, 40), Vector2(42, 44)), Color("#fff1a6"), false, 2)
 
 
 func _draw_room() -> void:
@@ -604,13 +630,13 @@ func _draw_player() -> void:
 			picture.set_pixel(4, 3, Color("#263445"))
 			picture.set_pixel(7, 3, Color("#263445"))
 		_textures[key] = ImageTexture.create_from_image(picture)
-	draw_rect(Rect2(player.round() + Vector2(-6, -2), Vector2(12, 4)), Color("#304a46"))
+	draw_rect(Rect2(player.round() + Vector2(-12, -3), Vector2(24, 6)), Color("#304a46"))
 	draw_texture_rect(_textures[key], player_sprite_rect(), false)
 
 
 func player_sprite_rect() -> Rect2:
 	# Godot mirrors negative texture widths inside the same destination bounds.
-	var rect := Rect2(player.round() - Vector2(6, 14), Vector2(12, 16))
+	var rect := Rect2(player.round() - Vector2(Scale.PLAYER_SIZE.x / 2, Scale.PLAYER_SIZE.y - 2), Scale.PLAYER_SIZE)
 	if facing.x < -0.4:
 		rect.size.x *= -1
 	return rect

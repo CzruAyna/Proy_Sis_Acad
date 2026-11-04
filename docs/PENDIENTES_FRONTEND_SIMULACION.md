@@ -1,5 +1,12 @@
 # Integración gráfica de SIS-INF
 
+Actualización del 04/11/2026: referencias originales fuera del juego, matriz
+8×8, personajes mayores y paseos ambientales. Frontend debe respetar el
+contrato de `campus_scale.gd`: sprite, huella, anclajes y accesos crecen juntos.
+Motor/backend debe sustituir la población ambiental por sus estados de
+recorridos y clases, sin duplicarla. Tamaños, límites y fuentes pendientes en
+[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md).
+
 Ampliación de exploración del 03/11/2026: hay paisaje ampliado, estatuas con
 fichas, diseños de personajes y planos por piso. **Motor/backend** debe conectar
 recorridos, clases, caricias, rareza de Piedritas, logros y cambio de planta.

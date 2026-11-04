@@ -1,5 +1,12 @@
 # Estado actual de SIS-INF
 
+Actualización del 04/11/2026: matriz 8×8 con 64 láminas, originales de referencia
+retirados, jugador de 24×32 y radio de pies 12, mayor velocidad y 51 personajes
+en paseos ambientales. Los edificios incorporan ajustes de cubiertas a partir
+de una consulta satelital, con vigencia de las fotos pendiente. El movimiento
+global con clases, caricias y logros todavía corresponde a motor/backend.
+Estado y notas para frontend en [Matriz 8×8](MAPA_8X8_Y_PERSONAJES.md).
+
 Ampliación del campus del 03/11/2026, sin commit propio: mapa de 12288 × 8704,
 bosque, jardines, fuentes, estacionamientos, laguna de Civil, estatuas de
 Piedritas y el Chivato con fichas, planos de dos y cinco niveles y catálogo

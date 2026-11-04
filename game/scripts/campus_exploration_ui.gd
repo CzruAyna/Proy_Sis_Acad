@@ -231,13 +231,14 @@ func show_map() -> void:
 	map.name = "CampusOverview"
 	map.state = saved.duplicate(true)
 	map.target_id = target_id
+	map.grid_font_size = roundi(11 * float(_ui().settings["font_scale"]))
 	map.custom_minimum_size = Vector2(0, 330)
 	map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map.set_meta("page_atomic", true)
 	page.add_child(map)
 	var row := _actions(page)
 	_ui()._add_button(row, "Volver a caminar", show_world, true, 40)
-	_ui()._add_button(row, "Ver plano aportado", show_reference, false, 40)
+	_ui()._add_button(row, "Cuadrícula y coordenadas", show_map_guide, false, 40)
 	var points := _actions(page)
 	for item in [["piedritas", "Piedritas"], ["chivato", "Chivato"], ["bosque", "Bosque"], ["laguna", "Laguna de Civil"], ["fis_mat", "Bloque 100"], ["basicas", "Bloque en cruz"]]:
 		_ui()._add_button(points, item[1], _select_target.bind(item[0]), false, 36)
@@ -253,28 +254,16 @@ func _select_target(id: String) -> void:
 	show_map()
 
 
-func show_reference() -> void:
-	var page: VBoxContainer = _ui()._make_page("Plano aportado", "Fuente de referencia: AULAS-FNI.jpg · vigencia y derechos de redistribución pendientes de confirmar", show_map)
-	var picture := TextureRect.new()
-	picture.name = "OriginalCampusPlan"
-	picture.texture = load("res://assets/reference/fni_plan.jpg")
-	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	picture.custom_minimum_size = Vector2(0, 360)
-	page.add_child(picture)
-	_text(page, "Los rótulos se consultan también en el directorio del mapa. El recuadro de Aulas Básicas se ha adaptado a una zona jugable: su enlace espacial exacto requiere confirmación.", 15)
-	_ui()._add_button(page, "Ver plano marcado", show_marked_reference, false, 40)
-
-
-func show_marked_reference() -> void:
-	var page: VBoxContainer = _ui()._make_page("Plano marcado", "Leyenda aportada por el usuario · interpretación jugable, sin escala topográfica", show_reference)
-	var picture := TextureRect.new()
-	picture.texture = load("res://assets/reference/fni_plan_annotated.jpg")
-	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	picture.custom_minimum_size = Vector2(0, 300)
-	page.add_child(picture)
-	_text(page, "Negro: caminos · verde: jardines y bosque del ingreso · morado: quirquinchos · amarillo: laboratorios · azul: bloques de aulas · gris: estacionamientos.", 15)
+func show_map_guide() -> void:
+	var page: VBoxContainer = _ui()._make_page("Coordenadas del campus", "Esquema del juego · cuadrícula 8×8", show_map)
+	var map := Overview.new()
+	map.state = saved.duplicate(true)
+	map.grid_font_size = roundi(11 * float(_ui().settings["font_scale"]))
+	map.custom_minimum_size = Vector2(0, 300)
+	map.set_meta("page_atomic", true)
+	page.add_child(map)
+	_text(page, "Filas A–H de arriba abajo y columnas 1–8 de izquierda a derecha. Cada celda mide 1536 × 1088 unidades del juego. X aumenta a la derecha; Y hacia abajo.", 15)
+	_text(page, "Estas unidades permiten comparar distancias del diseño. Todavía no equivalen a metros reales. Las formas y accesos continúan sujetos a revisión.", 15)
 
 
 func _inspect(content: Array[Dictionary]) -> void:
