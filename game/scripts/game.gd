@@ -436,7 +436,7 @@ func _home_curve_visual_point(point: Vector2) -> Vector2:
 
 
 func _process(delta: float) -> void:
-	if (_transitioning and not _transition_revealing) or not _home_art or not bool(settings.get("animations", true)):
+	if (_transitioning and not _transition_revealing) or not _home_art or not bool(settings.get("animations", true)) or bool(settings.get("low_performance", false)):
 		return
 	_home_formula_time += delta
 	if _home_formula_time >= 2.4 and not _home_formula_order.is_empty():
@@ -831,6 +831,10 @@ func _use_menu_theme() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		Engine.max_fps = 10
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		Engine.max_fps = 30 if bool(settings.get("low_performance", false)) else 60
 	elif what == NOTIFICATION_WM_CLOSE_REQUEST:
 		_exit_game()
 
@@ -879,7 +883,7 @@ func _apply_image_settings() -> void:
 	var viewport := get_viewport()
 	if viewport:
 		viewport.msaa_2d = Viewport.MSAA_4X if bool(settings["antialiasing"]) else Viewport.MSAA_DISABLED
-	Engine.max_fps = 30 if bool(settings.get("low_performance", false)) else 0
+	Engine.max_fps = 30 if bool(settings.get("low_performance", false)) else 60
 	RenderingServer.set_default_clear_color(_current_theme.get("bg", PAPER))
 
 
@@ -1421,7 +1425,7 @@ func _activate_menu_backdrop() -> void:
 	_initialize_home_cosmos()
 	_initialize_home_formulas()
 	_use_menu_theme()
-	set_process(bool(settings.get("animations", true)))
+	set_process(bool(settings.get("animations", true)) and not bool(settings.get("low_performance", false)))
 	queue_redraw()
 
 
@@ -1467,7 +1471,7 @@ func _complete_menu_transition(effect: Control) -> void:
 		_transition_overlay = null
 	_transition_revealing = false
 	_transitioning = false
-	set_process(_home_art and bool(settings.get("animations", true)))
+	set_process(_home_art and bool(settings.get("animations", true)) and not bool(settings.get("low_performance", false)))
 	queue_redraw()
 
 
@@ -1487,7 +1491,7 @@ func _show_options() -> void:
 		["DisplayOption", "Pantalla", "Pantalla completa aprovecha el monitor. Ventana permite trabajar junto a otras aplicaciones.", "Usar ventana" if settings["fullscreen"] else "Usar pantalla completa", _toggle_fullscreen, "Pantalla completa" if settings["fullscreen"] else "En ventana"],
 		["MotionOption", "Movimiento y efectos", "Reduce las animaciones si prefieres una experiencia tranquila. Las acciones y resultados siguen disponibles.", "Reducir movimiento" if settings["animations"] else "Activar animaciones", _toggle_animations, "Animaciones activas" if settings["animations"] else "Movimiento reducido"],
 		["SmoothingOption", "Bordes y líneas", "Suaviza la geometría de algunos dibujos. Las texturas y letras pixel conservan sus píxeles definidos. Puede exigir más a la tarjeta gráfica.", "Desactivar suavizado" if settings["antialiasing"] else "Activar suavizado", _toggle_antialiasing, "Suavizado activado" if settings["antialiasing"] else "Suavizado desactivado"],
-		["PerformanceOption", "Rendimiento", "Bajo consumo reduce partículas y halos y limita la animación a 30 FPS. Útil en equipos con menos recursos.", "Usar calidad normal" if settings["low_performance"] else "Activar bajo consumo", _toggle_low_performance, "Bajo consumo" if settings["low_performance"] else "Calidad normal"]
+		["PerformanceOption", "Rendimiento", "Bajo consumo reduce partículas y halos, deja estático el fondo decorativo y limita a 30 FPS. Útil en equipos con menos recursos.", "Usar calidad normal" if settings["low_performance"] else "Activar bajo consumo", _toggle_low_performance, "Bajo consumo" if settings["low_performance"] else "Calidad normal"]
 	]
 	for item in choices:
 		var card := _card(grid)

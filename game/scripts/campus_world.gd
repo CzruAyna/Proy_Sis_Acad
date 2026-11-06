@@ -22,7 +22,8 @@ const Cast = preload("res://scripts/campus_cast.gd")
 const Floors = preload("res://scripts/campus_floor_plan.gd")
 const RoomArt = preload("res://scripts/campus_room_art.gd")
 const Scale = preload("res://scripts/campus_scale.gd")
-const AmbientCast = preload("res://scripts/campus_ambient_cast.gd")
+const AmbientCast = preload("res://scripts/campus_life.gd")
+const Collision = preload("res://scripts/campus_collision.gd")
 const SPEED := Scale.WALK_SPEED
 const PLAYER_RADIUS := Scale.FOOT_RADIUS
 const SPRITE := [
@@ -35,6 +36,7 @@ var player := Map.SPAWN
 var camera := Map.SPAWN
 var room_id := ""
 var room_name := ""
+var floor_level := 0
 var visited: Array[String] = []
 var buildings: Array[Dictionary] = Map.buildings()
 var facing := Vector2.DOWN
@@ -52,10 +54,14 @@ var _interior_walls: Array[Rect2] = []
 var animations_enabled := true
 var _ambient_phase := 0.0
 var _ambient_tick := 0.0
-var _landscape_obstacles: Array[Rect2] = Land.obstacles()
 var cast_instances: Array[Dictionary] = []
 var ambient_cast := AmbientCast.new()
 var _cast_tick := 0.0
+var _context_tick := 0.0
+var _progress_tick := 0.0
+var _life_saved: Dictionary = {}
+var life_enabled := true
+var _life_revision := -1
 
 
 func _ready() -> void:
@@ -65,7 +71,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_take_focus.call_deferred()
 	_tree_positions = Foliage.all()
-	ambient_cast.build(_can_stand_outside)
+	ambient_cast.build(_can_stand_outside, _life_saved)
 	cast_instances = ambient_cast.actors
 	set_process(true)
 
@@ -83,6 +89,8 @@ func restore(saved: Dictionary) -> void:
 	player = Map.SPAWN
 	room_id = ""
 	room_name = ""
+	floor_level = 0
+	_life_saved = saved.get("life", {}).duplicate(true) if saved.get("life") is Dictionary else {}
 	visited.clear()
 	if saved.get("map_id", "") not in [Map.ID, Map.LEGACY_ID] or int(saved.get("version", 0)) != 1:
 		camera = player
@@ -103,10 +111,11 @@ func restore(saved: Dictionary) -> void:
 	var stored_room := str(saved.get("room_name", ""))
 	if not building.is_empty() and stored_room == Map.LEGACY_ROOMS.get(building["id"], "__none__"):
 		stored_room = "" # Old whole-block interiors now resume in their corridor.
-	if not building.is_empty() and (building["rooms"].has(stored_room) or (stored_room.is_empty() and building["rooms"].size() > 1)):
+	if not building.is_empty() and (Map.room_floor(building["id"], stored_room) >= 0 or (stored_room.is_empty() and building["rooms"].size() > 1)):
 		_outside = building["door"]
 		room_id = building["id"]
 		room_name = stored_room
+		floor_level = Map.room_floor(room_id, room_name) if not room_name.is_empty() else clampi(int(saved.get("floor", 0)), 0, Map.floor_count(room_id) - 1)
 		player = Map.hall_spawn(room_id) if room_name.is_empty() else Map.room_spawn(room_id, room_name)
 	camera = player
 
@@ -118,12 +127,14 @@ func _valid_visit(id: String) -> bool:
 		for room in building["rooms"]:
 			if id == str(building["id"]) + "/" + str(room):
 				return true
+		if id.begins_with(str(building["id"]) + "/") and Map.room_floor(building["id"], id.substr(str(building["id"]).length() + 1)) >= 0:
+			return true
 	return false
 
 
 func snapshot() -> Dictionary:
 	var outside := player if room_id.is_empty() else _outside
-	return {"version": 1, "map_id": Map.ID, "position": [outside.x, outside.y], "room_id": room_id, "room_name": room_name, "visited": visited.duplicate()}
+	return {"version": 1, "map_id": Map.ID, "position": [outside.x, outside.y], "room_id": room_id, "room_name": room_name, "floor": floor_level, "visited": visited.duplicate(), "life": ambient_cast.snapshot() if not ambient_cast.actors.is_empty() else _life_saved.duplicate(true)}
 
 
 func _process(delta: float) -> void:
@@ -132,18 +143,27 @@ func _process(delta: float) -> void:
 	var was_moving := moving
 	var direction := Vector2(float(_pressed(KEY_D) or _pressed(KEY_RIGHT)) - float(_pressed(KEY_A) or _pressed(KEY_LEFT)), float(_pressed(KEY_S) or _pressed(KEY_DOWN)) - float(_pressed(KEY_W) or _pressed(KEY_UP)))
 	move_player(direction, delta, _pressed(KEY_SHIFT))
-	var current := interaction_text()
-	if current != _last_context:
-		_last_context = current
-		context_changed.emit(current)
+	_context_tick += delta
+	_progress_tick += delta
+	if _context_tick >= 0.1:
+		_context_tick = 0
+		var current := interaction_text()
+		if current != _last_context:
+			_last_context = current
+			context_changed.emit(current)
 	if moving or was_moving:
 		queue_redraw()
-	if animations_enabled and room_id.is_empty():
+	if life_enabled:
 		_cast_tick += delta
 		if _cast_tick >= 0.1:
 			if ambient_cast.advance(minf(_cast_tick, 0.1), player):
 				queue_redraw()
+			if ambient_cast.state_revision != _life_revision:
+				_life_revision = ambient_cast.state_revision
+				if not room_id.is_empty():
+					queue_redraw()
 			_cast_tick = 0
+	if animations_enabled and room_id.is_empty():
 		_ambient_tick += delta
 		_ambient_phase += delta
 		if _ambient_tick > 0.2:
@@ -206,7 +226,9 @@ func move_player(direction: Vector2, delta: float, running: bool = false) -> voi
 			candidate = player + Vector2(0, offset.y)
 			if _can_stand(candidate):
 				player = candidate
-		progress_changed.emit(snapshot())
+		if _progress_tick >= 0.25:
+			_progress_tick = 0
+			progress_changed.emit(snapshot())
 	camera = player.round()
 
 
@@ -220,10 +242,10 @@ func _can_stand(point: Vector2) -> bool:
 		var bounds := Rect2(Vector2(22, 30), extent - Vector2(44, 50))
 		if not bounds.grow(-PLAYER_RADIUS).has_point(point):
 			return false
-		var key := room_id + "/" + room_name
+		var key := room_id + "/" + room_name + "/" + str(floor_level)
 		if key != _interior_key:
 			_interior_key = key
-			_interior_walls = Map.interior_obstacles(room_id, room_name)
+			_interior_walls = Map.interior_obstacles(room_id, room_name, floor_level)
 		for obstacle in _interior_walls:
 			if obstacle.grow(PLAYER_RADIUS).has_point(point):
 				return false
@@ -231,21 +253,7 @@ func _can_stand(point: Vector2) -> bool:
 
 
 func _can_stand_outside(point: Vector2, radius: float = PLAYER_RADIUS) -> bool:
-	if not point.is_finite() or not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
-		return false
-	for building in buildings:
-		if not Rect2(building["rect"]).grow(radius).has_point(point):
-			continue
-		var outline: PackedVector2Array = building["footprint"]
-		if Geometry2D.is_point_in_polygon(point, outline):
-			return false
-		for index in range(outline.size()):
-			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, outline[index], outline[(index + 1) % outline.size()])) <= radius:
-				return false
-	for obstacle in _landscape_obstacles:
-		if obstacle.grow(radius).has_point(point):
-			return false
-	return not Land.water_blocks(point, radius)
+	return Collision.can_stand(point, radius)
 
 
 func _safe_outside_position(point: Vector2) -> Vector2:
@@ -277,7 +285,7 @@ func interaction_text() -> String:
 			if player.distance_to(Map.hall_exit(room_id)) < 36:
 				return "E · Salir al campus · Camina por el pasillo para elegir aula"
 			if _near_stairs():
-				return "E · Ver distribución de pisos y escaleras"
+				return "E · Subir/bajar · Piso %d · distribución recreada" % floor_level
 			var space := nearby_room()
 			return "E · Entrar a " + str(space["name"]) if not space.is_empty() else "Pasillo · Acércate a una puerta iluminada y pulsa E"
 		if player.distance_to(Map.room_exit(room_id, room_name)) < 36:
@@ -287,6 +295,9 @@ func interaction_text() -> String:
 			if not station.is_empty():
 				return "E · Ver mesa de " + str(station["title"])
 			return "Sala de juegos · Acércate a una mesa o al cartel del fondo"
+		var feature := nearby_feature()
+		if not feature.is_empty():
+			return "E · " + str(feature["title"])
 		if player.y < 92:
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
@@ -323,6 +334,10 @@ func interact() -> void:
 			paused = true
 			_held.clear()
 			minigame_requested.emit(str(nearby_game()["id"]))
+		elif not nearby_feature().is_empty():
+			paused = true
+			_held.clear()
+			actor_requested.emit(nearby_feature()["id"])
 		elif player.y < 92:
 			paused = true
 			_held.clear()
@@ -344,13 +359,22 @@ func interact() -> void:
 
 func nearby_feature() -> Dictionary:
 	if not room_id.is_empty():
+		var count := 0
+		for actor in cast_instances:
+			if actor.get("state", "") == "CLASS" and actor["building_id"] == room_id and actor["room_name"] == room_name:
+				var point := Vector2(Map.room_size(room_id, room_name).x / 2, 130 + count * 36)
+				if player.distance_to(point) < 45:
+					return {"kind": "actor", "id": actor["instance_id"], "title": "Conversar · clase simulada"}
+				count += 1
+				if count == 4:
+					break
 		return {}
 	for item in Land.landmarks():
 		if player.distance_to(item["approach"]) < 34:
 			return item
 	for item in cast_instances:
-		if player.distance_to(item["point"]) < 25:
-			return {"kind": "actor", "id": item["id"], "title": "Conocer este diseño"}
+		if item.get("state", "WAIT") != "CLASS" and player.distance_to(item["point"]) < 45:
+			return {"kind": "actor", "id": item["instance_id"], "title": "Acariciar compañero" if ambient_cast.is_dog(item) else "Conversar · rutina simulada"}
 	return {}
 
 
@@ -359,7 +383,7 @@ func _near_stairs() -> bool:
 
 
 func nearby_room() -> Dictionary:
-	for space in Map.hall_rooms(room_id):
+	for space in Map.hall_rooms(room_id, floor_level):
 		if player.distance_to(space["door"]) < 30:
 			return space
 	return {}
@@ -383,6 +407,7 @@ func enter_building(id: String) -> bool:
 	_outside = building["door"]
 	room_id = id
 	room_name = ""
+	floor_level = 0
 	player = Map.hall_spawn(id)
 	camera = player
 	_held.clear()
@@ -394,9 +419,11 @@ func enter_building(id: String) -> bool:
 
 func return_to_hall() -> void:
 	var previous_room := room_name
+	var previous_floor := floor_level
 	if not enter_building(room_id):
 		return
-	for space in Map.hall_rooms(room_id):
+	floor_level = previous_floor
+	for space in Map.hall_rooms(room_id, floor_level):
 		if space["name"] == previous_room:
 			player = space["door"]
 			camera = player
@@ -407,11 +434,12 @@ func return_to_hall() -> void:
 
 func enter_room(id: String, selected_room: String) -> bool:
 	var building := Map.building(id)
-	if building.is_empty() or not building["rooms"].has(selected_room):
+	if building.is_empty() or Map.room_floor(id, selected_room) < 0:
 		return false
 	_outside = building["door"]
 	room_id = id
 	room_name = selected_room
+	floor_level = Map.room_floor(id, selected_room)
 	player = Map.room_spawn(id, selected_room)
 	camera = player
 	var visit := id + "/" + room_name
@@ -427,12 +455,27 @@ func enter_room(id: String, selected_room: String) -> bool:
 func leave_room() -> void:
 	room_id = ""
 	room_name = ""
+	floor_level = 0
 	player = _outside
 	camera = player
 	_held.clear()
 	progress_changed.emit(snapshot())
 	context_changed.emit(interaction_text())
 	queue_redraw()
+
+
+func change_floor(level: int) -> bool:
+	if not _near_stairs() or level < 0 or level >= Map.floor_count(room_id) or absi(level - floor_level) != 1:
+		return false
+	floor_level = level
+	player = Vector2(360, Map.hall_size(room_id).y - 108)
+	camera = player
+	_interior_key = ""
+	_held.clear()
+	progress_changed.emit(snapshot())
+	context_changed.emit(interaction_text())
+	queue_redraw()
+	return true
 
 
 func _draw() -> void:
@@ -473,8 +516,10 @@ func _draw_campus(view: Rect2) -> void:
 		if view.grow(90).has_point(item["point"]):
 			draw_texture_rect(LandmarkArt.texture(item["id"]), Rect2(item["point"] - Vector2(28, 63), Vector2(56, 68)), false)
 	for item in cast_instances:
+		if item.get("state", "WAIT") == "CLASS":
+			continue
 		if view.grow(44).has_point(item["point"]):
-			var dog := str(item["id"]).begins_with("perro_")
+			var dog := ambient_cast.is_dog(item)
 			var extent := Scale.DOG_SIZE if dog else Scale.HUMAN_SIZE
 			var destination := Rect2(item["point"] - Vector2(extent.x * 0.5, extent.y - 2), extent)
 			var direction: Vector2 = item.get("facing", Vector2.DOWN)
@@ -482,6 +527,9 @@ func _draw_campus(view: Rect2) -> void:
 				destination.size.x *= -1
 			var frame := int(item.get("stride", 0.0)) % 2 if item.get("moving", false) and animations_enabled else 0
 			draw_texture_rect(Cast.texture(item["id"], frame, direction.y < -0.4), destination, false)
+			if item.get("state", "") == "PET":
+				for offset in [Vector2(-4, -34), Vector2(2, -34), Vector2(-6, -32), Vector2(4, -32), Vector2(-4, -30), Vector2(2, -30), Vector2(-2, -28), Vector2(0, -28), Vector2(0, -26)]:
+					draw_rect(Rect2(Vector2(item["point"]) + offset, Vector2(3, 3)), Color("#f2c477"))
 	# Wayfinding stays readable above canopies and roof details.
 	for block in buildings:
 		if view.grow(80).intersects(block["rect"]):
@@ -505,6 +553,14 @@ func _draw_room() -> void:
 	var kind := Map.room_kind(room_id, room_name)
 	var layout := Map.room_layout(room_id, room_name)
 	RoomArt.draw(self, layout, room_name)
+	var count := 0
+	for actor in cast_instances:
+		if actor.get("state", "") == "CLASS" and actor["building_id"] == room_id and actor["room_name"] == room_name:
+			var point := Vector2(layout["size"].x / 2, 130 + count * 36)
+			draw_texture_rect(Cast.texture(actor["id"]), Rect2(point - Vector2(12, 30), Vector2(24, 32)), false)
+			count += 1
+			if count == 4:
+				break
 	if kind == "games_room":
 		_draw_games_room()
 		return
@@ -539,10 +595,10 @@ func _draw_hall() -> void:
 		for x in range(28, 694, 16):
 			draw_rect(Rect2(x, y, 15, 15), Color("#adb0a0") if (x + y) % 32 == 0 else Color("#989f96"))
 	draw_rect(Rect2(22, 24, 676, 16), Color("#666c69"))
-	var heading := str(Map.building(room_id)["name"]) + " · PASILLO"
+	var heading := str(Map.building(room_id)["name"]) + " · " + ("PB" if floor_level == 0 else "PISO %d" % floor_level)
 	var heading_width := Neon.PIXEL_FONT.get_string_size(heading, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
 	_sign(Vector2(360 - heading_width * 0.5, 22), heading, 11)
-	for space in Map.hall_rooms(room_id):
+	for space in Map.hall_rooms(room_id, floor_level):
 		var rect: Rect2 = space["rect"]
 		draw_rect(Rect2(rect.position + Vector2(2, 4), rect.size), Color("#6e7368"))
 		draw_rect(rect, Color("#777b70"))
@@ -568,7 +624,7 @@ func _draw_hall() -> void:
 	_sign(Vector2(342, extent.y - 30), "SALIDA", 9)
 	if Map.floor_count(room_id) > 1:
 		Floors._stairs(self, Vector2(329, extent.y - 130))
-		_sign(Vector2(312, extent.y - 137), "E: VER PISOS", 9)
+		_sign(Vector2(312, extent.y - 137), "E: SUBIR / BAJAR", 9)
 
 
 func _sign(point: Vector2, text: String, font_size: int) -> void:

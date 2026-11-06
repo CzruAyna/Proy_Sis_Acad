@@ -131,6 +131,8 @@ static func game_stations() -> Array[Dictionary]:
 
 
 static func room_kind(id: String, room: String) -> String:
+	if id == "basicas" and room.contains("Baño"):
+		return "restroom"
 	if id == "fisica":
 		return "physics_lab"
 	if id == "quimica_lab":
@@ -148,28 +150,45 @@ static func floor_count(id: String) -> int:
 
 static func floor_rooms(id: String, level: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
+	if level < 0 or level >= floor_count(id):
+		return result
 	if id == "fis_mat":
 		for index in range(3):
-			result.append({"label": "Aula %d" % (index + 1), "kind": "classroom", "provisional": true})
+			result.append({"id": "CU-%d" % (100 + level * 3 + index), "label": "Aula %d" % (index + 1), "kind": "classroom", "provisional": true})
 		if level == 0:
-			result.append({"label": "Laboratorio de física virtual", "kind": "physics_virtual", "provisional": true})
+			result.append({"id": "CU-106", "label": "Laboratorio de física virtual", "kind": "physics_virtual", "provisional": true})
 	elif id == "basicas":
-		for wing in ["norte", "este", "sur", "oeste"]:
-			result.append({"label": "Aula · ala " + wing, "kind": "classroom", "provisional": true})
+		var legacy: Array = building(id)["rooms"]
+		for index in range(4):
+			var label := "Aula · ala " + str(["norte", "este", "sur", "oeste"][index])
+			var old_index := level * 4 + index
+			result.append({"id": str(legacy[old_index]) if old_index < legacy.size() else "P%d · %s" % [level, label], "label": label, "kind": "classroom", "provisional": true})
 		if level in [0, 2, 4]:
-			result.append({"label": "Baño · mujeres", "kind": "restroom_women", "provisional": true})
-			result.append({"label": "Baño · varones", "kind": "restroom_men", "provisional": true})
+			for gender in ["mujeres", "varones"]:
+				result.append({"id": "P%d · Baño %s" % [level, gender], "label": "Baño · " + gender, "kind": "restroom", "provisional": true})
+	else:
+		for room in building(id).get("rooms", []):
+			result.append({"id": room, "label": room, "kind": room_kind(id, room), "provisional": true})
 	return result
 
 
-static func hall_rooms(id: String) -> Array[Dictionary]:
+static func room_floor(id: String, room: String) -> int:
+	for level in range(floor_count(id)):
+		for item in floor_rooms(id, level):
+			if item["id"] == room:
+				return level
+	return -1
+
+
+static func hall_rooms(id: String, level: int = -1) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var block := building(id)
-	for index in range(block.get("rooms", []).size()):
+	var names: Array = block.get("rooms", []) if level < 0 else floor_rooms(id, level).map(func(item: Dictionary) -> String: return str(item["id"]))
+	for index in range(names.size()):
 		var left := index % 2 == 0
 		var row := index / 2
 		var top := 52.0 + floorf(row) * 92
-		result.append({"name": block["rooms"][index],
+		result.append({"name": names[index],
 			"rect": Rect2(36 if left else 416, top, 268, 84),
 			"door": Vector2(318 if left else 402, top + 44)})
 	return result
@@ -188,10 +207,10 @@ static func hall_exit(id: String) -> Vector2:
 	return Vector2(360, hall_size(id).y - 30)
 
 
-static func interior_obstacles(id: String, room: String) -> Array[Rect2]:
+static func interior_obstacles(id: String, room: String, level: int = -1) -> Array[Rect2]:
 	if room.is_empty():
 		var walls: Array[Rect2] = []
-		for space in hall_rooms(id):
+		for space in hall_rooms(id, level):
 			walls.append(space["rect"])
 		return walls
 	if room_kind(id, room) == "games_room":

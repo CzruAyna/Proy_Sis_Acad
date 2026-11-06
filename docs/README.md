@@ -22,6 +22,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Campus ampliado y personajes](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md) | Plano marcado, bosque, estatuas, pisos, catálogo de personajes y contratos pendientes para backend. |
 | [Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md) | 64 celdas, escala, paseos ambientales, referencias satelitales y notas de colisión para frontend. |
 | [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md) | Empalmes continuos, rosa orientada, inicio con cuatro acciones, interiores variados y contrato para motor/backend. |
+| [Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md) | Pisos transitables, rutinas persistentes, caricias, Piedritas 1/100, logros y optimizaciones medidas; pendientes para frontend y datos. |
 | [Mapa en cuatro cuadrantes, histórico](MAPA_PARA_CORRECCIONES.md) | Exportación del 03/11/2026, sustituida por la matriz 8×8. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
 | [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Cuatro minijuegos jugables contra rivales, variantes, controles, guardado, optimizaciones y pendientes. |

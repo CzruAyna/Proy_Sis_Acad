@@ -249,3 +249,14 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     en docs/ las funcionalidades o datos que necesiten motor/backend.
     Esta precisión simplifica las acciones del inicio de las reglas 17 y 20;
     conserva su ruptura pixel art, terminal interior y accesibilidad.
+
+28. FUNCIONALIDADES Y BAJO CONSUMO, indicada el 06/11/2026.
+    Revisar los documentos y notas de frontend, resolver las funcionalidades
+    pendientes definidas y optimizar la fluidez y el consumo para equipos de
+    pocos recursos. Dejar las correcciones o necesidades restantes en docs/.
+    La aparición rara de Piedritas tendrá probabilidad de 1 entre 100 por
+    recorrido nuevo, evaluada una sola vez y conservada al guardar, según
+    la respuesta expresa del usuario. Es un parámetro del juego, no un dato
+    institucional. Entregar por chat los pasos solicitados para disponer del
+    repositorio abierto y descargable mediante el navegador; no incluir esas
+    instrucciones de publicación en los archivos del proyecto.

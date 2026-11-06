@@ -20,6 +20,7 @@ func _run() -> void:
 	_check(surface == Map.SIZE.x * Map.SIZE.y and codes.size() == 64, "64 celdas cubren toda la superficie")
 	_check(Grid.at(Vector2.ZERO) == "A1" and Grid.at(Map.SIZE) == "H8" and Grid.at(Map.SPAWN) == "H5", "Bordes y entrada se identifican sin desbordar")
 	var world := World.new()
+	world._life_saved = {"version": 1, "seed": "20261104", "rare": false}
 	root.add_child(world)
 	world.set_process(false)
 	_check(World.PLAYER_RADIUS == 12 and Scale.PLAYER_SIZE == Vector2(24, 32), "Sprite y huella de pies ampliados juntos")
@@ -55,20 +56,23 @@ func _run() -> void:
 	for actor in world.cast_instances:
 		if Vector2(actor["point"]).distance_to(positions[actor["instance_id"]]) > 10:
 			moving_count += 1
-	_check(moving_count > 35, "La mayoría de personajes pasea en el ensayo determinista")
-	_check(world.snapshot() == snapshot, "Los paseos ambientales no cambian el estado guardado del jugador")
+	_check(moving_count > 14, "La población realiza recorridos y entradas a clases")
+	var current: Dictionary = world.snapshot()
+	_check(current["position"] == snapshot["position"] and current["room_id"] == snapshot["room_id"] and current["visited"] == snapshot["visited"], "Las rutinas conservan la posición y visitas del jugador")
 	var before := str(world.cast_instances)
 	world.paused = true
 	world._process(0.5)
 	_check(str(world.cast_instances) == before, "Pausa detiene los paseos")
 	world.paused = false
 	world.animations_enabled = false
+	var elapsed: float = world.ambient_cast.elapsed
 	world._process(0.5)
-	_check(str(world.cast_instances) == before, "Animaciones desactivadas conservan los NPC quietos")
+	_check(world.ambient_cast.elapsed > elapsed, "Movimiento reducido conserva el reloj de las rutinas")
 	world.enter_building("sis_e")
 	world.animations_enabled = true
+	elapsed = world.ambient_cast.elapsed
 	world._process(0.5)
-	_check(str(world.cast_instances) == before, "No se actualiza el exterior dentro de un edificio")
+	_check(world.ambient_cast.elapsed > elapsed, "Las clases continúan al entrar en un edificio")
 	world.leave_room()
 	before = str(world.cast_instances)
 	for tick in range(40):

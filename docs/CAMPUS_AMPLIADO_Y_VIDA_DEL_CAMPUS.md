@@ -1,5 +1,13 @@
 # Campus ampliado: paisaje, memoria y personajes
 
+Actualización de motor del 06/11/2026: los contratos CAMPUS-NPC-01,
+CAMPUS-DOG-01/02/03, CAMPUS-FLOOR-01 y CAMPUS-MEMORY-01 tienen implementación
+de simulación y pruebas. Piedritas usa 1/100 por recorrido según el usuario.
+El detalle vigente, pendientes de arte y fuentes están en
+[Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md). La tabla de
+contratos inferior se conserva como antecedente del encargo, no como lista
+de funciones todavía ausentes. Horarios y plantas reales siguen sin verificar.
+
 Actualización del 04/11/2026: los originales de referencia se retiraron del
 proyecto; la matriz actual es 8×8. Los personajes tienen mayor tamaño y huella,
 con 51 paseantes ambientales. Las descripciones de muestras estáticas,

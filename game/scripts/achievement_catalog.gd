@@ -2,6 +2,9 @@ extends RefCounted
 
 const Catalog = preload("res://scripts/catalog.gd")
 const ACHIEVEMENTS := [
+	{"id": "campus_friend", "title": "Compañía en el campus", "description": "Acaricia a un perro del campus durante tu recorrido.", "hidden": false},
+	{"id": "campus_memory", "title": "Memoria de la facultad", "description": "Visita de cerca las fichas de Piedritas y el Chivato.", "hidden": false},
+	{"id": "secret_campus_friend", "title": "Un encuentro especial", "description": "Conociste y acariciaste al compañero especial de este recorrido.", "hidden": true},
 	{"id": "first_subject", "title": "Primer paso · aprobaste una materia", "description": "Aprueba tu primera materia y cierra el semestre.", "hidden": false},
 	{"id": "steady", "title": "Ritmo constante · aprobaste cinco materias en total", "description": "Acumula cinco materias aprobadas entre tus recorridos.", "hidden": false},
 	{"id": "tireless", "title": "Estudiante incansable · aprobaste veinte materias distintas", "description": "Acumula veinte materias aprobadas entre tus recorridos.", "hidden": false},
@@ -131,6 +134,14 @@ static func evaluate(profile: Dictionary, run: Dictionary = {}) -> bool:
 		conditions["degree_" + str(program["id"])] = complete
 		all_programs = all_programs and complete
 	conditions["explorer"] = all_programs
+	var exploration: Variant = run.get("campus_exploration", {})
+	var life: Variant = exploration.get("life", {}) if exploration is Dictionary else {}
+	if life is Dictionary:
+		var pets: Variant = life.get("petted", [])
+		var monuments: Variant = life.get("monuments", [])
+		conditions["campus_friend"] = pets is Array and not pets.is_empty()
+		conditions["campus_memory"] = monuments is Array and monuments.has("piedritas") and monuments.has("chivato")
+		conditions["secret_campus_friend"] = bool(life.get("rare", false)) and pets is Array and pets.has("ambient/piedritas_recuerdo")
 	for item in definitions():
 		if conditions.get(item["id"], false):
 			changed = _unlock(profile, item) or changed

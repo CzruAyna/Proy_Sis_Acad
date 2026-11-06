@@ -1,6 +1,7 @@
 extends Control
-## Presentation and intent surfaces only. No NPC AI, rewards or floor traversal.
+## Intent surface; validated actions belong to the campus-life/floor models.
 signal closed
+signal action_requested(action: Dictionary)
 const Landmarks = preload("res://scripts/campus_landmark_art.gd")
 const Cast = preload("res://scripts/campus_cast.gd")
 const Floors = preload("res://scripts/campus_floor_plan.gd")
@@ -110,6 +111,9 @@ func _rebuild() -> void:
 	if page.get("planned_action", "") != "":
 		var action: Button = ui._add_button(copy, str(page["planned_action"]), Callable(), false, 38)
 		action.disabled = true
+	for item in page.get("actions", []):
+		var action: Button = ui._add_button(copy, str(item["label"]), _request_action.bind(item), false, 38)
+		action.disabled = not bool(item.get("enabled", true))
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 10)
 	box.add_child(actions)
@@ -123,6 +127,10 @@ func _rebuild() -> void:
 	ui._add_button(actions, "Volver", close, true, 38)
 	_fit.call_deferred()
 	queue_redraw()
+
+
+func _request_action(action: Dictionary) -> void:
+	action_requested.emit(action.duplicate(true))
 
 
 func _fit() -> void:
@@ -180,7 +188,7 @@ static func floor_pages(id: String) -> Array[Dictionary]:
 		var labels := PackedStringArray()
 		for room in Floors.Map.floor_rooms(id, level):
 			labels.append(room["label"])
-		result.append({"kind": "floor", "id": id, "level": level, "title": ("Bloque 100" if id == "fis_mat" else "Aulas Básicas · bloque en cruz") + (" · PB" if level == 0 else " · Piso %d" % level), "text": " · ".join(labels), "source": "Plano provisional según el relato del usuario. Escaleras con descanso y retorno en U; recorrido entre pisos en preparación.", "planned_action": "Recorrer escaleras · en preparación"})
+		result.append({"kind": "floor", "id": id, "level": level, "title": ("Bloque 100" if id == "fis_mat" else "Aulas Básicas · bloque en cruz") + (" · PB" if level == 0 else " · Piso %d" % level), "text": " · ".join(labels), "source": "Plano provisional según el relato del usuario. Escaleras con descanso y retorno en U; acércate a la escalera para cambiar de piso."})
 	return result
 
 
@@ -190,12 +198,12 @@ static func catalog_pages() -> Array[Dictionary]:
 	for row in Cast.PROFESSIONS:
 		people.append({"id": row[0], "label": row[1]})
 	for start in range(0, people.size(), 6):
-		result.append({"kind": "cast_grid", "title": "Profesionales del campus", "items": people.slice(start, start + 6), "text": "Vestuario, herramientas y poses para la vida del campus.", "source": "Personajes ficticios con paseos ambientales. No representan personas reales ni una oferta oficial de carreras. Clases y horarios por integrar."})
+		result.append({"kind": "cast_grid", "title": "Profesionales del campus", "items": people.slice(start, start + 6), "text": "Vestuario, herramientas y poses para la vida del campus.", "source": "Personajes ficticios con recorridos y clases simuladas; no representan personas reales ni horarios oficiales."})
 	var students: Array[Dictionary] = []
 	for index in range(Cast.STUDENT_COUNT):
 		students.append({"id": "estudiante_%d" % index, "label": "Estudiante %d" % (index + 1)})
 	for start in range(0, students.size(), 6):
-		result.append({"kind": "cast_grid", "title": "Estudiantes del campus", "items": students.slice(start, start + 6), "text": "Ropa, piel, cabello, gafas y mochilas variadas. Cada diseño tiene poses de frente, espalda y paso.", "source": "Personajes ficticios con paseos de ambientación. Sus horarios y entrada a clases están por integrar."})
+		result.append({"kind": "cast_grid", "title": "Estudiantes del campus", "items": students.slice(start, start + 6), "text": "Ropa, piel, cabello, gafas y mochilas variadas. Cada diseño tiene poses de frente, espalda y paso.", "source": "Personajes ficticios con continuidad, recorridos y clases simuladas, sin asignación institucional verificada."})
 	var staff: Array[Dictionary] = []
 	for row in Cast.STAFF:
 		staff.append({"id": row[0], "label": row[1]})
@@ -204,5 +212,5 @@ static func catalog_pages() -> Array[Dictionary]:
 	var dogs: Array[Dictionary] = []
 	for row in Cast.DOGS:
 		dogs.append({"id": row[0], "label": row[1]})
-	result.append({"kind": "cast_grid", "title": "Compañeros del campus", "items": dogs, "text": "Diseños de perros y una variante especial en recuerdo de Piedritas. Encuentros, caricias y logros están en preparación.", "source": "La aparición muy rara de Piedritas está prevista; todavía no se aplica una probabilidad ni se otorgan logros.", "planned_action": "Acariciar · en preparación"})
+	result.append({"kind": "cast_grid", "title": "Compañeros del campus", "items": dogs, "text": "Diseños de perros y una variante especial en recuerdo de Piedritas. Para acariciarlos, busca una instancia real en el campus y acércate.", "source": "Catálogo ilustrativo. La variante especial tiene probabilidad de 1/100 por recorrido nuevo; el sorteo se conserva al guardar."})
 	return result

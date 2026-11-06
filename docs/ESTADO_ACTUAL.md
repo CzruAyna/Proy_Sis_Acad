@@ -1,5 +1,13 @@
 # Estado actual de SIS-INF
 
+Actualización de motor del 06/11/2026, sobre `e206909`, sin commit nuevo:
+pisos transitables, NPC con recorridos y clases ficticias persistentes, perros
+acariciables, Piedritas con sorteo único 1/100 y logros globales de exploración.
+Colisiones indexadas y ruptura en caché; bajo consumo detiene el fondo
+decorativo. Esta entrega sustituye los pendientes funcionales de esas áreas
+indicados en los cortes del 03 y 04/11, conservados debajo como antecedentes.
+Detalle y límites en [Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md).
+
 Actualización del 06/11/2026: inicio con Jugar, Simular, Opciones y Salir;
 caminos continuos, rosa con norte a la derecha y ambientes con distintas
 proporciones y equipamiento ilustrativo. Fuentes, contrato y pendientes en

@@ -1,5 +1,11 @@
 # Integración gráfica de SIS-INF
 
+Actualización de motor del 06/11/2026: implementados los contratos de pisos,
+rutinas de NPC, caricias, rareza persistente 1/100 y logros de exploración.
+Estado, límites, campos para frontend y verificaciones en
+[Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md).
+El arte del personaje de pausa y las animaciones laterales siguen pendientes.
+
 Actualización del 06/11/2026: inicio de cuatro acciones, caminos continuos,
 rosa orientada e interiores de dimensiones diferentes. Motor/backend debe
 consultar aparición, salida y colisiones de cada perfil, sin fijar aulas a

@@ -1,5 +1,13 @@
 # Código libre y licencia
 
+Distribución local preparada el 06/11/2026: el ZIP de Windows incluye EXE,
+PCK, `LICENSE`, esta guía y `GODOT-NOTICES.txt`, generado desde las APIs de
+licencias del motor mediante `game/tools/write_engine_notices.gd`. Se entrega
+además el ZIP de fuentes del mismo estado local, sin carpetas de herramientas,
+partidas, cachés, historial Git ni originales retirados. La integridad del ZIP
+no sustituye la revisión pendiente de derechos de identidad institucional y
+datos ajenos. No se realizó una operación remota.
+
 Actualización del 04/11/2026: se retiraron los JPG de planos y el PNG original
 aportados, junto con su conversor y metadatos. Se conservan el código y arte
 procedural propios, el icono pixel art y la procedencia histórica documentada.

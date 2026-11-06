@@ -25,9 +25,14 @@ static func make(kind: String, id: String, room: String) -> Dictionary:
 		extent = Vector2(720, 480) if id == "comedor" else Vector2(576, 416)
 	elif kind == "games_room":
 		extent = Vector2(480, 320) # Preserve the minigame interaction stations.
+	elif kind == "restroom":
+		extent = Vector2(480, 320)
 	var items: Array[Dictionary] = []
 	var center := extent.x / 2
-	if kind in ["classroom", "computer_lab", "physics_virtual"]:
+	if kind == "restroom":
+		for x in [60, 144, 300, 384]:
+			_add(items, "cabinet", Rect2(x, 88, 42, 74))
+	elif kind in ["classroom", "computer_lab", "physics_virtual"]:
 		var shared := kind == "classroom" and variant == 2
 		for y in range(128, int(extent.y - 90), 64):
 			for side in [-1, 1]:

@@ -1,5 +1,25 @@
 # Bitácora de desarrollo de SIS-INF
 
+## 6 de noviembre de 2026: cerrar contratos y reducir trabajo repetido
+
+Cambios locales sobre `e206909`, sin commit propio. Revisé las notas de frontend
+y conecté escaleras, plantas, rutinas de personajes, caricias y logros con el
+guardado. Los NPC usan la misma población visual y rutas sobre los caminos;
+sus clases son ficticias y no afectan las notas. El usuario eligió 1 entre 100
+para Piedritas, con un solo sorteo conservado por recorrido.
+
+La colisión consulta ahora un índice espacial y la ruptura reutiliza geometría
+en una caché acotada. Se redujeron consultas de contexto y copias de progreso,
+y bajo consumo deja estático el fondo decorativo. La medición local de estas
+funciones bajó; no la presento como una garantía de FPS en cualquier PC.
+
+La matriz de nueve suites suma 9.902 aserciones sin fallos y se generaron cinco
+capturas. Los detalles y límites están en [Verificaciones](VERIFICACIONES.md).
+Dejé para frontend el acabado de animaciones y para datos las plantas,
+horarios, equipamiento y fuentes originales en
+[Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md).
+
+
 ## 6 de noviembre de 2026: caminos, inicio e interiores
 
 Cambios locales sin commit propio. El usuario señaló los caminos que se

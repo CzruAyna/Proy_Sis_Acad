@@ -1,5 +1,50 @@
 # Registro de verificaciones
 
+## Ejecución del 6 de noviembre de 2026: vida y bajo consumo
+
+Cambios locales sobre `e206909`, sin commit propio. Godot 4.7.2, Windows.
+Estas suites se ejecutaron nuevamente; no se suman a resultados históricos.
+
+| Suite | Aserciones | Fallos |
+|---|---:|---:|
+| `test_campus_life` | 2.728 | 0 |
+| `test_natural_campus` | 4.641 | 0 |
+| `test_dynamic_menu` | 645 | 0 |
+| `test_cave_visuals` | 230 | 0 |
+| `test_grid8_and_cast` | 711 | 0 |
+| `test_player_rules` | 64 | 0 |
+| `test_exploration` | 558 | 0 |
+| `test_recreation_surface` | 291 | 0 |
+| `test_exploration_handoff` | 34 | 0 |
+| **Total de esta matriz** | **9.902** | **0** |
+
+`test_campus_life` compara 2.500 posiciones contra la colisión anterior,
+recorre aulas y baños de cada planta, comprueba guardado, rareza, caricias,
+logros, datos malformados, límites de caché/FPS y botones reales de escaleras.
+En 120 segundos de rutina simulada, 15 personajes alcanzaron clases y hubo
+132 búsquedas de rutas. No prueba todas las combinaciones posibles de destinos.
+Las expectativas de los tests anteriores se actualizaron para el catálogo
+ampliado de logros y para rutinas funcionales que siguen con movimiento reducido.
+
+`capture_campus_life.gd` generó cinco vistas de 1152×720 con datos ficticios,
+sin guardar partidas personales. Se revisaron escaleras, acción de caricia y
+opciones de bajo consumo. El controlador gráfico emitió un aviso de OpenGL y
+usó ANGLE sobre AMD Radeon R5 M330; no hubo errores de scripts en esa captura.
+Los logs/capturas están en `game/.test-artifacts/` y se excluyen de la entrega.
+
+Se exportó `game/build/SIS-INF.exe` con su `.pck`. El arranque headless aislado
+del binario terminó con código 0 y log sin errores. El primer intento bajo
+aislamiento informó que no podía leer los certificados de Windows; se repitió
+fuera de esa restricción con un directorio de usuario de prueba y quedó limpio.
+Esta comprobación confirma el arranque, no una sesión completa en el binario.
+Se prepararon ZIP locales de Windows x64 y fuentes correspondientes, con GPL
+y avisos extraídos del motor; se comprobó la integridad de ambos archivos.
+
+Los tiempos comparados y sus límites están en
+[Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md). No se midieron
+FPS sostenidos, memoria de una sesión larga ni rendimiento en otro equipo.
+
+
 Revisión documental: 2 de noviembre de 2026. Corte de código: `b122e96`.
 
 ## Resultados registrados por las entregas

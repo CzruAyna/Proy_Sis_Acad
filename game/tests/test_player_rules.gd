@@ -113,8 +113,8 @@ func _test_achievement_catalog() -> void:
 	var profile := {}
 	_check(Achievements.evaluate(profile), "Se inicializa catálogo global")
 	var empty := Achievements.presentation(profile)
-	_check(empty["public"].size() == 10 and empty["public_unlocked"] == 0, "Todos los logros públicos existen antes de ganar el primero")
-	_check(empty["secrets"].is_empty() and empty["hidden_total"] == 3, "Los secretos pendientes solo muestran su cantidad")
+	_check(empty["public"].size() == 12 and empty["public_unlocked"] == 0, "Todos los logros públicos existen antes de ganar el primero")
+	_check(empty["secrets"].is_empty() and empty["hidden_total"] == 4, "Los secretos pendientes solo muestran su cantidad")
 	_check(not Achievements.evaluate(profile), "Evaluar sin cambios no duplica logros ni provoca guardados")
 	var run := {"program_id": "sistemas", "mention_id": "gestion_sistemas", "simulation": {"history": [
 		{"course_id": "sistemas/gestion_sistemas/MAT 1101", "term": 1, "passed": false, "origin": "ORDINARIA"},

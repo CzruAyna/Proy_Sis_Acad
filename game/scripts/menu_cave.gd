@@ -6,6 +6,8 @@ const MAX_DEBRIS := 36
 const PRINT_RATE := 170.0
 const FOLDERS := ["sistemas", "informatica", "campus", "modelos", "software", "redes", "datos", "laboratorios", "proyectos", "recursos", "simulaciones", "algoritmos", "documentos", "build", "tests", "assets"]
 const FILES := ["config", "modelo", "nodo", "grafo", "kernel", "enlace", "matriz", "render", "evento", "modulo", "estado", "proceso"]
+static var _frames: Dictionary = {}
+static var geometry_builds := 0
 
 
 static func noise(x: int, y: int, seed: int = 19) -> float:
@@ -19,14 +21,33 @@ static func erosion(phase: float) -> float:
 
 
 static func frame(box: Rect2, chunk: int, depth: int, phase: float) -> Dictionary:
+	var amount := erosion(phase) if phase >= 0 else 0.0
+	var key := "%s/%d/%d/%d" % [box, chunk, depth, roundi(amount * 10)]
+	if not _frames.has(key):
+		if _frames.size() >= 16:
+			_frames.erase(_frames.keys()[0])
+		_frames[key] = _build_frame(box, chunk, depth, amount)
+	var cached: Dictionary = _frames[key]
+	var debris: Array[Rect2] = []
+	var age := phase - (12 + roundi(amount * 10) * 8)
+	if amount > 0 and age >= 0 and age < 3.5:
+		for chip in cached["chips"]:
+			var p: Vector2 = chip["point"]
+			var displacement := (p - box.get_center()).normalized() * age * 18 + Vector2(sin(age * 2 + int(chip["column"])) * 5, age * age * 5)
+			var extent := Vector2.ONE * (8 if age < 1.5 else 4)
+			debris.append(Rect2((p + displacement - extent * 0.5).snapped(Vector2(4, 4)), extent))
+	return {"cells": cached["cells"], "debris": debris, "spans": cached["spans"], "bounds": cached["bounds"], "step": cached["step"]}
+
+
+static func _build_frame(box: Rect2, chunk: int, depth: int, amount: float) -> Dictionary:
+	geometry_builds += 1
 	var step := maxf(8, chunk * 0.5)
 	var bounds := box.grow(depth)
 	var columns := ceili(bounds.size.x / step)
 	var rows := ceili(bounds.size.y / step)
 	var core := box.grow(-minf(40, box.size.x * 0.18))
-	var amount := erosion(phase) if phase >= 0 else 0.0
 	var cells: Array[Rect2] = []
-	var debris: Array[Rect2] = []
+	var chips: Array[Dictionary] = []
 	var spans: Array = []
 	var seed := int(box.size.x * 3 + box.size.y)
 	for row in range(rows):
@@ -44,13 +65,8 @@ static func frame(box: Rect2, chunk: int, depth: int, phase: float) -> Dictionar
 			var edge_distance := minf(minf(p.x - bounds.position.x, bounds.end.x - p.x) / (bounds.size.x * 0.5), minf(p.y - bounds.position.y, bounds.end.y - p.y) / (bounds.size.y * 0.5))
 			var resistance := clampf(0.04 + edge_distance * 0.53 + noise(column, row, seed + 31) * 0.42, 0.01, 0.99)
 			var broken := solid and amount >= resistance
-			if broken and debris.size() < MAX_DEBRIS:
-				var age := phase - (12 + ceilf(resistance * 10) * 8)
-				if age >= 0 and age < 3.5 and noise(column, row, seed + 71) < 0.22:
-					var outward := (p - box.get_center()).normalized()
-					var displacement := outward * age * 18 + Vector2(sin(age * 2 + column) * 5, age * age * 5)
-					var extent := Vector2.ONE * (8 if age < 1.5 else 4)
-					debris.append(Rect2((p + displacement - extent * 0.5).snapped(Vector2(4, 4)), extent))
+			if broken and chips.size() < MAX_DEBRIS and ceili(resistance * 10) == roundi(amount * 10) and noise(column, row, seed + 71) < 0.22:
+				chips.append({"point": p, "column": column})
 			if solid and not broken:
 				cells.append(rect)
 				if start == -INF:
@@ -61,7 +77,7 @@ static func frame(box: Rect2, chunk: int, depth: int, phase: float) -> Dictionar
 		if start != -INF:
 			runs.append(Vector2(start, bounds.end.x))
 		spans.append(runs)
-	return {"cells": cells, "debris": debris, "spans": spans, "bounds": bounds, "step": step}
+	return {"cells": cells, "chips": chips, "spans": spans, "bounds": bounds, "step": step}
 
 
 static func stream_frame(height: float, phase: float) -> Dictionary:
@@ -93,8 +109,10 @@ static func _tree_line(index: int, linux: bool) -> String:
 
 static func draw(item: RID, box: Rect2, chunk: int, depth: int, phase: float, inset_top: float = 0) -> void:
 	var geometry := frame(box, chunk, depth, phase)
-	for rect in geometry["cells"]:
-		RenderingServer.canvas_item_add_rect(item, rect, Color.BLACK)
+	var bounds: Rect2 = geometry["bounds"]
+	for row in range(geometry["spans"].size()):
+		for span in geometry["spans"][row]:
+			RenderingServer.canvas_item_add_rect(item, Rect2(span.x, bounds.position.y + row * float(geometry["step"]), span.y - span.x, minf(geometry["step"], bounds.size.y - row * float(geometry["step"]))), Color.BLACK)
 	for rect in geometry["debris"]:
 		RenderingServer.canvas_item_add_rect(item, rect, Color.BLACK)
 	if phase < 0:

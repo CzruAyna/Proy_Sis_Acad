@@ -7,6 +7,7 @@ const Neon = preload("res://scripts/neon_visuals.gd")
 const MinigamePreview = preload("res://scripts/minigame_preview.gd")
 const MinigameSessions = preload("res://scripts/minigame_session_ui.gd")
 const Inspection = preload("res://scripts/campus_inspection_overlay.gd")
+const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 
 var host: WeakRef
@@ -276,6 +277,7 @@ func _inspect(content: Array[Dictionary]) -> void:
 		world.paused = true
 		world._held.clear()
 	var overlay := Inspection.new()
+	overlay.action_requested.connect(_inspection_action, CONNECT_DEFERRED)
 	overlay.closed.connect(func() -> void:
 		if is_instance_valid(world) and world.is_inside_tree():
 			world.paused = false
@@ -284,6 +286,9 @@ func _inspect(content: Array[Dictionary]) -> void:
 
 
 func show_monument(id: String) -> void:
+	var world = world_ref.get_ref() if world_ref != null else null
+	if is_instance_valid(world) and world.ambient_cast.visit_monument(id, world.player):
+		_record_life(world)
 	_inspect(Inspection.monument_pages(id))
 
 
@@ -292,6 +297,16 @@ func show_designs() -> void:
 
 
 func show_actor(id: String) -> void:
+	var world = world_ref.get_ref() if world_ref != null else null
+	if is_instance_valid(world):
+		var actor: Dictionary = world.ambient_cast.find_instance(id)
+		if not actor.is_empty():
+			var dog: bool = world.ambient_cast.is_dog(actor)
+			var page := {"kind": "cast_grid", "title": "Compañero del campus" if dog else "Vida del campus", "items": [{"id": actor["id"], "label": "Compañero" if dog else "Personaje"}], "text": "Acércate y acaricia a este compañero. Su reacción forma parte de la simulación." if dog else "Rutina simulada: %s. Edificio %s; aula %s. Esta actividad no registra asistencia ni notas del jugador." % [actor["state"], actor["building_id"], actor["room_name"]], "source": "Personaje ficticio; horarios y aulas ilustrativos, sin asignación institucional verificada."}
+			if dog:
+				page["actions"] = [{"type": "pet", "instance_id": id, "label": "Acariciar", "enabled": world.player.distance_to(actor["point"]) <= 52}]
+			_inspect([page])
+			return
 	var pages := Inspection.catalog_pages()
 	for page in pages:
 		for item in page.get("items", []):
@@ -301,7 +316,41 @@ func show_actor(id: String) -> void:
 
 
 func show_floors(id: String) -> void:
-	_inspect(Inspection.floor_pages(id))
+	var world = world_ref.get_ref() if world_ref != null else null
+	if not is_instance_valid(world) or world.room_id != id or not world._near_stairs():
+		_inspect(Inspection.floor_pages(id))
+		return
+	var pages := Inspection.floor_pages(id)
+	var page: Dictionary = pages[clampi(world.floor_level, 0, pages.size() - 1)]
+	page["text"] = "Estás en %s. Usa la escalera para cambiar de nivel. La distribución es una recreación provisional." % ("PB" if world.floor_level == 0 else "el piso %d" % world.floor_level)
+	page["actions"] = [{"type": "floor", "level": world.floor_level + 1, "label": "Subir un piso", "enabled": world.floor_level + 1 < Map.floor_count(id)}, {"type": "floor", "level": world.floor_level - 1, "label": "Bajar un piso", "enabled": world.floor_level > 0}]
+	_inspect([page])
+
+
+func _inspection_action(action: Dictionary) -> void:
+	var world = world_ref.get_ref() if world_ref != null else null
+	if not is_instance_valid(world) or not world.is_inside_tree():
+		return
+	var overlay = _ui().find_child("CampusInspection", true, false)
+	if overlay != null:
+		overlay.close()
+	if action.get("type") == "floor":
+		world.change_floor(int(action.get("level", -1)))
+	elif action.get("type") == "pet":
+		var result: Dictionary = world.ambient_cast.pet(str(action.get("instance_id", "")), world.player)
+		if result.get("ok", false):
+			_record_life(world)
+			world.context_changed.emit(str(result["message"]))
+			world.queue_redraw()
+	_save()
+
+
+func _record_life(world: Control) -> void:
+	_update(world.snapshot())
+	if _ui().current_profile.is_empty():
+		return
+	if Achievements.evaluate(_ui().global_profile, _ui().current_profile):
+		_ui()._save_global_profile()
 
 
 func show_room(building: Dictionary, room: String) -> void:
@@ -313,7 +362,9 @@ func show_room(building: Dictionary, room: String) -> void:
 	var page: VBoxContainer = _ui()._make_page(room, "Interior recreado · " + str(building["name"]), show_world)
 	_text(page, "Estás en " + room + ". La decoración es una recreación didáctica; no representa todavía el mobiliario real.", 17)
 	var actions := _actions(page)
-	if not _ui().current_profile.is_empty():
+	if Map.room_kind(str(building["id"]), room) == "restroom":
+		_text(page, "Ambiente de servicios recreado; no registra actividades académicas.", 15)
+	elif not _ui().current_profile.is_empty():
 		var section := "tramites" if building["kind"] == "office" else "materias"
 		_ui()._add_button(actions, "Consultar trámites" if section == "tramites" else "Estudiar / repasar materias", _ui()._show_campus_section.bind(section), true, 42)
 		_ui()._add_button(actions, "Ver mi progreso", show_progress, false, 42)
@@ -325,8 +376,9 @@ func show_room(building: Dictionary, room: String) -> void:
 	if building["rooms"].size() > 1:
 		_ui()._add_button(page, "Recorrer pasillo del bloque", _choose_hall.bind(str(building["id"])), false, 40)
 	var rooms := _actions(page)
-	for name in building["rooms"]:
-		_ui()._add_button(rooms, str(name), _choose_room.bind(str(building["id"]), str(name)), str(name) == room, 40)
+	for item in Map.floor_rooms(str(building["id"]), int(saved.get("floor", 0))):
+		var name := str(item["id"])
+		_ui()._add_button(rooms, name, _choose_room.bind(str(building["id"]), name), name == room, 40)
 	_ui()._add_button(page, "Volver al interior", show_world, false, 40)
 
 
@@ -368,7 +420,10 @@ func _choose_room(id: String, room: String) -> void:
 func _choose_hall(id: String) -> void:
 	var model := World.new()
 	model.restore(saved)
-	model.enter_building(id)
+	if model.room_id == id and not model.room_name.is_empty():
+		model.return_to_hall()
+	else:
+		model.enter_building(id)
 	_update(model.snapshot())
 	model.free()
 	show_world()
