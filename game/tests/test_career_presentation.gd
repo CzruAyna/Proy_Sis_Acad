@@ -77,7 +77,9 @@ func _run() -> void:
 		game.settings["font_scale"] = 1.2
 		game._show_main()
 		await _inspect("inicio")
-		_check(game.find_child("CareerPresentationEntry", true, false) != null, "Acceso directo desde inicio")
+		game._show_simulate()
+		await _inspect("simular")
+		_check(game.find_child("CareerPresentationEntry", true, false) != null, "Acceso a la presentación dentro de Simular")
 		game._show_career_presentation()
 		var view = game.find_child("CareerPresentation", true, false)
 		view.model.paused = true

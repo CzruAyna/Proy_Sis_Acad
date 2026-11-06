@@ -105,7 +105,8 @@ func _run() -> void:
 	root.add_child(game)
 	game.size = Vector2(1152, 720)
 	game._show_main()
-	_check(game.find_child("CareerStoryEntry", true, false) != null, "El módulo es accesible desde el menú")
+	game._show_simulate()
+	_check(game.find_child("CareerStoryEntry", true, false) != null, "La historia es accesible dentro de Simular")
 	game._show_career_story()
 	var ui = game.career_story_ui
 	var field: LineEdit = game.find_child("StoryPlayerName", true, false)

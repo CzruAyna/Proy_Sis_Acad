@@ -2,6 +2,14 @@ PARA BACKEND: INFORMACIÓN REAL Y MATERIAL ORIGINAL PARA SIS-INF
 Solicitud del usuario: 29/10/2026. Revisar también /REGLAS_USUARIO.txt.
 Este archivo solicita revisión y datos; NO confirma vigencia ni modifica reglas.
 
+PRECISIÓN DEL 06/11/2026
+El inicio se simplifica y los interiores dejan de tener un tamaño único.
+Consultar docs/CAMINOS_MENU_Y_AMBIENTES.md: se necesitan fotos fechadas e
+identificadas por aula/planta, croquis acotados y mobiliario confirmado.
+No deducir capacidades de las mesas dibujadas. Motor debe usar tamaño, salida,
+aparición y obstáculos del perfil para NPC interiores, prácticas y cambios
+de piso. Las coordenadas y proporciones siguen siendo una recreación.
+
 PRECISIÓN DEL 04/11/2026
 Los mapas, fotos y demás originales aportados se consultan FUERA del proyecto.
 No copiarlos a los recursos del juego ni empaquetarlos. Mantener procedencia,

@@ -1,5 +1,11 @@
 # Matriz 8×8, escala de personajes y referencias externas
 
+Actualización del 06/11/2026: se regeneran las 64 láminas con caminos conectados
+y rosa de los vientos. El usuario precisó norte a la derecha, sur a la izquierda,
+este abajo y oeste arriba. Esa orientación sustituye la falta de referencia
+cardinal del avance del 04/11 descrito debajo; siguen sin equivaler a metros.
+Detalles en [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md).
+
 Estado: 4 de noviembre de 2026, cambios locales sin commit propio. Este avance
 actualiza [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md) y sustituye
 la revisión en cuatro cuadrantes por una matriz de 64 celdas.

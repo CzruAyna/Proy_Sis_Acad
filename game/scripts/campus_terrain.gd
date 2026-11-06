@@ -1,8 +1,8 @@
 extends RefCounted
 const Land = preload("res://scripts/campus_landscape.gd")
+const Roads = preload("res://scripts/campus_roads.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 static var _lawns: Array[PackedVector2Array] = []
-static var _roads: Array[PackedVector2Array] = []
 static var _forest := PackedVector2Array()
 static var _pond := PackedVector2Array()
 
@@ -12,24 +12,27 @@ static func prepare() -> void:
 		return
 	for shape in Land.LAWNS:
 		_lawns.append(Land.polygon(shape))
-	_roads = Land.routes()
 	_forest = Land.polygon(Land.FOREST)
 	_pond = Land.polygon(Land.POND)
 
 
-static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0) -> void:
+static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool = true) -> void:
 	prepare()
-	canvas.draw_rect(view, Color("#a89e80"))
+	canvas.draw_rect(view, Color("#ad9b7c"))
 	for shape in _lawns:
 		if _bounds(shape).intersects(view):
 			canvas.draw_colored_polygon(shape, Color("#6b8656"))
 	if _bounds(_forest).intersects(view):
 		canvas.draw_colored_polygon(_forest, Color("#3e654c"))
-	for y in range(floori(view.position.y / 48) * 48, ceili(view.end.y), 48):
-		for x in range(floori(view.position.x / 48) * 48, ceili(view.end.x), 48):
+	for y in range(floori(view.position.y / 48) * 48, ceili(view.end.y), 48 if detail else 384):
+		for x in range(floori(view.position.x / 48) * 48, ceili(view.end.x), 48 if detail else 384):
 			var point := Vector2(x, y)
 			var green := in_garden(point)
-			canvas.draw_rect(Rect2(point + Vector2(posmod(x + y, 17), 8), Vector2(3, 2)), Color("#8d9e62") if green else Color("#c2b58d"))
+			if detail:
+				var seed := posmod(x * 13 + y * 7, 31)
+				canvas.draw_rect(Rect2(point + Vector2(seed, seed % 13), Vector2(4, 2)), Color("#91a569") if green else Color("#c8b692"))
+				if not green and seed % 3 == 0:
+					canvas.draw_rect(Rect2(point + Vector2(12, 28), Vector2(2, 2)), Color("#8e8069"))
 	for shape in Land.PARKING:
 		var points := Land.polygon(shape)
 		if not _bounds(points).intersects(view):
@@ -43,11 +46,7 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0) -> void:
 					canvas.draw_rect(Rect2(p, Vector2(46, 2)), Color("#d5d3b9"))
 					if posmod(x + y, 5) == 0:
 						canvas.draw_rect(Rect2(p + Vector2(10, 7), Vector2(24, 34)), Color("#3e5b6b"))
-	for path in _roads:
-		if _bounds(path).grow(90).intersects(view):
-			canvas.draw_polyline(path, Color("#c0b89b"), 134, false)
-			canvas.draw_polyline(path, Color("#343b3c"), 112, false)
-			canvas.draw_polyline(path, Color("#424747"), 90, false)
+	Roads.draw(canvas, view)
 	if _bounds(_pond).grow(24).intersects(view):
 		canvas.draw_colored_polygon(_pond, Color("#a7805e"))
 		var inner := PackedVector2Array()
@@ -55,7 +54,7 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0) -> void:
 		for p in _pond:
 			inner.append(center + (p - center) * 0.97)
 		canvas.draw_colored_polygon(inner, Color("#437f98"))
-		for y in range(floori(view.position.y / 24) * 24, ceili(view.end.y), 24):
+		for y in range(floori(view.position.y / 24) * 24, ceili(view.end.y) if detail else 0, 24):
 			for x in range(floori(view.position.x / 48) * 48, ceili(view.end.x), 48):
 				var p := Vector2(x, y)
 				if Geometry2D.is_point_in_polygon(p, inner):

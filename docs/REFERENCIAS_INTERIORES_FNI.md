@@ -1,5 +1,11 @@
 # Referencias para los edificios e interiores de la FNI
 
+Actualización del 06/11/2026: se observaron dos fotografías de RTvU–UTO sobre
+mobiliario del ciclo básico (publicación del 22/05/2026). Se incorporaron
+proporciones variadas y detalles recreados, sin atribuir a una foto un ID de aula
+no identificado. Fuentes, límites y croquis pendientes en
+[Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md).
+
 Estado del 04/11/2026: las referencias se consultan externamente y las copias
 de los originales fueron retiradas del proyecto. La revisión satelital, límites
 de actualidad y fotos de fachadas pendientes están en

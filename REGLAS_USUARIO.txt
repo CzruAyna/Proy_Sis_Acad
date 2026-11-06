@@ -234,3 +234,18 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     por su fecha de consulta o por el año de copyright del mapa.
     Esta precisión actualiza la incorporación de archivos de las reglas 15,
     16 y 25; conserva identidad, recreación pixel art y fuentes documentadas.
+
+27. CAMINOS, ORIENTACIÓN E INICIO SIMPLE, indicada el 06/11/2026.
+    Los caminos deben empalmar de forma continua y natural, sin dibujar bordes
+    de una vía encima de otra. El resto del suelo es principalmente tierra;
+    conservar pasto en los sectores indicados, aunque no sea evidente en la foto.
+    Incorporar una rosa de los vientos en la esquina superior derecha del mapa:
+    norte a la derecha, sur a la izquierda, este abajo y oeste arriba, según
+    la orientación indicada por el usuario. El inicio tendrá solo Jugar,
+    Simular, Opciones y Salir; las partidas y otras funciones se consultan dentro
+    de esos flujos y no añaden botones al inicio al crear guardados.
+    Variar tamaños, proporciones y detalles de los ambientes mediante referencias
+    fotográficas, distinguiendo recreación de planta real confirmada. Registrar
+    en docs/ las funcionalidades o datos que necesiten motor/backend.
+    Esta precisión simplifica las acciones del inicio de las reglas 17 y 20;
+    conserva su ruptura pixel art, terminal interior y accesibilidad.

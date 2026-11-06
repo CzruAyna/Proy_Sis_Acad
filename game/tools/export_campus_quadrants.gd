@@ -4,6 +4,7 @@ const Map = preload("res://scripts/campus_map.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Terrain = preload("res://scripts/campus_terrain.gd")
 const Grid = preload("res://scripts/campus_grid.gd")
+const Compass = preload("res://scripts/campus_compass.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 const OUTPUT := "res://.test-artifacts/mapa-8x8/"
 const PAGE_SIZE := Vector2i(1600, 1520)
@@ -40,7 +41,8 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 		for mask in [Rect2(0, 0, size.x, MAP_ORIGIN.y), Rect2(0, edge.y, size.x, size.y - edge.y), Rect2(0, 0, MAP_ORIGIN.x, size.y), Rect2(edge.x, 0, size.x - edge.x, size.y)]:
 			draw_rect(mask, Color("#10191f"))
 		draw_string(FONT, Vector2(32, 36), "SIS-INF / CELDA " + Grid.code(quadrant / 8, quadrant % 8) + " / MATRIZ 8×8", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("#e7efdc"))
-		draw_string(FONT, Vector2(32, 69), "1536 × 1088 unidades por celda · 04/11/2026 · diseño por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#acc4bd"))
+		draw_string(FONT, Vector2(32, 69), "1536 × 1088 unidades por celda · 06/11/2026 · diseño por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#acc4bd"))
+		Compass.draw(self, Vector2(size.x - 54, 48), 12)
 		_draw_grid()
 		occupied.clear()
 		for item in features:
@@ -100,12 +102,13 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 			var p := Vector2(32 + column * 768, top + 38 + row * 24)
 			draw_string(FONT, p, str(features[index]["code"]) + "  " + str(features[index]["label"]), HORIZONTAL_ALIGNMENT_LEFT, 748, 17, Color("#cbd7c7"))
 		draw_string(FONT, Vector2(32, 1475), "Coordenadas en unidades de juego, no metros. X → derecha; Y → abajo.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
-		draw_string(FONT, Vector2(32, 1504), "«continúa» cruza el corte. Orientación del esquema, sin norte geográfico.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
+		draw_string(FONT, Vector2(32, 1504), "«continúa» cruza el corte. N → derecha; S → izquierda; E → abajo; O → arriba.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
 
 
 	func _draw_preview() -> void:
 		draw_string(FONT, Vector2(48, 52), "SIS-INF / MAPA ACTUAL / MATRIZ 8×8", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#e6eedc"))
 		draw_string(FONT, Vector2(48, 84), "Misma orientación del plano aportado · distribución por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a9c2bb"))
+		Compass.draw(self, Vector2(size.x - 54, 48), 12)
 		draw_texture_rect(preview, Rect2(48, 108, 1536, 1088), false)
 		for row in range(8):
 			for column in range(8):
@@ -195,7 +198,7 @@ func _run() -> void:
 	sheet.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	viewport.add_child(sheet)
 	var full := Image.create(int(Map.SIZE.x / 2), int(Map.SIZE.y / 2), false, Image.FORMAT_RGBA8)
-	var manifest: Dictionary = {"map_id": Map.ID, "date": "2026-11-04", "grid": [8, 8], "cell_size": [HALF.x, HALF.y], "size": [Map.SIZE.x, Map.SIZE.y], "units": "game units, not metres", "orientation": "screen coordinates, not geographic north", "cells": []}
+	var manifest: Dictionary = {"map_id": Map.ID, "date": "2026-11-06", "grid": [8, 8], "cell_size": [HALF.x, HALF.y], "size": [Map.SIZE.x, Map.SIZE.y], "units": "game units, not metres", "orientation": "N right; S left; E down; W up, as specified by user", "cells": []}
 	for index in range(64):
 		sheet.quadrant = index
 		sheet.region = Grid.bounds(index / 8, index % 8)

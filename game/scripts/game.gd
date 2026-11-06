@@ -1019,7 +1019,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	var layout := VBoxContainer.new()
 	layout.add_theme_constant_override("separation", 8)
 	margin.add_child(layout)
-	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
+	if not current_profile.is_empty() and simulation != null and (not menu_backdrop or title in ["Jugar", "Simular"]):
 		var program_name := "Sistemas" if current_profile["program_id"] == "sistemas" else "Informática"
 		var identity := _label("PARTIDA %d · %s · %s · Periodo %d" % [active_slot, str(current_profile.get("player_name", "Estudiante")).left(40), program_name, int(simulation.state["term"])], 13, _current_theme.get("neon", Color.WHITE))
 		identity.name = "PlayerIdentity"
@@ -1302,19 +1302,10 @@ func _show_main() -> void:
 	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	branding.add_child(title)
 	menu.add_child(_label("Tu carrera, tu campus, tu recorrido.", 13, Color("#c6d0d4")))
-	var recent := _recent_slot()
-	if recent > 0:
-		var saved := _read_save(recent, "solo")
-		menu.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")), 12, Color("#c6d0d4")))
-		_add_menu_button(menu, "Continuar mi recorrido", _open_slot.bind(recent, "solo"), true, 34)
-	_add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 34)
-	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 34)
-	_add_menu_button(menu, "Explorar la facultad", _show_exploration, false, 34).name = "ExplorationEntry"
-	_add_menu_button(menu, "Historia de una carrera", _show_career_story, false, 34).name = "CareerStoryEntry"
-	_add_menu_button(menu, "Demostración automática", _show_career_presentation, false, 34).name = "CareerPresentationEntry"
-	_add_menu_button(menu, "Opciones", _show_options, false, 34)
-	_add_menu_button(menu, "Logros globales", _show_global_achievements.bind(Callable(self, "_show_main")), false, 34)
-	_add_button(menu, "Salir", Callable(self, "_exit_game"), false, 34)
+	_add_menu_button(menu, "Jugar", _show_play, true, 40).name = "PlayEntry"
+	_add_menu_button(menu, "Simular", _show_simulate, false, 40).name = "SimulateEntry"
+	_add_menu_button(menu, "Opciones", _show_options, false, 40)
+	_add_button(menu, "Salir", Callable(self, "_exit_game"), false, 40)
 	for action in menu.get_children():
 		if action is Button:
 			action.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -1367,6 +1358,34 @@ func _home_panel_style() -> BrokenPanel:
 	return style
 
 
+func _show_play() -> void:
+	_use_neutral_theme()
+	var page := _make_page("Jugar", "Elige tu recorrido", _show_main, true, false)
+	var card := _card(page)
+	var recent := _recent_slot()
+	if recent > 0:
+		var saved := _read_save(recent, "solo")
+		card.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")), 16))
+		_add_menu_button(card, "Continuar", _open_slot.bind(recent, "solo"), true, 40)
+	_add_menu_button(card, "Nueva carrera", _new_available_game, recent == 0, 40)
+	_add_menu_button(card, "Mis partidas", _show_solo_slots, false, 40)
+	_add_menu_button(card, "Explorar la facultad", _show_exploration, false, 40).name = "ExplorationEntry"
+	_add_menu_button(card, "Logros", _show_global_achievements.bind(Callable(self, "_show_play")), false, 40)
+
+
+func _show_simulate() -> void:
+	_use_neutral_theme()
+	var page := _make_page("Simular", "Dos formas de conocer el recorrido académico", _show_main, true, false)
+	var demo := _card(page)
+	demo.add_child(_label("Ver y aprender", 21))
+	demo.add_child(_label("Presentación automática de las carreras y sus menciones. Puedes pausarla cuando quieras.", 16))
+	_add_menu_button(demo, "Demostración automática", _show_career_presentation, true, 40).name = "CareerPresentationEntry"
+	var story := _card(page)
+	story.add_child(_label("Probar una historia", 21))
+	story.add_child(_label("Genera un recorrido con decisiones y resultados variables, separado de tus partidas.", 16))
+	_add_menu_button(story, "Historia de una carrera", _show_career_story, false, 40).name = "CareerStoryEntry"
+
+
 func _show_exploration() -> void:
 	if exploration_ui == null:
 		exploration_ui = ExplorationUI.new(self)
@@ -1379,7 +1398,7 @@ func _show_career_presentation() -> void:
 		if exploration_ui.minigames != null:
 			exploration_ui.minigames.suspend()
 	_use_neutral_theme()
-	var page := _make_page("Demostración automática", "Sistemas e Informática · recorrido explicativo en bucle", _show_main, false, false)
+	var page := _make_page("Demostración automática", "Sistemas e Informática · recorrido explicativo en bucle", _show_simulate, false, false)
 	page.add_child(_label(CareerPresentationView.Presentation.NOTICE, 12, Color("#a2b7c1")))
 	var presentation := CareerPresentationView.new()
 	presentation.reduced_motion = not bool(settings["animations"]) or bool(settings["low_performance"])
@@ -1545,7 +1564,7 @@ func _show_slots(mode: String) -> void:
 	if mode != "solo":
 		return
 	_use_neutral_theme()
-	var content := _make_page("Partidas de estudiante", "Tres espacios guardados en este equipo.", Callable(self, "_show_main"), true)
+	var content := _make_page("Partidas de estudiante", "Tres espacios guardados en este equipo.", Callable(self, "_show_play"), true)
 	var rows := _add_compact_list(content)
 	for slot in range(1, SAVE_COUNT + 1):
 		var save := _read_save(slot, "solo")

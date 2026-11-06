@@ -41,7 +41,7 @@ func _actions(parent: Control) -> HFlowContainer:
 
 func show_setup(message: String = "") -> void:
 	_ui()._apply_career_theme(program_id, mention_id)
-	var page: VBoxContainer = _ui()._make_page("Una posible historia", "Demostración independiente · nombre, decisiones de estudio y sucesos aleatorios", _ui()._show_main)
+	var page: VBoxContainer = _ui()._make_page("Una posible historia", "Demostración independiente · nombre, decisiones de estudio y sucesos aleatorios", _ui()._show_simulate)
 	_text(page, "Crea una historia ficticia por toda la carrera. El nombre personaliza el relato; no determina capacidad ni predice tu futuro. Cada nueva historia puede cambiar.", 16)
 	var card: VBoxContainer = _ui()._card(page)
 	_text(card, "¿Quién protagoniza la historia?", 19)

@@ -1,5 +1,11 @@
 # Integración gráfica de SIS-INF
 
+Actualización del 06/11/2026: inicio de cuatro acciones, caminos continuos,
+rosa orientada e interiores de dimensiones diferentes. Motor/backend debe
+consultar aparición, salida y colisiones de cada perfil, sin fijar aulas a
+480×320; ocupación, uso de equipos y planos reales siguen pendientes.
+[Contrato y material necesario](CAMINOS_MENU_Y_AMBIENTES.md).
+
 Actualización del 04/11/2026: referencias originales fuera del juego, matriz
 8×8, personajes mayores y paseos ambientales. Frontend debe respetar el
 contrato de `campus_scale.gd`: sprite, huella, anclajes y accesos crecen juntos.

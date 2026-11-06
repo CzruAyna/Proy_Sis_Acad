@@ -1,5 +1,19 @@
 # Bitácora de desarrollo de SIS-INF
 
+## 6 de noviembre de 2026: caminos, inicio e interiores
+
+Cambios locales sin commit propio. El usuario señaló los caminos que se
+encimaban y pidió cuatro acciones en el inicio. Se unificó el dibujo de la
+red vial por capas, se suavizaron giros y se incorporó la rosa con norte a la
+derecha. Jugar conserva partidas y exploración; Simular reúne las demostraciones.
+
+Se revisaron fotografías de RTvU–UTO y referencias institucionales para variar
+las proporciones, ventanales y mobiliario de los interiores. Las medidas siguen
+siendo ilustrativas. Tamaño, colisión, aparición y salida ahora comparten un
+perfil por ambiente. Se actualizaron las láminas 8×8 y la compilación Windows.
+Fuentes y responsabilidades en [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md);
+las once suites y sus límites están en [Verificaciones](VERIFICACIONES.md).
+
 ## 4 de noviembre de 2026: matriz 8×8 y escala del campus
 
 Cambios locales sin commit propio. El usuario pidió retirar los originales

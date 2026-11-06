@@ -285,6 +285,64 @@ horarios, asistencia a clases, caricias, rareza ni logros. Fuentes y contratos e
 [Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md). No se modificaron partidas
 personales ni se ejecutaron servicios Django o Next.js.
 
+## Caminos, inicio y ambientes: 06/11/2026
+
+Cambios locales sin commit propio. Se ejecutaron once suites con Godot 4.7.2
+y datos ficticios. Cada registro está en `game/.test-artifacts/nov6-<nombre>.log`.
+Los resultados corresponden a esta entrega; no se suman a los cortes anteriores.
+
+| Script `test_<nombre>.gd` | Aserciones | Fallos |
+|---|---:|---:|
+| `natural_campus` | 4.641 | 0 |
+| `exploration` | 558 | 0 |
+| `building_interiors` | 425 | 0 |
+| `dynamic_menu` | 645 | 0 |
+| `exploration_navigation` | 936 | 0 |
+| `large_campus` | 2.079 | 0 |
+| `games_room` | 1.728 | 0 |
+| `career_presentation` | 2.803 | 0 |
+| `career_story` | 74.725 | 0 |
+| `grid8_and_cast` | 711 | 0 |
+| `exploration_handoff` | 34 | 0 |
+
+Total: **89.285 aserciones sin fallos**. Una aserción no equivale a un caso
+de usuario independiente. La mayor parte procede de los recorridos múltiples
+de la historia de carrera. La suite nueva comprueba orientación, conexión de
+caminos, acceso a todos los ambientes, mobiliario sólido, corredor central,
+salida y actividades; también los cuatro botones del inicio con/sin guardados,
+Jugar y Simular a 900×640, 1152×720 y 1600×900, con letras de 80 %, 100 % y 120 %.
+
+Durante la implementación se corrigió una inferencia de tipo en el renderizador.
+La primera revisión de navegación detectó que Simular ocultaba la identidad
+de una partida activa: ahora se conserva en Jugar y Simular. La comprobación
+de curvas distingue un tramo recto sin giros, que debe conservar sus extremos.
+La importación final utilizó un perfil aislado y terminó sin errores de script.
+
+La sesión gráfica produjo **16 capturas** en `nov6-diseno/`: inicio, Jugar,
+Simular, mapa, sala de juegos, diez ambientes y un empalme. Se revisaron las
+proporciones, mobiliario, márgenes y orientación; se corrigió el desborde de
+baldosas antes de regenerar las capturas. La comprobación de cuatro muestras
+del renderizado del cruce confirmó superficie continua (`ROAD_JUNCTION_RASTER:
+true`, en `nov6-captures.log`). La sesión gráfica usó ANGLE.
+
+El exportador regeneró 64 láminas de 1600×1520, índice de 1632×1272 y conjunto
+de 6144×4352. Se validaron los 66 PNG, códigos A1–H8, intervalos, fecha y
+orientación del JSON, enlaces del documento nuevo y ZIP. Registro gráfico:
+`nov6-map-export.log`; auditoría local reproducible: `nov6_audit.py`.
+
+La exportación Windows terminó con salida cero (`nov6-build.log`). El arranque
+del ejecutable con perfil aislado también terminó con salida cero
+(`nov6-smoke.log`). Se montó el PCK y se comprobaron los cuatro botones,
+accesos de Jugar/Simular y tamaño nuevo de Física; no estaban los originales de
+planos/logo (`nov6-pack-audit.log`). Los avisos del almacén de certificados
+del equipo no impidieron estas operaciones locales. No se verificó red.
+
+Las fotografías de RTvU–UTO se observaron en el navegador y no se copiaron al
+proyecto. Siguen pendientes dimensiones y plantas reales, asignación de cada
+foto a un aula, interacción con equipos, ocupación interior por NPC y
+rendimiento en otros equipos. No se modificaron reglas académicas, Django,
+Next.js ni partidas personales. [Contrato y fuentes](CAMINOS_MENU_Y_AMBIENTES.md).
+
 ## Límites generales pendientes
 
 - Dificultad percibida y sesiones prolongadas con jugadores.

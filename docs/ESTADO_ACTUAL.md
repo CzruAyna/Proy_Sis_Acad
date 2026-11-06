@@ -1,5 +1,10 @@
 # Estado actual de SIS-INF
 
+Actualización del 06/11/2026: inicio con Jugar, Simular, Opciones y Salir;
+caminos continuos, rosa con norte a la derecha y ambientes con distintas
+proporciones y equipamiento ilustrativo. Fuentes, contrato y pendientes en
+[Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md).
+
 Actualización del 04/11/2026: matriz 8×8 con 64 láminas, originales de referencia
 retirados, jugador de 24×32 y radio de pies 12, mayor velocidad y 51 personajes
 en paseos ambientales. Los edificios incorporan ajustes de cubiertas a partir

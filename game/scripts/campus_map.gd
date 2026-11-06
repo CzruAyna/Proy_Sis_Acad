@@ -1,6 +1,7 @@
 extends RefCounted
 
 const Landscape = preload("res://scripts/campus_landscape.gd")
+const RoomLayout = preload("res://scripts/campus_room_layout.gd")
 const ID := "fni_ciudad_v2"
 const LEGACY_ID := "fni_ciudad_v1"
 const LEGACY_SIZE := Vector2(2304, 1664)
@@ -193,8 +194,22 @@ static func interior_obstacles(id: String, room: String) -> Array[Rect2]:
 		for space in hall_rooms(id):
 			walls.append(space["rect"])
 		return walls
-	var kind := room_kind(id, room)
-	var furniture := room_obstacles("lab" if kind == "computer_lab" else kind)
-	if kind == "computer_lab":
-		furniture.append(Rect2(424, 38, 20, 30))
-	return furniture
+	if room_kind(id, room) == "games_room":
+		return room_obstacles("games_room")
+	return room_layout(id, room)["obstacles"]
+
+
+static func room_layout(id: String, room: String) -> Dictionary:
+	return RoomLayout.make(room_kind(id, room), id, room)
+
+
+static func room_size(id: String, room: String) -> Vector2:
+	return room_layout(id, room)["size"]
+
+
+static func room_spawn(id: String, room: String) -> Vector2:
+	return room_layout(id, room)["spawn"]
+
+
+static func room_exit(id: String, room: String) -> Vector2:
+	return room_layout(id, room)["exit"]

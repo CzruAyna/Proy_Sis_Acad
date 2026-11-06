@@ -74,7 +74,9 @@ func _run() -> void:
 	_check(Map.building("sis_a")["rooms"] == ["LSIA-1", "LSIA-4"], "Ambientes A publicados en la fuente institucional")
 	_check(Map.room_kind("sis_a", "LSIA-4") == "computer_lab", "Sistemas tiene equipamiento informático propio")
 	world.enter_room("sis_a", "LSIA-1")
-	_check(not world._can_stand(Vector2(432, 50)), "El armario del laboratorio bloquea el paso")
+	for item in Map.room_layout("sis_a", "LSIA-1")["items"]:
+		if item["kind"] == "rack":
+			_check(not world._can_stand(Rect2(item["rect"]).get_center()), "El armario del laboratorio bloquea el paso en su posición actual")
 	world.restore({"version": 1, "map_id": Map.ID, "position": [1280, 1536], "room_id": "sis_a", "room_name": "SIS A", "visited": ["sis_a/SIS A"]})
 	_check(world.room_id == "sis_a" and world.room_name.is_empty(), "La antigua sala genérica se recupera en el pasillo")
 	_check(world.visited.has("sis_a/SIS A"), "No pierde la visita histórica del bloque")

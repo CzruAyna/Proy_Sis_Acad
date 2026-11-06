@@ -63,7 +63,7 @@ func open() -> void:
 
 func show_welcome(message: String = "") -> void:
 	_ui()._use_neutral_theme()
-	var page: VBoxContainer = _ui()._make_page("Explora la FNI", "SIS-INF · ciudad universitaria · recorrido pixel art", _ui()._show_main)
+	var page: VBoxContainer = _ui()._make_page("Explora la FNI", "SIS-INF · ciudad universitaria · recorrido pixel art", _ui()._show_play)
 	var card: VBoxContainer = _ui()._card(page)
 	_text(card, "Tu primera visita", 22)
 	_text(card, "Recorre el campus con WASD o las flechas. Acércate a una puerta y pulsa E para entrar. P abre progreso y M abre el mapa.", 17)
@@ -264,6 +264,7 @@ func show_map_guide() -> void:
 	page.add_child(map)
 	_text(page, "Filas A–H de arriba abajo y columnas 1–8 de izquierda a derecha. Cada celda mide 1536 × 1088 unidades del juego. X aumenta a la derecha; Y hacia abajo.", 15)
 	_text(page, "Estas unidades permiten comparar distancias del diseño. Todavía no equivalen a metros reales. Las formas y accesos continúan sujetos a revisión.", 15)
+	_text(page, "Orientación indicada: norte → derecha; sur → izquierda; este → abajo; oeste → arriba.", 15)
 
 
 func _inspect(content: Array[Dictionary]) -> void:

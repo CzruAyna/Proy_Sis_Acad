@@ -3,9 +3,10 @@ extends RefCounted
 const Map = preload("res://scripts/campus_map.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Terrain = preload("res://scripts/campus_terrain.gd")
+const Roads = preload("res://scripts/campus_roads.gd")
 static var _points: Array[Vector2] = []
 static var _buckets: Dictionary = {}
-static var _routes: Array[PackedVector2Array] = Land.routes()
+static var _routes: Array[PackedVector2Array] = Roads.paths()
 static var _landmarks: Array[Dictionary] = Land.landmarks()
 static var _fountains: Array[Dictionary] = Land.fountains()
 

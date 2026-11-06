@@ -5,6 +5,8 @@ const Neon = preload("res://scripts/neon_visuals.gd")
 const Architecture = preload("res://scripts/campus_architecture.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Grid = preload("res://scripts/campus_grid.gd")
+const Terrain = preload("res://scripts/campus_terrain.gd")
+const Compass = preload("res://scripts/campus_compass.gd")
 var state: Dictionary = {}
 var target_id := ""
 var grid_font_size := 11
@@ -12,18 +14,10 @@ var grid_font_size := 11
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#172c30"))
-	var scale_factor := minf((size.x - 30) / Map.SIZE.x, (size.y - 30) / Map.SIZE.y)
-	var offset := (size - Map.SIZE * scale_factor) * 0.5
+	var scale_factor := minf((size.x - 110) / Map.SIZE.x, (size.y - 30) / Map.SIZE.y)
+	var offset := (size - Vector2(90, 0) - Map.SIZE * scale_factor) * 0.5
 	draw_set_transform(offset, 0, Vector2.ONE * scale_factor)
-	draw_rect(Rect2(Vector2.ZERO, Map.SIZE), Color("#a49c7e"))
-	for shape in Land.LAWNS:
-		draw_colored_polygon(Land.polygon(shape), Color("#6b8656"))
-	draw_colored_polygon(Land.polygon(Land.FOREST), Color("#355e46"))
-	draw_colored_polygon(Land.polygon(Land.POND), Color("#548fa5"))
-	for shape in Land.PARKING:
-		draw_colored_polygon(Land.polygon(shape), Color("#7d8380"))
-	for route in Map.routes():
-		draw_polyline(route, Color("#343b3c"), 112, false)
+	Terrain.draw(self, Rect2(Vector2.ZERO, Map.SIZE), 0, false)
 	for row in Map.COURTS:
 		var rect := Architecture.court_rect(row)
 		draw_rect(rect, Color("#92a06e") if str(row[0]).begins_with("FÚTBOL") else Color("#758f8b"))
@@ -61,3 +55,4 @@ func _draw() -> void:
 	var player_point := offset + point * scale_factor
 	draw_rect(Rect2(player_point - Vector2.ONE * 4, Vector2.ONE * 8), Color("#fff49b"))
 	draw_string(Neon.PIXEL_FONT, Vector2(14, 20), "FNI · CUADRÍCULA 8×8 · " + Grid.at(point), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#ecedcf"))
+	Compass.draw(self, Vector2(size.x - 47, 51), grid_font_size)
