@@ -7,6 +7,8 @@ const Land = preload("res://scripts/campus_landscape.gd")
 const Grid = preload("res://scripts/campus_grid.gd")
 const Terrain = preload("res://scripts/campus_terrain.gd")
 const Compass = preload("res://scripts/campus_compass.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 var state: Dictionary = {}
 var target_id := ""
 var grid_font_size := 11
@@ -20,8 +22,12 @@ func _draw() -> void:
 	Terrain.draw(self, Rect2(Vector2.ZERO, Map.SIZE), 0, false)
 	for row in Map.COURTS:
 		var rect := Architecture.court_rect(row)
-		draw_rect(rect, Color("#92a06e") if str(row[0]).begins_with("FÚTBOL") else Color("#758f8b"))
-		draw_rect(rect.grow(-6), Color("#c6ceb1"), false, 4)
+		var polygon := Geo.shape("courts", row[0])
+		var color := Color("#92a06e") if str(row[0]).begins_with("FÚTBOL") else Color("#758f8b")
+		if polygon.is_empty():
+			draw_rect(rect, color)
+		else:
+			draw_colored_polygon(polygon, color)
 	for building in Map.buildings():
 		var color := Color("#99a9a1")
 		for id in state.get("visited", []):
@@ -34,7 +40,7 @@ func _draw() -> void:
 	var point := Map.SPAWN
 	var coordinates: Variant = state.get("position", [])
 	if coordinates is Array and coordinates.size() == 2:
-		point = Vector2(float(coordinates[0]), float(coordinates[1]))
+		point = Map.migrate_outside(Vector2(float(coordinates[0]), float(coordinates[1])), str(state.get("map_id", Map.ID)))
 	draw_set_transform(Vector2.ZERO)
 	for index in range(9):
 		var x := offset.x + Map.SIZE.x * scale_factor * index / 8
@@ -56,3 +62,10 @@ func _draw() -> void:
 	draw_rect(Rect2(player_point - Vector2.ONE * 4, Vector2.ONE * 8), Color("#fff49b"))
 	draw_string(Neon.PIXEL_FONT, Vector2(14, 20), "FNI · CUADRÍCULA 8×8 · " + Grid.at(point), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#ecedcf"))
 	Compass.draw(self, Vector2(size.x - 47, 51), grid_font_size)
+	var ruler := Vector2(size.x - 84, size.y - 27)
+	var ruler_end := ruler + Vector2(50 * Scale.UNITS_PER_METRE * scale_factor, 0)
+	draw_line(ruler, ruler_end, Color("#ecedcf"), 2)
+	for tick in [ruler, ruler_end]:
+		draw_line(tick - Vector2(0, 4), tick + Vector2(0, 4), Color("#ecedcf"), 1)
+	draw_string(Neon.PIXEL_FONT, ruler + Vector2(0, 14), "50 m aprox.", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("#ecedcf"))
+	draw_string(Neon.PIXEL_FONT, Vector2(14, size.y - 5), Geo.CREDIT, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("#ecedcf"))

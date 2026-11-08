@@ -2,6 +2,8 @@ extends "res://tests/test_compact_navigation.gd"
 
 const Map = preload("res://scripts/campus_map.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 const World = preload("res://scripts/campus_world.gd")
 const Foliage = preload("res://scripts/campus_foliage.gd")
 const Art = preload("res://scripts/campus_landmark_art.gd")
@@ -13,11 +15,12 @@ func _run() -> void:
 	var started := Time.get_ticks_msec()
 	var trees := Foliage.all()
 	print("CAMPUS_FOLIAGE_INIT_MS: ", Time.get_ticks_msec() - started, " TREES: ", trees.size())
-	_check(Map.SIZE.x * Map.SIZE.y / (Map.LEGACY_SIZE.x * Map.LEGACY_SIZE.y) > 25, "Superficie ampliada más de 25 veces")
-	_check(Land.ROAD_LINES.size() >= 16 and Land.LAWNS.size() >= 7 and Land.PARKING.size() == 2, "Leyenda del plano representada")
-	_check(trees.size() > 600, "Bosque y jardines densos")
-	_check(Foliage.visible(Rect2(Land.at(65.5, 85), Vector2(500, 300))).size() < trees.size() / 4, "Consulta espacial acotada a árboles visibles")
+	_check(Map.SIZE / Scale.UNITS_PER_METRE == Vector2(880, 488), "El recorte cubre el sector FNI a escala exterior")
+	_check(Land.routes().size() >= 10 and Geo.shapes("walkways").size() > 100 and Geo.shapes("parking").size() == 2, "Se distinguen vías, senderos y estacionamientos")
+	_check(trees.size() > 200, "Bosque y jardines conservan arbolado")
+	_check(Foliage.visible(Rect2(Land.destination("bosque")["point"], Vector2(200, 130))).size() < trees.size() / 4, "Consulta espacial acotada a árboles visibles")
 	var probe := World.new()
+	probe._life_saved = {"version": 1, "seed": "20261108", "rare": false}
 	root.add_child(probe)
 	probe.set_process(false)
 	_check(probe._can_stand(Map.SPAWN), "Aparición segura en ingreso")
@@ -33,19 +36,19 @@ func _run() -> void:
 		_check(Cast.texture(row[0], 0).get_image().get_data() != Cast.texture(row[0], 1).get_image().get_data(), "Fotogramas de paso diferentes")
 	for actor in probe.cast_instances:
 		_check(actor["id"] != "piedritas_recuerdo", "El encuentro raro no se convierte en aparición garantizada")
-		_check(probe._can_stand(actor["point"]), "Muestra de personaje accesible: " + actor["id"])
+		_check(probe._can_stand_outside(actor["point"], actor["radius"]), "Muestra de personaje accesible: " + actor["id"])
 	_check(Map.floor_count("fis_mat") == 2 and Map.floor_count("basicas") == 5, "Dos y cinco niveles diferenciados")
 	_check(Map.floor_rooms("fis_mat", 0).size() == 4 and Map.floor_rooms("fis_mat", 1).size() == 3, "Bloque 100: tres aulas por piso y laboratorio virtual en PB")
 	for level in range(5):
 		var toilets := 0
 		for room in Map.floor_rooms("basicas", level):
-			if str(room.get("kind", "")).begins_with("restroom_"):
+			if room.get("kind") == "restroom":
 				toilets += 1
 		_check(toilets == (2 if level % 2 == 0 else 0), "Baños separados cada dos niveles, esquema provisional")
 	var old_point := Vector2(1200, 1500)
 	probe.restore({"version": 1, "map_id": Map.LEGACY_ID, "position": [old_point.x, old_point.y], "visited": ["sis_c/CU-SIC1"]})
-	var expected := (old_point * Map.SIZE / Map.LEGACY_SIZE).snapped(Vector2(2, 2))
-	_check(probe.player == expected and probe.visited.has("sis_c/CU-SIC1"), "Migración proporcional del exterior y visitas")
+	var expected := Map.migrate_outside(old_point, Map.LEGACY_ID)
+	_check(probe.player.distance_to(expected) <= 64 and probe._can_stand(probe.player) and probe.visited.has("sis_c/CU-SIC1"), "Migración proporcional del exterior y visitas")
 	probe.restore({"version": 1, "map_id": Map.LEGACY_ID, "position": [100, 100], "room_id": "sis_c", "room_name": "CU-SIC4", "visited": ["sis_c/CU-SIC4"]})
 	_check(probe.room_id == "sis_c" and probe.room_name == "CU-SIC4" and probe._can_stand(probe.player), "Migración conserva el aula y una posición interior segura")
 	_check(probe.snapshot()["map_id"] == Map.ID, "El nuevo guardado identifica la versión ampliada")
@@ -86,7 +89,8 @@ func _run() -> void:
 						_check(overlay.find_children("*", forbidden, true, false).is_empty(), "Inspección sin desplazamiento ni deslizadores")
 				overlay.close()
 				await _settle()
-				_check(not world.paused and before == world.snapshot(), "Cerrar conserva posición, aula y visitas")
+				var after: Dictionary = world.snapshot()
+				_check(not world.paused and before["position"] == after["position"] and before["room_name"] == after["room_name"] and before["visited"] == after["visited"], "Cerrar conserva posición, aula y visitas mientras las rutinas se reanudan")
 			if not world.room_id.is_empty():
 				world.leave_room()
 			world.player = Land.landmarks()[0]["approach"]

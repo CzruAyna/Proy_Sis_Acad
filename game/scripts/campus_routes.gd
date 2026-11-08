@@ -1,6 +1,7 @@
 extends RefCounted
 ## Native A* over the recreated road network. No per-frame path searches.
 const Land = preload("res://scripts/campus_landscape.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 var graph := AStar2D.new()
 var segments: Array[Dictionary] = []
 var _ids: Dictionary = {}
@@ -58,8 +59,8 @@ func _node(point: Vector2) -> int:
 	return int(_ids[key])
 
 
-func clear_line(a: Vector2, b: Vector2, radius: float = 12) -> bool:
-	var steps := maxi(1, ceili(a.distance_to(b) / 16))
+func clear_line(a: Vector2, b: Vector2, radius: float = Scale.OUTDOOR_RADIUS) -> bool:
+	var steps := maxi(1, ceili(a.distance_to(b) / 8))
 	for i in range(steps + 1):
 		if not walkable.call(a.lerp(b, float(i) / steps), radius):
 			return false
@@ -80,7 +81,7 @@ func _connector(point: Vector2) -> Dictionary:
 
 func path(start: Vector2, finish: Vector2) -> PackedVector2Array:
 	searches += 1
-	if start.distance_to(finish) < 220 and clear_line(start, finish):
+	if clear_line(start, finish):
 		return PackedVector2Array([start, finish])
 	var a := _connector(start)
 	var b := _connector(finish)

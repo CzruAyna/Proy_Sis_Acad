@@ -37,7 +37,7 @@ func _run() -> void:
 		Cave.frame(Rect2(i, 80, 420, 330), 16, 48, 1)
 	_check(Cave._frames.size() <= 16, "La caché de ruptura tiene un límite de memoria")
 	for i in range(2500):
-		var point := Vector2(30 + posmod(i * 173, 12200), 30 + posmod(i * 347, 8600))
+		var point := Vector2(30 + posmod(i * 173, int(Map.SIZE.x) - 60), 30 + posmod(i * 347, int(Map.SIZE.y) - 60))
 		_check(Collision.can_stand(point, 12) == _legacy_collision(point, 12), "Índice conserva las colisiones exactas")
 	var world := World.new()
 	for block in ["fis_mat", "basicas"]:

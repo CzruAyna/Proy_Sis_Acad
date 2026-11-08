@@ -7,6 +7,7 @@ const Roads = preload("res://scripts/campus_roads.gd")
 static var _points: Array[Vector2] = []
 static var _buckets: Dictionary = {}
 static var _routes: Array[PackedVector2Array] = Roads.paths()
+static var _walkways: Array[PackedVector2Array] = Roads.walkways()
 static var _landmarks: Array[Dictionary] = Land.landmarks()
 static var _fountains: Array[Dictionary] = Land.fountains()
 
@@ -17,8 +18,8 @@ static func prepare() -> void:
 	var blocks := Map.buildings()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261103
-	for y in range(40, int(Map.SIZE.y) - 40, 36):
-		for x in range(40, int(Map.SIZE.x) - 40, 36):
+	for y in range(24, int(Map.SIZE.y) - 24, 24):
+		for x in range(24, int(Map.SIZE.x) - 24, 24):
 			var p := Vector2(x, y)
 			var forest := Terrain.in_forest(p)
 			if (forest and rng.randf() < 0.78) or (not forest and posmod(x + y, 4) == 0 and rng.randf() < 0.035 and Terrain.in_garden(p)):
@@ -58,12 +59,16 @@ static func can_plant(point: Vector2, blocks: Array[Dictionary]) -> bool:
 		if Rect2(block["rect"]).grow(42).has_point(point):
 			return false
 	for row in Map.COURTS:
-		var rect := Rect2(Vector2(row[1], row[2]) * Map.SIZE / 100, Vector2(row[3], row[4]) * Map.SIZE / 100)
+		var rect := Map.court_rect(row)
 		if rect.grow(32).has_point(point):
 			return false
 	for path in _routes:
 		for index in range(path.size() - 1):
-			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, path[index], path[index + 1])) < 82:
+			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, path[index], path[index + 1])) < 40:
+				return false
+	for path in _walkways:
+		for index in range(path.size() - 1):
+			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, path[index], path[index + 1])) < 16:
 				return false
 	for item in _landmarks:
 		if point.distance_to(item["point"]) < 100:

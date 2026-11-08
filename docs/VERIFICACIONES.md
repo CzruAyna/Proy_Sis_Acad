@@ -1,5 +1,35 @@
 # Registro de verificaciones
 
+## Ejecución del 8 de noviembre de 2026 · cartografía y escala
+
+Cambios locales sobre `113037c`, Godot 4.7.2 en Windows, con datos de usuario
+aislados de las partidas personales.
+
+| Suite | Aserciones | Fallos |
+|---|---:|---:|
+| `test_exploration` | 524 | 0 |
+| `test_grid8_and_cast` | 711 | 0 |
+| `test_campus_life` | 2.728 | 0 |
+| `test_large_campus` | 2.051 | 0 |
+| `test_natural_campus` | 4.631 | 0 |
+| `test_exploration_handoff` | 34 | 0 |
+| `test_games_room` | 1.728 | 0 |
+| **Total** | **12.407** | **0** |
+
+Se comprobó la llegada a las 40 entradas, tres caminatas con colisiones y
+una migración v2 con visitas y encuentro de Piedritas. Los tiempos, escala y
+límites de la medición están en [Cartografía y escala](CARTOGRAFIA_FNI_Y_ESCALA.md).
+La conversión del recorte externo reprodujo el JSON empaquetado byte por byte.
+Se generaron capturas con el renderizador gráfico y se revisaron el ingreso
+y el mapa de orientación. El atlas contiene 64 celdas con límites comprobados,
+66 PNG de dimensiones verificadas y un ZIP cuya prueba de integridad pasó.
+
+Se exportaron `SIS-INF.exe` y su `.pck`, que incluye el JSON cartográfico.
+El arranque headless del ejecutable terminó con código 0. Godot informó que
+no pudo leer los certificados de Windows durante el arranque aislado. Las
+pruebas son locales. Quedan pendientes mediciones de campo y comprobar una
+sesión completa con el ejecutable exportado.
+
 ## Ejecución del 6 de noviembre de 2026: vida y bajo consumo
 
 Cambios locales sobre `e206909`, sin commit propio. Godot 4.7.2, Windows.

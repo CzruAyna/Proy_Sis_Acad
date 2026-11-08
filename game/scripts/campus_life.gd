@@ -29,7 +29,7 @@ func build(can_walk: Callable, saved: Dictionary = {}, new_seed: int = -1) -> vo
 	if int(saved.get("version", 0)) == 1 and saved.get("rare") is bool:
 		rare = saved["rare"]
 	if rare:
-		_spawn("piedritas_recuerdo", Land.landmarks()[0]["point"] + Vector2(0, 150))
+		_spawn("piedritas_recuerdo", Land.PIEDRITAS + Vector2(0, 75))
 	routes.build(can_walk)
 	_blocks = Map.buildings()
 	for index in range(actors.size()):
@@ -55,7 +55,7 @@ func find_instance(id: String) -> Dictionary:
 
 func pet(id: String, player: Vector2) -> Dictionary:
 	var actor := find_instance(id)
-	if actor.is_empty() or not is_dog(actor) or player.distance_squared_to(actor["point"]) > 52 * 52 or actor["state"] == "CLASS":
+	if actor.is_empty() or not is_dog(actor) or player.distance_to(actor["point"]) > Scale.OUTDOOR_REACH or actor["state"] == "CLASS":
 		return {"ok": false, "message": "Acércate al perro para acariciarlo."}
 	if actor["state"] == "PET":
 		return {"ok": false, "message": "Ya está recibiendo tu caricia."}
@@ -70,7 +70,7 @@ func pet(id: String, player: Vector2) -> Dictionary:
 
 func visit_monument(id: String, player: Vector2) -> bool:
 	for landmark in Land.landmarks():
-		if landmark["id"] == id and player.distance_squared_to(landmark["approach"]) <= 52 * 52:
+		if landmark["id"] == id and player.distance_to(landmark["approach"]) <= Scale.OUTDOOR_REACH:
 			if not monuments.has(id):
 				monuments.append(id)
 			return true
@@ -136,11 +136,11 @@ func _advance_actor(actor: Dictionary, dt: float, player: Vector2) -> bool:
 			return was_moving
 		_plan_budget -= 1
 		var home := Map.building(actor["home_id"])
-		var goal: Vector2 = home["door"] + Vector2(0, 44)
+		var goal: Vector2 = home["door"]
 		# Alternate a campus walk and return to the simulated classroom.
 		if actor["class_count"] % 2 == 1:
 			home = _blocks[(int(actor["class_count"]) + posmod(str(actor["instance_id"]).hash(), 40)) % _blocks.size()]
-			goal = home["door"] + Vector2(0, 44)
+			goal = home["door"]
 		actor["building_id"] = home["id"]
 		actor["room_name"] = str(home["rooms"][0])
 		actor["route"] = routes.path(actor["point"], goal)
@@ -160,8 +160,8 @@ func _advance_actor(actor: Dictionary, dt: float, player: Vector2) -> bool:
 
 func _move(actor: Dictionary, target: Vector2, dt: float, player: Vector2) -> bool:
 	var start: Vector2 = actor["point"]
-	var next := start.move_toward(target, (54 if is_dog(actor) else 112) * minf(dt, 0.8))
-	if next.distance_squared_to(player) < pow(float(actor["radius"]) + Scale.FOOT_RADIUS + 4, 2):
+	var next := start.move_toward(target, (Scale.DOG_SPEED if is_dog(actor) else Scale.NPC_WALK_SPEED) * minf(dt, 0.8))
+	if next.distance_squared_to(player) < pow(float(actor["radius"]) + Scale.OUTDOOR_RADIUS + 3, 2):
 		return false
 	var cell := Vector2i((next / 128).floor())
 	for y in range(cell.y - 1, cell.y + 2):
@@ -185,7 +185,7 @@ func _move(actor: Dictionary, target: Vector2, dt: float, player: Vector2) -> bo
 			_cells[cell] = []
 		_cells[cell].append(actor["index"])
 	actor["facing"] = start.direction_to(next)
-	actor["stride"] += start.distance_to(next) * 0.12
+	actor["stride"] += start.distance_to(next) * 0.24
 	actor["moving"] = next != start
 	return actor["moving"]
 
@@ -208,9 +208,8 @@ func _restore(saved: Dictionary) -> void:
 			if actor.is_empty() or not (record["point"][0] is float or record["point"][0] is int) or not (record["point"][1] is float or record["point"][1] is int):
 				continue
 			var point := Vector2(record["point"][0], record["point"][1])
-			if not point.is_finite() or not walkable.call(point, actor["radius"]):
-				continue
-			actor["point"] = point
+			if point.is_finite() and walkable.call(point, actor["radius"]):
+				actor["point"] = point
 			actor["state"] = str(record.get("state", "WAIT")) if record.get("state") in ["WAIT", "WALK", "CLASS", "PET"] else "WAIT"
 			actor["cooldown"] = _saved_number(record.get("cooldown"), 60)
 			actor["class_count"] = int(_saved_number(record.get("class_count"), 100000))
@@ -230,6 +229,18 @@ func _restore(saved: Dictionary) -> void:
 			monuments.append(str(id))
 	elapsed = _saved_number(saved.get("elapsed"), 1e12)
 	rng.state = str(saved.get("rng", str(rng.state))).to_int()
+
+
+static func migrate_positions(saved: Dictionary, from_map: String) -> void:
+	if from_map == Map.ID or not saved.get("actors") is Array:
+		return
+	for record in saved["actors"]:
+		if not record is Dictionary:
+			continue
+		var position: Variant = record.get("point")
+		if position is Array and position.size() == 2 and (position[0] is float or position[0] is int) and (position[1] is float or position[1] is int):
+			var point := Map.migrate_outside(Vector2(position[0], position[1]), from_map)
+			record["point"] = [point.x, point.y]
 
 
 func _saved_number(value: Variant, maximum: float) -> float:

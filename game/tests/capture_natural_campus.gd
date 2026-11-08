@@ -19,7 +19,7 @@ class RoomPlate extends Control:
 		draw_set_transform(Vector2.ZERO)
 
 class RoadPlate extends Control:
-	var center := Land.at(47.7, 33)
+	var center := Land.routes()[0][0]
 	func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color("#ad9b7c"))
 		draw_set_transform(size * 0.5 - center, 0, Vector2.ONE)
@@ -70,7 +70,7 @@ func _run() -> void:
 	await _capture("05-empalme")
 	var image := root.get_texture().get_image()
 	var valid := true
-	for offset in [Vector2.ZERO, Vector2(-18, -18), Vector2(18, 18), Vector2(26, 0)]:
+	for offset in [Vector2.ZERO, Vector2(-8, -8), Vector2(8, 8), Vector2(12, 0)]:
 		var sample: Color = image.get_pixelv(Vector2i(road.size * 0.5 + offset))
 		valid = valid and sample.is_equal_approx(Roads.SURFACE)
 	print("ROAD_JUNCTION_RASTER: ", valid)

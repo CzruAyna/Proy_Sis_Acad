@@ -5,12 +5,17 @@ const Land = preload("res://scripts/campus_landscape.gd")
 const Terrain = preload("res://scripts/campus_terrain.gd")
 const Grid = preload("res://scripts/campus_grid.gd")
 const Compass = preload("res://scripts/campus_compass.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
-const OUTPUT := "res://.test-artifacts/mapa-8x8/"
+const OUTPUT := "res://.test-artifacts/mapa-8x8-v3/"
 const PAGE_SIZE := Vector2i(1600, 1520)
 const MAP_ORIGIN := Vector2(32, 100)
-const FACTOR := 1.0
+const FACTOR := 1.5
 const HALF := Grid.CELL_SIZE
+const INDEX_SIZE := Vector2(1536, 852)
+const INDEX_ORIGIN := Vector2(48, 108)
+const PRINT_CREDIT := "OpenStreetMap contributors · ODbL · openstreetmap.org/copyright"
 var viewport: SubViewport
 var sheet: Control
 
@@ -20,6 +25,8 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 	var quadrant := 0
 	var features: Array[Dictionary] = []
 	var preview: Texture2D
+	var whole_map := false
+	var show_map_credit := false
 	var occupied: Array[Rect2] = []
 
 	func _ready() -> void:
@@ -34,6 +41,14 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 		if preview != null:
 			_draw_preview()
 			return
+		if whole_map:
+			draw_set_transform(Vector2.ZERO, 0, size / Map.SIZE)
+			_draw_campus(Rect2(Vector2.ZERO, Map.SIZE))
+			draw_set_transform(Vector2.ZERO)
+			if show_map_credit:
+				draw_rect(Rect2(12, size.y - 40, 950, 34), Color("#10191f"))
+				draw_string(FONT, Vector2(22, size.y - 16), PRINT_CREDIT, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#ecedcf"))
+			return
 		draw_set_transform(MAP_ORIGIN - region.position * FACTOR, 0, Vector2.ONE * FACTOR)
 		_draw_campus(region)
 		draw_set_transform(Vector2.ZERO)
@@ -41,7 +56,7 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 		for mask in [Rect2(0, 0, size.x, MAP_ORIGIN.y), Rect2(0, edge.y, size.x, size.y - edge.y), Rect2(0, 0, MAP_ORIGIN.x, size.y), Rect2(edge.x, 0, size.x - edge.x, size.y)]:
 			draw_rect(mask, Color("#10191f"))
 		draw_string(FONT, Vector2(32, 36), "SIS-INF / CELDA " + Grid.code(quadrant / 8, quadrant % 8) + " / MATRIZ 8×8", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("#e7efdc"))
-		draw_string(FONT, Vector2(32, 69), "1536 × 1088 unidades por celda · 06/11/2026 · diseño por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#acc4bd"))
+		draw_string(FONT, Vector2(32, 69), "880 × 488 unidades por celda · 110 × 61 m aprox. · 08/11/2026", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#acc4bd"))
 		Compass.draw(self, Vector2(size.x - 54, 48), 12)
 		_draw_grid()
 		occupied.clear()
@@ -101,24 +116,26 @@ class AtlasCanvas extends "res://scripts/campus_world.gd":
 			var row := index / 2
 			var p := Vector2(32 + column * 768, top + 38 + row * 24)
 			draw_string(FONT, p, str(features[index]["code"]) + "  " + str(features[index]["label"]), HORIZONTAL_ALIGNMENT_LEFT, 748, 17, Color("#cbd7c7"))
-		draw_string(FONT, Vector2(32, 1475), "Coordenadas en unidades de juego, no metros. X → derecha; Y → abajo.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
+		draw_string(FONT, Vector2(32, 1475), "8 unidades/m aprox. · " + PRINT_CREDIT, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
 		draw_string(FONT, Vector2(32, 1504), "«continúa» cruza el corte. N → derecha; S → izquierda; E → abajo; O → arriba.", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a8beb8"))
 
 
 	func _draw_preview() -> void:
 		draw_string(FONT, Vector2(48, 52), "SIS-INF / MAPA ACTUAL / MATRIZ 8×8", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#e6eedc"))
-		draw_string(FONT, Vector2(48, 84), "Misma orientación del plano aportado · distribución por corregir", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a9c2bb"))
+		draw_string(FONT, Vector2(48, 84), "Cartografía calibrada · norte a la derecha", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#a9c2bb"))
 		Compass.draw(self, Vector2(size.x - 54, 48), 12)
-		draw_texture_rect(preview, Rect2(48, 108, 1536, 1088), false)
+		draw_texture_rect(preview, Rect2(INDEX_ORIGIN, INDEX_SIZE), false)
 		for row in range(8):
 			for column in range(8):
-				var p := Vector2(48 + column * 192, 108 + row * 136)
+				var p := INDEX_ORIGIN + Vector2(column, row) * INDEX_SIZE / 8
 				draw_rect(Rect2(p + Vector2(5, 5), Vector2(56, 30)), Color.BLACK)
 				draw_string(FONT, p + Vector2(11, 29), Grid.code(row, column), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 		for index in range(9):
-			draw_line(Vector2(48 + index * 192, 108), Vector2(48 + index * 192, 1196), Color("#ddedd5"), 1)
-			draw_line(Vector2(48, 108 + index * 136), Vector2(1584, 108 + index * 136), Color("#ddedd5"), 1)
-		draw_string(FONT, Vector2(48, 1234), "A–H: arriba → abajo · 1–8: izquierda → derecha · 1536×1088 unidades/celda", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#c3d4c8"))
+			var p := INDEX_ORIGIN + Vector2(index, index) * INDEX_SIZE / 8
+			draw_line(Vector2(p.x, INDEX_ORIGIN.y), Vector2(p.x, INDEX_ORIGIN.y + INDEX_SIZE.y), Color("#ddedd5"), 1)
+			draw_line(Vector2(INDEX_ORIGIN.x, p.y), Vector2(INDEX_ORIGIN.x + INDEX_SIZE.x, p.y), Color("#ddedd5"), 1)
+		draw_string(FONT, Vector2(48, 994), "A–H: arriba → abajo · 1–8: izquierda → derecha · 110 × 61 m por celda", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#c3d4c8"))
+		draw_string(FONT, Vector2(48, 1021), PRINT_CREDIT, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("#c3d4c8"))
 
 
 func _initialize() -> void:
@@ -134,16 +151,16 @@ func _features(region: Rect2) -> Array[Dictionary]:
 	index = 0
 	for row in Map.COURTS:
 		index += 1
-		var area := Rect2(Vector2(row[1], row[2]) * Map.SIZE / 100, Vector2(row[3], row[4]) * Map.SIZE / 100)
+		var area := Map.court_rect(row)
 		_add_region(result, region, area, "C%02d" % index, row[0], row[0])
 	index = 0
-	for shape in Land.LAWNS:
+	for shape in Geo.shapes("gardens"):
 		index += 1
-		_add_region(result, region, Terrain._bounds(Land.polygon(shape)), "G%02d" % index, "Jardín / pasto %d" % index, "garden_%d" % index)
+		_add_region(result, region, Terrain._bounds(shape), "G%02d" % index, "Jardín / pasto %d" % index, "garden_%d" % index)
 	index = 0
-	for shape in Land.PARKING:
+	for shape in Geo.shapes("parking"):
 		index += 1
-		_add_region(result, region, Terrain._bounds(Land.polygon(shape)), "P%02d" % index, "Estacionamiento %d" % index, "parking_%d" % index)
+		_add_region(result, region, Terrain._bounds(shape), "P%02d" % index, "Estacionamiento %d" % index, "parking_%d" % index)
 	_add_region(result, region, Terrain._bounds(Land.polygon(Land.FOREST)), "V01", "Bosque del ingreso", "bosque")
 	_add_region(result, region, Terrain._bounds(Land.polygon(Land.POND)), "A01", "Laguna de Civil", "laguna")
 	index = 0
@@ -154,7 +171,7 @@ func _features(region: Rect2) -> Array[Dictionary]:
 	for item in Land.fountains():
 		index += 1
 		_add_point(result, region, item["point"], "F%02d" % index, "Fuente " + str(index), item["id"])
-	_add_point(result, region, Land.at(50.6, 35.5), "V02", "Asientos FNI", "asientos_fni")
+	_add_point(result, region, Land.FNI_SEATS, "V02", "Asientos FNI", "asientos_fni")
 	_add_point(result, region, Map.SPAWN, "I01", "Ingreso / aparición del jugador", "ingreso")
 	return result
 
@@ -197,8 +214,7 @@ func _run() -> void:
 	sheet.size = PAGE_SIZE
 	sheet.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	viewport.add_child(sheet)
-	var full := Image.create(int(Map.SIZE.x / 2), int(Map.SIZE.y / 2), false, Image.FORMAT_RGBA8)
-	var manifest: Dictionary = {"map_id": Map.ID, "date": "2026-11-06", "grid": [8, 8], "cell_size": [HALF.x, HALF.y], "size": [Map.SIZE.x, Map.SIZE.y], "units": "game units, not metres", "orientation": "N right; S left; E down; W up, as specified by user", "cells": []}
+	var manifest: Dictionary = {"map_id": Map.ID, "date": "2026-11-08", "grid": [8, 8], "cell_size": [HALF.x, HALF.y], "size": [Map.SIZE.x, Map.SIZE.y], "units_per_metre": Scale.UNITS_PER_METRE, "attribution": Geo.CREDIT, "copyright": Geo.COPYRIGHT_URL, "orientation": "N right; S left; E down; W up", "cells": []}
 	for index in range(64):
 		sheet.quadrant = index
 		sheet.region = Grid.bounds(index / 8, index % 8)
@@ -206,14 +222,18 @@ func _run() -> void:
 		var output := await _render()
 		var code := Grid.code(index / 8, index % 8)
 		_save(output, code)
-		var map_pixels := output.get_region(Rect2i(Vector2i(MAP_ORIGIN), Vector2i(HALF * FACTOR)))
-		map_pixels.resize(int(HALF.x / 2), int(HALF.y / 2), Image.INTERPOLATE_NEAREST)
-		full.blit_rect(map_pixels, Rect2i(Vector2i.ZERO, map_pixels.get_size()), Vector2i(Vector2(index % 8, index / 8) * HALF / 2))
 		manifest["cells"].append({"id": code, "bounds": [sheet.region.position.x, sheet.region.position.y, HALF.x, HALF.y], "features": sheet.features})
+	sheet.whole_map = true
+	viewport.size = Vector2i(Map.SIZE / 2)
+	sheet.size = viewport.size
+	sheet.show_map_credit = true
+	var full := await _render()
 	_save(full, "mapa-completo")
-	full.resize(1536, 1088, Image.INTERPOLATE_NEAREST)
+	sheet.show_map_credit = false
+	full = await _render()
+	full.resize(int(INDEX_SIZE.x), int(INDEX_SIZE.y), Image.INTERPOLATE_NEAREST)
 	sheet.preview = ImageTexture.create_from_image(full)
-	viewport.size = Vector2i(1632, 1272)
+	viewport.size = Vector2i(1632, 1048)
 	sheet.size = viewport.size
 	_save(await _render(), "00-indice")
 	var file := FileAccess.open(OUTPUT + "referencias.json", FileAccess.WRITE)

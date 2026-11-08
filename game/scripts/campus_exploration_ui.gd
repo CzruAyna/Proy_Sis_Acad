@@ -9,6 +9,7 @@ const MinigameSessions = preload("res://scripts/minigame_session_ui.gd")
 const Inspection = preload("res://scripts/campus_inspection_overlay.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
 
 var host: WeakRef
 var world_ref: WeakRef
@@ -226,7 +227,7 @@ func show_progress() -> void:
 func show_map() -> void:
 	capture()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Mapa del campus", "Adaptación espacial del plano aportado · sin escala topográfica", show_world)
+	var page: VBoxContainer = _ui()._make_page("Mapa del campus", "Ciudad Universitaria · escala exterior aproximada", show_world)
 	_text(page, "Marca un destino y vuelve a caminar. El punto dorado es tu posición; el borde azul señala tu destino.", 15)
 	var map := Overview.new()
 	map.name = "CampusOverview"
@@ -263,9 +264,10 @@ func show_map_guide() -> void:
 	map.custom_minimum_size = Vector2(0, 300)
 	map.set_meta("page_atomic", true)
 	page.add_child(map)
-	_text(page, "Filas A–H de arriba abajo y columnas 1–8 de izquierda a derecha. Cada celda mide 1536 × 1088 unidades del juego. X aumenta a la derecha; Y hacia abajo.", 15)
-	_text(page, "Estas unidades permiten comparar distancias del diseño. Todavía no equivalen a metros reales. Las formas y accesos continúan sujetos a revisión.", 15)
+	_text(page, "Filas A–H de arriba abajo y columnas 1–8 de izquierda a derecha. Cada celda equivale a unos 110 × 61 m en el exterior.", 15)
+	_text(page, "Escala de diseño de 8 unidades por metro. El juego acelera los desplazamientos. Las puertas y la distribución interior son provisionales.", 15)
 	_text(page, "Orientación indicada: norte → derecha; sur → izquierda; este → abajo; oeste → arriba.", 15)
+	_ui()._add_button(page, "Créditos cartográficos · OpenStreetMap", func() -> void: OS.shell_open(Geo.COPYRIGHT_URL), false, 36)
 
 
 func _inspect(content: Array[Dictionary]) -> void:

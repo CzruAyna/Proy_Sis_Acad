@@ -1,12 +1,17 @@
 extends RefCounted
 
 const Landscape = preload("res://scripts/campus_landscape.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 const RoomLayout = preload("res://scripts/campus_room_layout.gd")
-const ID := "fni_ciudad_v2"
+const ID := "fni_ciudad_v3"
+const PREVIOUS_ID := "fni_ciudad_v2"
 const LEGACY_ID := "fni_ciudad_v1"
 const LEGACY_SIZE := Vector2(2304, 1664)
+const PREVIOUS_SIZE := Vector2(12288, 8704)
+const PREVIOUS_SPAWN := Vector2(6784, 8144)
 const SIZE := Landscape.SIZE
-const SPAWN := Vector2(6784, 8144)
+const SPAWN := Vector2(3696, 3616)
 const ROOM_SIZE := Vector2(480, 320)
 const HALL_SIZE := Vector2(720, 480)
 const COMPUTING_SOURCE := "https://www.sisinf.fni.uto.edu.bo/computacion/"
@@ -78,33 +83,70 @@ const COURTS := [
 
 
 static var _building_index: Dictionary = {}
+static var _buildings: Array[Dictionary] = []
+const PROVISIONAL_METRES := {
+	"sis_e": Rect2(534, 125, 17, 13),
+	"sis_c": Rect2(607, 139, 28, 24),
+	"electrica": Rect2(607, 279, 21, 20),
+	"quirquincho_matem": Rect2(478, 368, 18, 14)
+}
 
 
 static func buildings() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
+	if not _buildings.is_empty():
+		return _buildings.duplicate(true)
 	for row in ROWS:
-		var rect := Rect2(Vector2(float(row[2]), float(row[3])) * SIZE / 100, Vector2(float(row[4]), float(row[5])) * SIZE / 100)
-		rect.position = rect.position.snapped(Vector2(8, 8))
-		rect.size = rect.size.snapped(Vector2(8, 8))
+		var footprint := Geo.shape("buildings", row[0])
+		if footprint.is_empty():
+			var approximate: Rect2 = PROVISIONAL_METRES[row[0]]
+			var box := Rect2(approximate.position * Scale.UNITS_PER_METRE, approximate.size * Scale.UNITS_PER_METRE)
+			for vertex in FOOTPRINTS.get(row[0], [[0, 0], [1, 0], [1, 1], [0, 1]]):
+				footprint.append((box.position + Vector2(vertex[0], vertex[1]) * box.size).round())
+		var rect := Geo.bounds(footprint)
 		var rooms: Array = SYSTEMS_ROOMS.get(row[0], row[7]).duplicate()
-		var footprint := PackedVector2Array()
-		for vertex in FOOTPRINTS.get(row[0], [[0, 0], [1, 0], [1, 1], [0, 1]]):
-			footprint.append((rect.position + Vector2(vertex[0], vertex[1]) * rect.size).snapped(Vector2(2, 2)))
-		result.append({"id": row[0], "name": row[1], "rect": rect, "footprint": footprint, "kind": row[6], "rooms": rooms,
+		var data := {"id": row[0], "name": row[1], "rect": rect, "footprint": footprint, "kind": row[6], "rooms": rooms,
 			"room_source": COMPUTING_SOURCE if SYSTEMS_ROOMS.has(row[0]) else "FNI-PLANO-01",
-			"door": Vector2(rect.get_center().x, rect.end.y + 14).snapped(Vector2(2, 2))})
-	return result
+			"door": Vector2(rect.get_center().x, rect.end.y + 10).round()}
+		if row[0] == "metalurgia2":
+			# The east face shares a tight passage with Comedor. Use the west access.
+			data["door"] = Vector2(644, 881)
+			data["door_top"] = true
+		_buildings.append(data)
+		_building_index[row[0]] = data
+	return _buildings.duplicate(true)
 
 
 static func routes() -> Array[PackedVector2Array]:
 	return Landscape.routes()
 
 
+static func court_rect(row: Array) -> Rect2:
+	var polygon := Geo.shape("courts", row[0])
+	if not polygon.is_empty():
+		return Geo.bounds(polygon)
+	return Rect2(Vector2(row[1], row[2]) * SIZE / 100, Vector2(row[3], row[4]) * SIZE / 100)
+
+
 static func building(id: String) -> Dictionary:
 	if _building_index.is_empty():
-		for item in buildings():
-			_building_index[str(item["id"])] = item
+		buildings()
 	return _building_index[id].duplicate(true) if _building_index.has(id) else {}
+
+
+static func migrate_outside(point: Vector2, from_map: String) -> Vector2:
+	if from_map == ID or not point.is_finite():
+		return point
+	var previous := point * PREVIOUS_SIZE / LEGACY_SIZE if from_map == LEGACY_ID else point
+	var factor := SIZE / PREVIOUS_SIZE
+	if previous.distance_to(PREVIOUS_SPAWN) < 96:
+		return (SPAWN + (previous - PREVIOUS_SPAWN) * factor).round()
+	for row in ROWS:
+		var old_origin := (Vector2(row[2], row[3]) * PREVIOUS_SIZE / 100).snapped(Vector2(8, 8))
+		var old_extent := (Vector2(row[4], row[5]) * PREVIOUS_SIZE / 100).snapped(Vector2(8, 8))
+		var old_door := (old_origin + Vector2(old_extent.x / 2, old_extent.y + 14)).snapped(Vector2(2, 2))
+		if previous.distance_to(old_door) < 48:
+			return (Vector2(building(row[0])["door"]) + (previous - old_door) * factor).round()
+	return (previous * factor).round()
 
 
 static func room_obstacles(kind: String) -> Array[Rect2]:

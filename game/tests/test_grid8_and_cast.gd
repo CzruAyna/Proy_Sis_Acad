@@ -1,7 +1,6 @@
 extends "res://tests/test_exploration.gd"
 const Grid = preload("res://scripts/campus_grid.gd")
 const Cast = preload("res://scripts/campus_cast.gd")
-const Scale = preload("res://scripts/campus_scale.gd")
 
 
 func _run() -> void:
@@ -15,7 +14,7 @@ func _run() -> void:
 			_check(not codes.has(code), "Celda única " + code)
 			codes[code] = true
 			var area := Grid.bounds(row, column)
-			_check(area.size == Vector2(1536, 1088) and Grid.at(area.get_center()) == code, "Celda cubre su intervalo y centro")
+			_check(area.size / Scale.UNITS_PER_METRE == Vector2(110, 61) and Grid.at(area.get_center()) == code, "Celda calibrada cubre 110 × 61 m y conserva su código")
 			surface += area.get_area()
 	_check(surface == Map.SIZE.x * Map.SIZE.y and codes.size() == 64, "64 celdas cubren toda la superficie")
 	_check(Grid.at(Vector2.ZERO) == "A1" and Grid.at(Map.SIZE) == "H8" and Grid.at(Map.SPAWN) == "H5", "Bordes y entrada se identifican sin desbordar")
@@ -23,10 +22,10 @@ func _run() -> void:
 	world._life_saved = {"version": 1, "seed": "20261104", "rare": false}
 	root.add_child(world)
 	world.set_process(false)
-	_check(World.PLAYER_RADIUS == 12 and Scale.PLAYER_SIZE == Vector2(24, 32), "Sprite y huella de pies ampliados juntos")
+	_check(Scale.OUTDOOR_SIZE.y / Scale.UNITS_PER_METRE == 2.0 and Scale.OUTDOOR_RADIUS < World.PLAYER_RADIUS, "La silueta y la huella exteriores comparten la escala del campus")
 	var start := world.player
 	world.move_player(Vector2.RIGHT, 0.1)
-	_check(world.player.distance_to(start) > 20, "Paseo exterior supera la velocidad anterior")
+	_check(absf(world.player.distance_to(start) - Scale.WALK_SPEED * 0.1) < 0.01, "Paseo exterior aplica el ritmo calibrado")
 	world.player = start
 	var old_position: Vector2 = Map.building("sis_c")["door"] - Vector2(0, 4)
 	world.restore({"version": 1, "map_id": Map.ID, "position": [old_position.x, old_position.y], "visited": ["sis_c/CU-SIC1"]})
@@ -34,7 +33,7 @@ func _run() -> void:
 	_check(world.visited.has("sis_c/CU-SIC1"), "Ajustar la posición conserva visitas")
 	world.player = start
 	world.move_player(Vector2.RIGHT, 0.1, true)
-	_check(world.player.distance_to(start) > 36, "Carrera facilita recorrer el mapa grande")
+	_check(absf(world.player.distance_to(start) - Scale.WALK_SPEED * Scale.RUN_MULTIPLIER * 0.1) < 0.01, "Correr aplica el multiplicador sobre el ritmo calibrado")
 	world.player = start
 	_check(world.cast_instances.size() == 51, "Población ambiental: profesionales, 24 estudiantes, personal y cinco perros")
 	var designs := {}

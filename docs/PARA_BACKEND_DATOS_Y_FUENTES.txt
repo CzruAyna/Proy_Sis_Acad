@@ -151,3 +151,17 @@ creación de la organización; plantas, códigos de aulas, baños y accesos de l
 bloques 100 y en cruz; procedencia y permiso del plano marcado. No dar por
 verificadas la biografía, la organización, las plantas o la oferta de carreras
 por existir sus diseños. La fecha 3 de julio de 1906 procede del sitio FNI-UTO.
+
+CARTOGRAFÍA Y ESCALA, 08/11/2026
+Consultar docs/CARTOGRAFIA_FNI_Y_ESCALA.md. El mapa fni_ciudad_v3 deriva de
+OpenStreetMap. Los identificadores de edificios y aulas se conservan.
+- P1. Conseguir un plano institucional o croquis fechado con los bloques
+  Sistemas A–E, Eléctrica y el quirquincho de Matemáticas identificados.
+  Señalar la puerta pública y su conexión al camino en cada edificio.
+- P1. Medir sobre el terreno la distancia por el sendero desde el ingreso
+  hasta Física, Sistemas A y Básicas. Registrar extremos, ruta y método.
+- P2. Solicitar fotos propias o autorizadas, con fecha y orientación, de
+  accesos, fachadas, niveles, bosque, Piedritas y laguna de Civil.
+- Mantener las coordenadas ligadas al map_id y las velocidades de exteriores
+  separadas de las unidades de interiores y del reloj académico.
+Consultar los originales fuera del repositorio, según la regla 26.

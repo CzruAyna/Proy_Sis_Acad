@@ -1,5 +1,9 @@
 # Matriz 8×8, escala de personajes y referencias externas
 
+Para la matriz vigente y sus medidas aproximadas en metros, consultar
+[Cartografía y escala FNI](CARTOGRAFIA_FNI_Y_ESCALA.md). Las dimensiones y
+coordenadas descritas debajo corresponden a las versiones del 4 y 6 de noviembre.
+
 Actualización del 06/11/2026: se regeneran las 64 láminas con caminos conectados
 y rosa de los vientos. El usuario precisó norte a la derecha, sur a la izquierda,
 este abajo y oeste arriba. Esa orientación sustituye la falta de referencia

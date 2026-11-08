@@ -26,14 +26,17 @@ func _run() -> void:
 	var courts_clear := true
 	for point in world._tree_positions:
 		for row in Map.COURTS:
-			var area := Rect2(Vector2(float(row[1]), float(row[2])) * Map.SIZE / 100, Vector2(float(row[3]), float(row[4])) * Map.SIZE / 100)
+			var area := Map.court_rect(row)
 			courts_clear = courts_clear and not area.grow(24).has_point(point)
 	_check(courts_clear, "La vegetación no aparece sobre las canchas ni su margen")
 	var outline: Rect2 = Map.building("sis_a")["rect"]
 	_check(world._can_stand(outline.position + outline.size * 0.05), "La esquina recortada de A permite caminar, sin pared rectangular invisible")
 	_check(not world._can_stand(outline.get_center()), "La parte sólida del bloque A mantiene la colisión")
-	for id in Map.FOOTPRINTS:
-		_check(Map.building(id)["footprint"].size() > 4, "Contorno propio compartido por dibujo, colisión y mapa: " + str(id))
+	var geo = preload("res://scripts/campus_cartography.gd")
+	for id in ["sis_a", "geologia", "decanato", "basicas", "minas", "electrica_aulas", "civil", "admin_geo", "quirquincho_quimica", "quirquincho_fisica"]:
+		var mapped: PackedVector2Array = geo.shape("buildings", id)
+		_check(mapped.size() >= 3 and Map.building(id)["footprint"] == mapped, "Huella OSM compartida por dibujo, colisión y mapa: " + id)
+	_check(Map.building("quirquincho_matem")["footprint"].size() > 4, "El edificio provisional conserva su contorno recreado")
 	_check(world.enter_building("sis_e") and world.room_name == "SIS E", "E conserva la sala existente y su identificador de guardado")
 	var origin: Vector2 = world.player
 	for station in Map.game_stations():

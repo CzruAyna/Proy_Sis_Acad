@@ -1,5 +1,12 @@
 # Código libre y licencia
 
+La base cartográfica del 08/11/2026 deriva de OpenStreetMap y se distribuye
+bajo la [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), con
+[atribución a OpenStreetMap y sus colaboradores](https://www.openstreetmap.org/copyright).
+El JSON derivado es independiente del código original del renderizador.
+La [guía de cartografía](CARTOGRAFIA_FNI_Y_ESCALA.md) identifica el archivo,
+su procedencia y cómo reproducirlo.
+
 Distribución local preparada el 06/11/2026: el ZIP de Windows incluye EXE,
 PCK, `LICENSE`, esta guía y `GODOT-NOTICES.txt`, generado desde las APIs de
 licencias del motor mediante `game/tools/write_engine_notices.gd`. Se entrega

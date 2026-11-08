@@ -1,8 +1,11 @@
 extends RefCounted
 const Land = preload("res://scripts/campus_landscape.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
 const Roads = preload("res://scripts/campus_roads.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 static var _lawns: Array[PackedVector2Array] = []
+static var _lawn_bounds: Array[Rect2] = []
+static var _parking: Array[PackedVector2Array] = []
 static var _forest := PackedVector2Array()
 static var _pond := PackedVector2Array()
 
@@ -10,8 +13,10 @@ static var _pond := PackedVector2Array()
 static func prepare() -> void:
 	if not _lawns.is_empty():
 		return
-	for shape in Land.LAWNS:
-		_lawns.append(Land.polygon(shape))
+	_lawns = Geo.shapes("gardens")
+	for shape in _lawns:
+		_lawn_bounds.append(_bounds(shape))
+	_parking = Geo.shapes("parking")
 	_forest = Land.polygon(Land.FOREST)
 	_pond = Land.polygon(Land.POND)
 
@@ -19,22 +24,21 @@ static func prepare() -> void:
 static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool = true) -> void:
 	prepare()
 	canvas.draw_rect(view, Color("#ad9b7c"))
-	for shape in _lawns:
-		if _bounds(shape).intersects(view):
-			canvas.draw_colored_polygon(shape, Color("#6b8656"))
+	for index in range(_lawns.size()):
+		if _lawn_bounds[index].intersects(view):
+			canvas.draw_colored_polygon(_lawns[index], Color("#6b8656"))
 	if _bounds(_forest).intersects(view):
 		canvas.draw_colored_polygon(_forest, Color("#3e654c"))
-	for y in range(floori(view.position.y / 48) * 48, ceili(view.end.y), 48 if detail else 384):
-		for x in range(floori(view.position.x / 48) * 48, ceili(view.end.x), 48 if detail else 384):
-			var point := Vector2(x, y)
-			var green := in_garden(point)
-			if detail:
+	if detail:
+		for y in range(floori(view.position.y / 48) * 48, ceili(view.end.y), 48):
+			for x in range(floori(view.position.x / 48) * 48, ceili(view.end.x), 48):
+				var point := Vector2(x, y)
+				var green := in_garden(point)
 				var seed := posmod(x * 13 + y * 7, 31)
 				canvas.draw_rect(Rect2(point + Vector2(seed, seed % 13), Vector2(4, 2)), Color("#91a569") if green else Color("#c8b692"))
 				if not green and seed % 3 == 0:
 					canvas.draw_rect(Rect2(point + Vector2(12, 28), Vector2(2, 2)), Color("#8e8069"))
-	for shape in Land.PARKING:
-		var points := Land.polygon(shape)
+	for points in _parking:
 		if not _bounds(points).intersects(view):
 			continue
 		canvas.draw_colored_polygon(points, Color("#7a807e"))
@@ -64,13 +68,13 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool
 	for item in Land.fountains():
 		if view.grow(70).has_point(item["point"]):
 			_fountain(canvas, item["point"], item["radius"], phase)
-	var seats := Land.at(50.6, 35.5)
+	var seats := Land.FNI_SEATS
 	if view.grow(170).has_point(seats):
 		_seats(canvas, seats)
-	var entrance := Land.at(55.2, 93.8)
+	var entrance := Geo.anchor("gate")
 	if view.grow(120).has_point(entrance):
 		for index in range(-3, 4):
-			canvas.draw_rect(Rect2(entrance + Vector2(index * 18, -7), Vector2(10, 50)), Color("#d8d1b4"))
+			canvas.draw_rect(Rect2(entrance + Vector2(index * 8, -4), Vector2(4, 16)), Color("#d8d1b4"))
 		canvas.draw_string(FONT, entrance + Vector2(-50, -24), "INGRESO FNI", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ede6ca"))
 
 
@@ -85,8 +89,8 @@ static func in_garden(point: Vector2) -> bool:
 	prepare()
 	if Geometry2D.is_point_in_polygon(point, _forest):
 		return true
-	for shape in _lawns:
-		if Geometry2D.is_point_in_polygon(point, shape):
+	for index in range(_lawns.size()):
+		if _lawn_bounds[index].has_point(point) and Geometry2D.is_point_in_polygon(point, _lawns[index]):
 			return true
 	return false
 

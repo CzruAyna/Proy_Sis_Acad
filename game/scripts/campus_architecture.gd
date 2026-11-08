@@ -1,6 +1,7 @@
 extends RefCounted
 ## Original pixel geometry, inspired by the plan and reference photographs.
 const Map = preload("res://scripts/campus_map.gd")
+const Geo = preload("res://scripts/campus_cartography.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 
 
@@ -130,7 +131,7 @@ static func tree(canvas: CanvasItem, point: Vector2) -> void:
 
 
 static func court_rect(row: Array) -> Rect2:
-	return Rect2(Vector2(float(row[1]), float(row[2])) * Map.SIZE / 100, Vector2(float(row[3]), float(row[4])) * Map.SIZE / 100)
+	return Map.court_rect(row)
 
 
 static func court(canvas: CanvasItem, row: Array) -> void:
@@ -141,6 +142,18 @@ static func court(canvas: CanvasItem, row: Array) -> void:
 	var football := name.begins_with("FÚTBOL")
 	var tennis := name == "TENIS"
 	var sand := name in ["FÚTBOL TIERRA", "VOLEIBOL"]
+	var outline := Geo.shape("courts", name)
+	if not outline.is_empty():
+		var color := Color("#b29a74") if sand else (Color("#658351") if football else Color("#586f72"))
+		canvas.draw_colored_polygon(outline, color)
+		for index in range(outline.size()):
+			canvas.draw_line(outline[index], outline[(index + 1) % outline.size()], ink, 2, false)
+		if outline.size() == 4:
+			var midpoint := (outline[0] + outline[2]) / 2
+			var side := 0 if outline[0].distance_to(outline[1]) > outline[1].distance_to(outline[2]) else 1
+			canvas.draw_line((outline[side] + outline[side + 1]) / 2, (outline[(side + 2) % 4] + outline[(side + 3) % 4]) / 2, ink, 2, false)
+			canvas.draw_arc(midpoint, minf(rect.size.x, rect.size.y) * 0.09, 0, TAU, 24, ink, 2, false)
+		return
 	canvas.draw_rect(rect.grow(4), Color("#777d68"))
 	canvas.draw_rect(rect, Color("#b29a74") if sand else (Color("#658351") if football else Color("#586f72")))
 	if football and not sand:

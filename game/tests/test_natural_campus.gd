@@ -24,7 +24,7 @@ func _run() -> void:
 			if index == other_index:
 				continue
 			var other: PackedVector2Array = paths[other_index]
-			for endpoint in [path[0], path[-1]]:
+			for endpoint in path:
 				for segment in range(other.size() - 1):
 					if endpoint.distance_to(Geometry2D.get_closest_point_to_segment(endpoint, other[segment], other[segment + 1])) < 80:
 						connected = true

@@ -92,14 +92,15 @@ func restore(saved: Dictionary) -> void:
 	floor_level = 0
 	_life_saved = saved.get("life", {}).duplicate(true) if saved.get("life") is Dictionary else {}
 	visited.clear()
-	if saved.get("map_id", "") not in [Map.ID, Map.LEGACY_ID] or int(saved.get("version", 0)) != 1:
+	var from_map := str(saved.get("map_id", ""))
+	if from_map not in [Map.ID, Map.PREVIOUS_ID, Map.LEGACY_ID] or int(saved.get("version", 0)) != 1:
 		camera = player
 		return
+	AmbientCast.migrate_positions(_life_saved, from_map)
 	var stored: Variant = saved.get("position", [])
 	if stored is Array and stored.size() == 2 and (stored[0] is float or stored[0] is int) and (stored[1] is float or stored[1] is int):
 		var point := Vector2(float(stored[0]), float(stored[1]))
-		if saved.get("map_id", "") == Map.LEGACY_ID:
-			point = (point * Map.SIZE / Map.LEGACY_SIZE).snapped(Vector2(2, 2))
+		point = Map.migrate_outside(point, from_map)
 		if point.is_finite():
 			player = _safe_outside_position(point)
 	var previous: Variant = saved.get("visited", [])
@@ -216,7 +217,7 @@ func move_player(direction: Vector2, delta: float, running: bool = false) -> voi
 	moving = motion.length_squared() > 0.001
 	if moving:
 		facing = direction.normalized()
-		stride += motion.length() * 0.12
+		stride += motion.length() * (0.24 if room_id.is_empty() else 0.12)
 		var steps := maxi(1, ceili(motion.length() / 4.0))
 		for step in range(steps):
 			var offset := motion / float(steps)
@@ -236,7 +237,7 @@ func _can_stand(point: Vector2) -> bool:
 	if not point.is_finite():
 		return false
 	if room_id.is_empty():
-		return _can_stand_outside(point, PLAYER_RADIUS)
+		return _can_stand_outside(point)
 	else:
 		var extent := Map.hall_size(room_id) if room_name.is_empty() else Map.room_size(room_id, room_name)
 		var bounds := Rect2(Vector2(22, 30), extent - Vector2(44, 50))
@@ -252,7 +253,7 @@ func _can_stand(point: Vector2) -> bool:
 	return true
 
 
-func _can_stand_outside(point: Vector2, radius: float = PLAYER_RADIUS) -> bool:
+func _can_stand_outside(point: Vector2, radius: float = Scale.OUTDOOR_RADIUS) -> bool:
 	return Collision.can_stand(point, radius)
 
 
@@ -270,7 +271,7 @@ func _safe_outside_position(point: Vector2) -> Vector2:
 
 func nearby_building() -> Dictionary:
 	var closest := {}
-	var distance := 29.0
+	var distance := Scale.OUTDOOR_REACH
 	for building in buildings:
 		var candidate := player.distance_to(building["door"])
 		if candidate < distance:
@@ -370,10 +371,10 @@ func nearby_feature() -> Dictionary:
 					break
 		return {}
 	for item in Land.landmarks():
-		if player.distance_to(item["approach"]) < 34:
+		if player.distance_to(item["approach"]) < Scale.OUTDOOR_REACH:
 			return item
 	for item in cast_instances:
-		if item.get("state", "WAIT") != "CLASS" and player.distance_to(item["point"]) < 45:
+		if item.get("state", "WAIT") != "CLASS" and player.distance_to(item["point"]) < Scale.OUTDOOR_REACH:
 			return {"kind": "actor", "id": item["instance_id"], "title": "Acariciar compañero" if ambient_cast.is_dog(item) else "Conversar · rutina simulada"}
 	return {}
 
@@ -481,6 +482,8 @@ func change_floor(level: int) -> bool:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#0c1720"))
 	zoom = maxf(2, floorf(minf(size.x / 420.0, size.y / 220.0)))
+	if room_id.is_empty():
+		zoom += 1
 	var world_size := Map.SIZE if room_id.is_empty() else (Map.hall_size(room_id) if room_name.is_empty() else Map.room_size(room_id, room_name))
 	var extent := size / zoom
 	var origin := camera - extent * 0.5
@@ -514,13 +517,13 @@ func _draw_campus(view: Rect2) -> void:
 		Architecture.tree(self, point)
 	for item in Land.landmarks():
 		if view.grow(90).has_point(item["point"]):
-			draw_texture_rect(LandmarkArt.texture(item["id"]), Rect2(item["point"] - Vector2(28, 63), Vector2(56, 68)), false)
+			draw_texture_rect(LandmarkArt.texture(item["id"]), Rect2(item["point"] - Vector2(14, 32), Vector2(28, 34)), false)
 	for item in cast_instances:
 		if item.get("state", "WAIT") == "CLASS":
 			continue
 		if view.grow(44).has_point(item["point"]):
 			var dog := ambient_cast.is_dog(item)
-			var extent := Scale.DOG_SIZE if dog else Scale.HUMAN_SIZE
+			var extent := Scale.DOG_SIZE if dog else Scale.OUTDOOR_SIZE
 			var destination := Rect2(item["point"] - Vector2(extent.x * 0.5, extent.y - 2), extent)
 			var direction: Vector2 = item.get("facing", Vector2.DOWN)
 			if direction.x < -0.4:
@@ -539,13 +542,15 @@ func _draw_campus(view: Rect2) -> void:
 func _draw_building(building: Dictionary, view: Rect2) -> void:
 	Architecture.building(self, building, view)
 	var door: Vector2 = building["door"]
-	draw_rect(Rect2(door - Vector2(18, 36), Vector2(36, 35)), Color("#223a40"))
-	draw_rect(Rect2(door - Vector2(13, 32), Vector2(26, 30)), Color("#6ddab9"))
-	draw_rect(Rect2(door - Vector2(22, 0), Vector2(44, 6)), Color("#d4c7a0"))
+	var top_access := bool(building.get("door_top", false))
+	var door_rect := Rect2(door - Vector2(9, 0 if top_access else 18), Vector2(18, 17))
+	draw_rect(door_rect, Color("#223a40"))
+	draw_rect(door_rect.grow(-3), Color("#6ddab9"))
+	draw_rect(Rect2(door - Vector2(11, 0), Vector2(22, 3)), Color("#d4c7a0"))
 	if view.grow(100).has_point(door):
-		_sign(door + Vector2(-48, -41), str(building["name"]), 10)
-	if player.distance_to(door) < 29:
-		draw_rect(Rect2(door - Vector2(21, 40), Vector2(42, 44)), Color("#fff1a6"), false, 2)
+		_sign(door + Vector2(-24, -22), str(building["name"]), 8)
+	if player.distance_to(door) < Scale.OUTDOOR_REACH:
+		draw_rect(door_rect.grow(2), Color("#fff1a6"), false, 1)
 
 
 func _draw_room() -> void:
@@ -653,13 +658,15 @@ func _draw_player() -> void:
 			picture.set_pixel(4, 3, Color("#263445"))
 			picture.set_pixel(7, 3, Color("#263445"))
 		_textures[key] = ImageTexture.create_from_image(picture)
-	draw_rect(Rect2(player.round() + Vector2(-12, -3), Vector2(24, 6)), Color("#304a46"))
+	var shadow := Vector2(12, 3) if room_id.is_empty() else Vector2(24, 6)
+	draw_rect(Rect2(player.round() - shadow / 2, shadow), Color("#304a46"))
 	draw_texture_rect(_textures[key], player_sprite_rect(), false)
 
 
 func player_sprite_rect() -> Rect2:
 	# Godot mirrors negative texture widths inside the same destination bounds.
-	var rect := Rect2(player.round() - Vector2(Scale.PLAYER_SIZE.x / 2, Scale.PLAYER_SIZE.y - 2), Scale.PLAYER_SIZE)
+	var extent := Scale.OUTDOOR_SIZE if room_id.is_empty() else Scale.PLAYER_SIZE
+	var rect := Rect2(player.round() - Vector2(extent.x / 2, extent.y - extent.y / 16), extent)
 	if facing.x < -0.4:
 		rect.size.x *= -1
 	return rect

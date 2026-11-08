@@ -2,6 +2,7 @@ extends RefCounted
 ## Shared broad phase. Exact polygon/foot-radius checks remain authoritative.
 const Map = preload("res://scripts/campus_map.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 const CELL := 512.0
 static var _buckets: Dictionary = {}
 static var _items: Array[Dictionary] = []
@@ -35,7 +36,7 @@ static func _add(item: Dictionary) -> void:
 			_buckets[key].append(id)
 
 
-static func can_stand(point: Vector2, radius: float = 12) -> bool:
+static func can_stand(point: Vector2, radius: float = Scale.OUTDOOR_RADIUS) -> bool:
 	if not point.is_finite() or not is_finite(radius) or radius < 0 or not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
 		return false
 	prepare()

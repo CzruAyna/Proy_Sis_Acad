@@ -260,3 +260,12 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     institucional. Entregar por chat los pasos solicitados para disponer del
     repositorio abierto y descargable mediante el navegador; no incluir esas
     instrucciones de publicación en los archivos del proyecto.
+
+29. CARTOGRAFÍA Y ESCALA, indicada el 08/11/2026.
+    Usar OpenStreetMap como referencia para precisar las formas, conexiones y
+    dimensiones del campus. Mantener proporciones exteriores comparables con
+    la realidad y ajustar de forma coherente personajes, colisiones y velocidad
+    para que los desplazamientos jugables sean más breves. Distinguir la escala
+    cartográfica del ritmo de juego. Conservar la orientación de la regla 27
+    y la matriz de la regla 26. Documentar las fuentes, la calibración y lo que
+    falta verificar. Dejar en docs/ los requisitos para motor/backend.

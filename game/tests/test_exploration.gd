@@ -4,6 +4,7 @@ const World = preload("res://scripts/campus_world.gd")
 const Map = preload("res://scripts/campus_map.gd")
 const Simulation = preload("res://scripts/student_simulation.gd")
 const Store = preload("res://scripts/simulation_save_store.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 const GRID_STEP := 16
 
 var assertions := 0
@@ -20,35 +21,49 @@ func _check(value: bool, message: String) -> void:
 		failures.append(message)
 
 
-func _reachable() -> PackedByteArray:
-	var width := int(Map.SIZE.x / GRID_STEP)
-	var height := int(Map.SIZE.y / GRID_STEP)
-	var blocked := PackedByteArray()
-	blocked.resize(width * height)
-	for building in Map.buildings():
-		var rect: Rect2 = Rect2(building["rect"]).grow(World.PLAYER_RADIUS)
-		for y in range(maxi(0, int(rect.position.y / GRID_STEP)), mini(height, ceili(rect.end.y / GRID_STEP))):
-			for x in range(maxi(0, int(rect.position.x / GRID_STEP)), mini(width, ceili(rect.end.x / GRID_STEP))):
-				if rect.has_point(Vector2(x, y) * GRID_STEP):
-					blocked[y * width + x] = 1
-	var seen := PackedByteArray()
-	seen.resize(width * height)
-	var start := Vector2i(Map.SPAWN / GRID_STEP)
-	var queue: Array[Vector2i] = [start]
-	seen[start.y * width + start.x] = 1
-	var cursor := 0
-	while cursor < queue.size():
-		var point := queue[cursor]
-		cursor += 1
-		for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-			var next: Vector2i = point + direction
-			if next.x < 2 or next.y < 2 or next.x >= width - 2 or next.y >= height - 2:
-				continue
-			var index := next.y * width + next.x
-			if seen[index] == 0 and blocked[index] == 0:
-				seen[index] = 1
-				queue.append(next)
-	return seen
+func _walking_grid(world: Control) -> AStarGrid2D:
+	var grid := AStarGrid2D.new()
+	grid.region = Rect2i(Vector2i.ZERO, Vector2i(Map.SIZE / GRID_STEP))
+	grid.cell_size = Vector2.ONE * GRID_STEP
+	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	grid.update()
+	for y in range(grid.region.size.y):
+		for x in range(grid.region.size.x):
+			var cell := Vector2i(x, y)
+			grid.set_point_solid(cell, not world._can_stand(grid.get_point_position(cell)))
+	return grid
+
+
+func _walk_to(world: Control, grid: AStarGrid2D, door: Vector2) -> PackedVector2Array:
+	var center := Vector2i((door / GRID_STEP).round())
+	for offset in [Vector2i.ZERO, Vector2i.DOWN, Vector2i.UP, Vector2i.RIGHT, Vector2i.LEFT,
+			Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]:
+		var cell: Vector2i = center + offset
+		if not grid.region.has_point(cell) or grid.is_point_solid(cell):
+			continue
+		if not world.ambient_cast.routes.clear_line(grid.get_point_position(cell), door):
+			continue
+		var path := grid.get_point_path(Vector2i(Map.SPAWN / GRID_STEP), cell)
+		if not path.is_empty():
+			path.append(door)
+			return path
+	return PackedVector2Array()
+
+
+func _time_walk(world: Control, path: PackedVector2Array) -> float:
+	world.player = Map.SPAWN
+	var seconds := 0.0
+	for point in path:
+		var distance: float = world.player.distance_to(point)
+		while distance > 0.025:
+			var step := minf(distance / Scale.WALK_SPEED, 0.05)
+			world.move_player(world.player.direction_to(point), step)
+			seconds += step
+			var remaining: float = world.player.distance_to(point)
+			if remaining >= distance - 0.001:
+				return INF
+			distance = remaining
+	return seconds
 
 
 func _run() -> void:
@@ -60,20 +75,24 @@ func _run() -> void:
 	world.set_process(false)
 	world.size = Vector2(1000, 460)
 	_check(world._can_stand(Map.SPAWN), "Ingreso libre de obstáculos")
-	var seen := _reachable()
-	var width := int(Map.SIZE.x / GRID_STEP)
+	var grid := _walking_grid(world)
+	# Even the straight-line minimum in v2 was longer for these journeys.
+	var v2_minimum := {"fisica": 8.85, "sis_a": 19.88, "basicas": 18.92}
 	var ids := {}
 	for building in Map.buildings():
 		_check(not ids.has(building["id"]), "Identificador único")
 		ids[building["id"]] = true
 		var door: Vector2 = building["door"]
 		_check(world._can_stand(door), "Puerta libre: " + str(building["id"]))
-		# Use an exterior grid cell: rounding the narrow door clearance can hit a wall.
-		var grid := Vector2i(((door + Vector2(0, GRID_STEP)) / GRID_STEP).round())
-		_check(seen[grid.y * width + grid.x] == 1, "Puerta accesible a pie desde el ingreso: " + str(building["id"]))
-		var approach := Vector2(grid) * GRID_STEP
-		_check(world._can_stand(approach) and world._can_stand(door.lerp(approach, 0.5)), "El tramo final desde la rejilla admite la huella ampliada")
-		_check(not world._can_stand(Rect2(building["rect"]).get_center()), "El edificio bloquea caminar a través")
+		var path := _walk_to(world, grid, door)
+		_check(not path.is_empty(), "Puerta accesible a pie desde el ingreso: " + str(building["id"]))
+		if v2_minimum.has(building["id"]) and not path.is_empty():
+			var elapsed := _time_walk(world, path)
+			print("CAMPUS_WALK ", building["id"], ": ", snappedf(elapsed, 0.01), " s (v2 en recta: ", v2_minimum[building["id"]], " s)")
+			_check(elapsed < float(v2_minimum[building["id"]]), "El trayecto jugado mejora el mínimo de v2")
+		var polygon: PackedVector2Array = building["footprint"]
+		var triangle := Geometry2D.triangulate_polygon(polygon)
+		_check(not triangle.is_empty() and not world._can_stand((polygon[triangle[0]] + polygon[triangle[1]] + polygon[triangle[2]]) / 3), "La huella del edificio bloquea el paso")
 		for room in building["rooms"]:
 			_check(world.enter_room(str(building["id"]), str(room)), "Entrada a " + str(room))
 			_check(world._can_stand(world.player), "Aparición segura en interior")
@@ -117,6 +136,18 @@ func _run() -> void:
 	world.restore({"version": 1, "map_id": Map.ID, "position": [INF, NAN], "room_id": "fake", "visited": ["fake", 7]})
 	_check(world.player == Map.SPAWN and world.visited.is_empty(), "Sanea estado corrupto")
 	_check(not world.enter_room("fake", "fake") and not world.enter_room("sis_c", "fake"), "No admite aulas inexistentes")
+	var v2 := {"version": 1, "map_id": Map.PREVIOUS_ID, "position": [6784, 8144], "visited": ["sis_a/LSIA-1"],
+		"life": {"version": 1, "seed": "82", "rare": true, "petted": ["ambient/piedritas_recuerdo"],
+			"actors": [{"instance_id": "ambient/piedritas_recuerdo", "point": [6784, 8144], "pet_count": 2}]}}
+	var migrated := World.new()
+	migrated.restore(v2)
+	root.add_child(migrated)
+	migrated.set_process(false)
+	var rare := migrated.ambient_cast.find_instance("ambient/piedritas_recuerdo")
+	_check(migrated.player == Map.SPAWN and migrated.visited.has("sis_a/LSIA-1"), "La partida v2 conserva el ingreso y las visitas")
+	_check(migrated.snapshot()["map_id"] == Map.ID and not rare.is_empty() and rare["point"] == Map.SPAWN and rare["pet_count"] == 2, "La vida persistida migra coordenadas y caricias sin volver a sortear")
+	_check(migrated.ambient_cast.petted.has("ambient/piedritas_recuerdo"), "La migración conserva las interacciones registradas")
+	migrated.free()
 	var profile := {"slot": 1, "player_name": "Prueba", "program_id": "sistemas", "mention_id": "gestion_sistemas"}
 	var simulation := Simulation.new(profile)
 	var academic := JSON.stringify(simulation.snapshot())
