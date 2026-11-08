@@ -116,14 +116,17 @@ func _rebuild() -> void:
 		action.disabled = not bool(item.get("enabled", true))
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 10)
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(actions)
-	var previous: Button = ui._add_button(actions, "←", _change.bind(-1), false, 36)
-	previous.custom_minimum_size.x = 44
-	previous.disabled = page_index == 0
-	actions.add_child(ui._label("%d / %d" % [page_index + 1, pages.size()], 13, Color.WHITE, true))
-	var next: Button = ui._add_button(actions, "→", _change.bind(1), false, 36)
-	next.custom_minimum_size.x = 44
-	next.disabled = page_index == pages.size() - 1
+	if pages.size() > 1:
+		for direction in [-1, 1]:
+			var arrow: Button = ui._add_button(actions, "←" if direction < 0 else "→", _change.bind(direction), false, 38)
+			arrow.custom_minimum_size.x = 44
+			var target: int = page_index + direction
+			arrow.disabled = target < 0 or target >= pages.size()
+			if not arrow.disabled:
+				arrow.tooltip_text = str(pages[target]["title"])
+				arrow.accessibility_name = arrow.tooltip_text
 	ui._add_button(actions, "Volver", close, true, 38)
 	_fit.call_deferred()
 	queue_redraw()

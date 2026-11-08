@@ -3,6 +3,7 @@ extends RefCounted
 const Map = preload("res://scripts/campus_map.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Scale = preload("res://scripts/campus_scale.gd")
+const Perimeter = preload("res://scripts/campus_perimeter.gd")
 const CELL := 512.0
 static var _buckets: Dictionary = {}
 static var _items: Array[Dictionary] = []
@@ -15,6 +16,8 @@ static func prepare() -> void:
 		return
 	for block in Map.buildings():
 		_add({"bounds": block["rect"], "polygon": block["footprint"], "water": false})
+	for section in Perimeter.sections():
+		_add({"bounds": section["bounds"], "polygon": section["polygon"], "water": false})
 	for rect in Land.obstacles():
 		_add({"bounds": rect, "polygon": PackedVector2Array(), "water": false})
 	var pond := Land.polygon(Land.POND)

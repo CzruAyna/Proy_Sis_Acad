@@ -108,10 +108,8 @@ func _run() -> void:
 			game._active_back.call()
 			await _settle()
 			_check(world.room_id == "fis_mat" and world.room_name.is_empty(), "La vista de pisos no simula un cambio de nivel del motor")
-			ui.show_map_guide()
-			await _inspect("plano-marcado")
 			ui.show_map()
-			await _inspect("destinos-ampliados")
+			await _inspect("mapa interactivo")
 	game.queue_free()
 	viewport.queue_free()
 	await process_frame

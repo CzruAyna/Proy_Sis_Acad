@@ -4,6 +4,10 @@ Estado del 8 de noviembre de 2026. La exploración usa el mapa `fni_ciudad_v3`
 de Ciudad Universitaria. El trazado se recrea en pixel art a partir de una
 selección del [mapa de OpenStreetMap](https://www.openstreetmap.org/#map=17/-17.990505/-67.139089).
 
+La cuadrícula 8×8 se usa en el atlas técnico. La vista del jugador usa
+rótulos de sectores, una flecha de orientación y zoom. El perímetro y la
+carretera exterior se describen en [Menús, mapa jugable y perímetro](MENUS_MAPA_Y_PERIMETRO.md).
+
 ## Datos y cobertura
 
 El [recorte de la API de OpenStreetMap](https://api.openstreetmap.org/api/0.6/map?bbox=-67.1434,-17.9945,-67.1354,-17.9860)

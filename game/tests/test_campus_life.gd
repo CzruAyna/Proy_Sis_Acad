@@ -6,17 +6,21 @@ const Collision = preload("res://scripts/campus_collision.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
 const Cave = preload("res://scripts/menu_cave.gd")
+const Perimeter = preload("res://scripts/campus_perimeter.gd")
 
 
 func _legacy_collision(point: Vector2, radius: float) -> bool:
 	if not Rect2(Vector2.ONE * 16, Map.SIZE - Vector2.ONE * 32).has_point(point):
 		return false
-	for block in Map.buildings():
-		if not Rect2(block["rect"]).grow(radius).has_point(point):
+	var shapes := Map.buildings().duplicate()
+	for section in Perimeter.sections():
+		shapes.append({"rect": section["bounds"], "footprint": section["polygon"]})
+	for shape in shapes:
+		if not Rect2(shape["rect"]).grow(radius).has_point(point):
 			continue
-		if Geometry2D.is_point_in_polygon(point, block["footprint"]):
+		if Geometry2D.is_point_in_polygon(point, shape["footprint"]):
 			return false
-		var poly: PackedVector2Array = block["footprint"]
+		var poly: PackedVector2Array = shape["footprint"]
 		for i in range(poly.size()):
 			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, poly[i], poly[(i + 1) % poly.size()])) <= radius:
 				return false
@@ -39,6 +43,11 @@ func _run() -> void:
 	for i in range(2500):
 		var point := Vector2(30 + posmod(i * 173, int(Map.SIZE.x) - 60), 30 + posmod(i * 347, int(Map.SIZE.y) - 60))
 		_check(Collision.can_stand(point, 12) == _legacy_collision(point, 12), "Índice conserva las colisiones exactas")
+	var gate := Perimeter._gate
+	_check(Collision.can_stand(gate), "El ingreso mantiene un hueco transitable en el cerco")
+	for wire in [true, false]:
+		var barriers := Perimeter.sections().filter(func(item: Dictionary) -> bool: return item["wire"] == wire)
+		_check(not barriers.is_empty() and not Collision.can_stand(Rect2(barriers[0]["bounds"]).get_center()), "El límite bloquea el paso por su geometría")
 	var world := World.new()
 	for block in ["fis_mat", "basicas"]:
 		world.enter_building(block)

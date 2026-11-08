@@ -39,8 +39,32 @@ func _run() -> void:
 			await _inspect("exploración-progreso")
 			ui.show_map()
 			await _inspect("exploración-mapa")
-			ui.show_map_guide()
-			await _inspect("exploración-plano")
+			var map = game.find_child("CampusOverview", true, false)
+			_check(map._heading == Vector2.UP, "La flecha señala la última orientación exterior al abrir el mapa desde un aula")
+			var overview: Vector2 = map.map_center
+			var plus: Button = game.find_child("CampusZoomIn", true, false)
+			plus.pressed.emit()
+			plus.pressed.emit()
+			_check(map.zoom_index == 2 and map.map_center != overview, "Acercar centra el zoom en el personaje")
+			var marker: Vector2 = map.size * 0.5 + (map._player - map.map_center) * map._map_scale()
+			_check(Rect2(Vector2.ZERO, map.size - Vector2(0, 25)).has_point(marker), "La flecha queda visible tras acercar dos veces")
+			var position_before: Vector2 = map.map_center
+			var wheel := InputEventMouseButton.new()
+			wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+			wheel.pressed = true
+			map._gui_input(wheel)
+			_check(map.zoom_index == 2 and map.map_center == position_before, "El mapa no depende de la rueda")
+			var arrow := InputEventKey.new()
+			arrow.keycode = KEY_LEFT
+			arrow.pressed = true
+			map._gui_input(arrow)
+			_check(map.map_center.x < position_before.x, "Flechas desplazan la vista ampliada")
+			game.find_child("CampusZoomReset", true, false).pressed.emit()
+			_check(map.zoom_index == 0 and map.map_center == overview, "Vista general restaura el encuadre")
+			var map_keys: Array[String] = []
+			for button in game.find_children("*", "Button", true, false):
+				map_keys.append(button.text)
+			_check(map_keys == ["−", "Vista general", "+", "Créditos del mapa", "← Atrás"], "Mapa sin lista de destinos ni cuadrícula")
 			_check(game.current_profile.is_empty() and game.simulation == null, "Visita libre sin crear expediente académico")
 	game.draft_player_name = "Prueba compacta"
 	game.active_slot = 1

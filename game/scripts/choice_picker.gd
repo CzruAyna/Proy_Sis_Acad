@@ -105,7 +105,7 @@ func _render() -> void:
 		_results.add_child(ui._label("Sin coincidencias. Cambia la búsqueda.", 15))
 	_previous.disabled = _page == 0
 	_next.disabled = _page == pages - 1
-	_counter.text = "%d / %d" % [_page + 1, pages]
+	_counter.text = "1 resultado" if _matches.size() == 1 else "%d resultados" % _matches.size()
 
 
 func _choose(index: int) -> void:

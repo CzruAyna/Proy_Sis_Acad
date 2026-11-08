@@ -101,7 +101,7 @@ var _ambient: TextureRect
 var _effects: Node
 var _page_style: StyleBox
 var _page_width := 880.0
-var _options_page := 0
+var _options_section := "Pantalla"
 var campus_ui: RefCounted
 var career_story_ui: RefCounted
 var exploration_ui: RefCounted
@@ -982,7 +982,7 @@ func _show_global_achievements(back: Callable = Callable(), _menu_backdrop: bool
 			card.add_child(_label("✦ " + str(title), 16, _current_theme.get("text", INK)))
 
 
-func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false, campus_navigation: bool = true) -> VBoxContainer:
+func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false, campus_navigation: bool = true, use_pager: bool = true) -> VBoxContainer:
 	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
 		_apply_career_theme(str(current_profile["program_id"]), str(current_profile["mention_id"]))
 	if menu_backdrop:
@@ -1008,6 +1008,8 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	var graph_workspace := title in ["Tu malla y sus conexiones", "Explora el plan de estudios", "Grafo de la historia", "Explorar FNI", "Mapa del campus", "Plano aportado"]
 	var game_workspace := title in ["Billar", "Ping-pong", "Ajedrez", "Monopolio · Ruta del campus"]
 	var maximum_width := 1100.0 if graph_workspace or game_workspace else 880.0
+	if title in ["Jugar", "Simular", "Opciones del juego", "Partidas de estudiante", "Crea tu recorrido", "Menciones y enfoques", "Explora la FNI"]:
+		maximum_width = 720.0
 	_page_width = maximum_width
 	var resize_page := func() -> void:
 		var side := maxi(24, int((size.x - maximum_width) * 0.5))
@@ -1029,16 +1031,24 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		identity.name = "PlayerIdentity"
 		identity.tooltip_text = str(current_profile.get("player_name", "")) + " · " + str(current_profile.get("mention_name", ""))
 		layout.add_child(identity)
-	if not title.is_empty():
-		layout.add_child(_label(title, 24, _current_theme.get("text", INK)))
+	if not title.is_empty() and title != "Jugar":
+		layout.add_child(_label(title, 24, _current_theme.get("text", INK), title in ["Jugar", "Simular", "Opciones del juego"]))
 	if not subtitle.is_empty() and not graph_workspace and not game_workspace:
-		layout.add_child(_label(subtitle, 13, _current_theme.get("sub", INK)))
+		layout.add_child(_label(subtitle, 13, _current_theme.get("sub", INK), title in ["Jugar", "Simular", "Opciones del juego"]))
 	if not current_profile.is_empty() and simulation != null and not menu_backdrop and not graph_workspace and campus_navigation:
 		_add_campus_navigation(layout)
-	var pager := PagedView.new()
-	layout.add_child(pager)
-	pager.configure(self)
-	var content: VBoxContainer = pager.content
+	var content: VBoxContainer
+	if use_pager:
+		var pager := PagedView.new()
+		layout.add_child(pager)
+		pager.configure(self)
+		content = pager.content
+	else:
+		content = VBoxContainer.new()
+		content.name = "PageContent"
+		content.add_theme_constant_override("separation", 10)
+		content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		layout.add_child(content)
 	if back.is_valid():
 		var footer := HBoxContainer.new()
 		layout.add_child(footer)
@@ -1184,6 +1194,50 @@ func _add_menu_button(parent: Control, text: String, action: Callable, accent: b
 	return _add_button(parent, text, Callable(self, "_transition_to").bind(action), accent, height)
 
 
+func _style_menu_tabs(tabs: TabContainer) -> void:
+	tabs.tab_alignment = TabBar.ALIGNMENT_CENTER
+	tabs.add_theme_stylebox_override("tab_selected", _button_style(true, "normal"))
+	tabs.add_theme_stylebox_override("tab_unselected", _button_style(false, "normal"))
+	tabs.add_theme_stylebox_override("tab_hovered", _button_style(true, "hover"))
+	tabs.add_theme_font_size_override("font_size", roundi(15 * float(settings["font_scale"])))
+
+
+func _style_menu_action(button: Button, primary: bool, width: float, translucent: bool = false) -> void:
+	button.custom_minimum_size.x = width
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var font_size := roundi(17 * float(settings["font_scale"]))
+	button.add_theme_font_size_override("font_size", font_size)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style := PixelStyle.new()
+		style.translucent = translucent
+		style.bg_color = Color("#173d57") if primary else Color("#102533")
+		style.border_color = Color("#72ddea") if primary else Color("#7a9bab")
+		if state == "hover":
+			style.bg_color = Color("#2d5266")
+			style.border_color = Color("#ffd394")
+		elif state == "pressed":
+			style.bg_color = Color("#0d2330")
+			style.border_color = Color("#fff1cb")
+		elif state == "disabled":
+			style.border_color = Color("#4b5c68")
+		style.bg_color.a = (0.66 if state == "normal" else 0.73) if translucent else 1.0
+		style.border_width = 3 if state == "hover" or state == "pressed" else 2
+		style.raised = true
+		style.pressed = state == "pressed"
+		style.shadow_size = 0
+		if translucent:
+			style.text_backing = Vector2(NeonVisuals.PIXEL_FONT.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 20, NeonVisuals.PIXEL_FONT.get_height(font_size) + 4)
+		button.add_theme_stylebox_override(state, style)
+	var focus := _focus_style()
+	focus.border_color = Color("#fff1cb")
+	button.add_theme_stylebox_override("focus", focus)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(state, Color("#f6fcff"))
+	button.add_theme_color_override("font_outline_color", Color.BLACK)
+	button.add_theme_constant_override("outline_size", 2)
+
+
 func _button_style(accent: bool, state: String) -> PixelStyle:
 	return NeonVisuals.button(_current_theme, accent, state, bool(settings.get("low_performance", false)))
 
@@ -1284,12 +1338,9 @@ func _show_main() -> void:
 	_effects.register(menu_panel, menu_style)
 	var menu := VBoxContainer.new()
 	menu.name = "PageContent"
-	menu.add_theme_constant_override("separation", 4)
+	menu.add_theme_constant_override("separation", 7)
 	menu_panel.add_child(menu)
-	menu.add_child(_label("SISTEMAS · INFORMÁTICA", 12, Color("#8ff5ff")))
-	var branding := HBoxContainer.new()
-	branding.add_theme_constant_override("separation", 14)
-	menu.add_child(branding)
+	menu.add_child(_label("SISTEMAS · INFORMÁTICA", 12, Color("#8ff5ff"), true))
 	var logo := CareerLogo.new()
 	logo.name = "SisInfLogo"
 	logo.modulate.a = 0.75
@@ -1299,43 +1350,21 @@ func _show_main() -> void:
 	var place_logo := func() -> void:
 		var extent := floorf(minf(stage.size.x * 0.48, stage.size.y * 0.72) / CareerLogo.SIDE) * CareerLogo.SIDE
 		logo.size = Vector2.ONE * maxf(CareerLogo.SIDE, extent)
-		logo.position = (Vector2(stage.size.x * 0.73, stage.size.y * 0.5) - logo.size * 0.5).round()
+		logo.position = (Vector2(stage.size.x * 0.76, stage.size.y * 0.5) - logo.size * 0.5).round()
 	stage.resized.connect(place_logo)
 	place_logo.call_deferred()
-	var title := _label(HOME_NAME, 30, Color("#f4fdff"))
-	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	branding.add_child(title)
-	menu.add_child(_label("Tu carrera, tu campus, tu recorrido.", 13, Color("#c6d0d4")))
-	_add_menu_button(menu, "Jugar", _show_play, true, 40).name = "PlayEntry"
-	_add_menu_button(menu, "Simular", _show_simulate, false, 40).name = "SimulateEntry"
-	_add_menu_button(menu, "Opciones", _show_options, false, 40)
-	_add_button(menu, "Salir", Callable(self, "_exit_game"), false, 40)
-	for action in menu.get_children():
-		if action is Button:
-			action.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-			action.autowrap_mode = TextServer.AUTOWRAP_OFF
-			action.add_theme_font_size_override("font_size", int(round(14 * float(settings["font_scale"]))))
-	var actions_width := 0.0
-	for action in menu.get_children():
-		if action is Button:
-			actions_width = maxf(actions_width, NeonVisuals.PIXEL_FONT.get_string_size(action.text, HORIZONTAL_ALIGNMENT_LEFT, -1, action.get_theme_font_size("font_size")).x + 36)
-	var first_action: Button
-	for action in menu.get_children():
-		if action is Button:
-			if first_action == null:
-				first_action = action
-			action.custom_minimum_size.x = actions_width
-			for state in ["normal", "hover", "pressed", "disabled"]:
-				var style: PixelStyle = action.get_theme_stylebox(state).duplicate()
-				style.translucent = true
-				style.bg_color = Color(0.01, 0.04, 0.07, 0.32 if state == "normal" else (0.56 if state == "hover" else 0.68))
-				style.shadow_size = 0
-				style.raised = false
-				var font_size: int = action.get_theme_font_size("font_size")
-				style.text_backing = Vector2(NeonVisuals.PIXEL_FONT.get_string_size(action.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 16, NeonVisuals.PIXEL_FONT.get_height(font_size) + 4)
-				action.add_theme_stylebox_override(state, style)
-			action.add_theme_color_override("font_outline_color", Color.BLACK)
-			action.add_theme_constant_override("outline_size", 2)
+	menu.add_child(_label(HOME_NAME, 34, Color("#f4fdff"), true))
+	menu.add_child(_label("Tu carrera, tu campus, tu recorrido.", 13, Color("#c6d0d4"), true))
+	var actions := VBoxContainer.new()
+	actions.add_theme_constant_override("separation", 12)
+	menu.add_child(actions)
+	var first_action := _add_menu_button(actions, "Jugar", _show_play, true, 46)
+	first_action.name = "PlayEntry"
+	_add_menu_button(actions, "Simular", _show_simulate, false, 46).name = "SimulateEntry"
+	_add_menu_button(actions, "Opciones", _show_options, false, 46)
+	_add_button(actions, "Salir", Callable(self, "_exit_game"), false, 46)
+	for action in actions.get_children():
+		_style_menu_action(action, action == first_action, 194, true)
 	for label in menu.find_children("*", "Label", true, false):
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
 		label.add_theme_constant_override("outline_size", 2)
@@ -1345,10 +1374,10 @@ func _show_main() -> void:
 	var fit_menu := func() -> void:
 		if not is_instance_valid(menu_panel) or not menu_panel.is_inside_tree():
 			return
-		var width := minf(ceilf(maxf(320, actions_width + 80) / 16) * 16, maxf(0, stage.size.x - 128))
+		var width := minf(368, maxf(0, stage.size.x - 48))
 		menu_panel.size.x = width
 		menu_panel.size.y = menu_panel.get_combined_minimum_size().y
-		menu_panel.position = Vector2(72, maxf(28, floorf((stage.size.y - menu_panel.size.y) * 0.5)))
+		menu_panel.position = ((stage.size - menu_panel.size) * 0.5).round()
 		if first_action != null:
 			menu_style.terminal_inset_top = maxf(0, first_action.get_global_rect().position.y - menu_panel.get_global_rect().position.y - 18)
 	stage.resized.connect(fit_menu)
@@ -1364,17 +1393,34 @@ func _home_panel_style() -> BrokenPanel:
 
 func _show_play() -> void:
 	_use_neutral_theme()
-	var page := _make_page("Jugar", "Elige tu recorrido", _show_main, true, false)
-	var card := _card(page)
+	var page := _make_page("Jugar", "", _show_main, true, false, false)
+	page.alignment = BoxContainer.ALIGNMENT_CENTER
+	var menu := _card(page)
+	var panel := menu.get_parent() as PanelContainer
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.custom_minimum_size.x = 354
+	menu.name = "PlayActions"
+	menu.add_theme_constant_override("separation", 12)
+	menu.add_child(_label("Jugar", 28, _current_theme["text"], true))
 	var recent := _recent_slot()
+	var primary_action: Button
 	if recent > 0:
 		var saved := _read_save(recent, "solo")
-		card.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")), 16))
-		_add_menu_button(card, "Continuar", _open_slot.bind(recent, "solo"), true, 40)
-	_add_menu_button(card, "Nueva carrera", _new_available_game, recent == 0, 40)
-	_add_menu_button(card, "Mis partidas", _show_solo_slots, false, 40)
-	_add_menu_button(card, "Explorar la facultad", _show_exploration, false, 40).name = "ExplorationEntry"
-	_add_menu_button(card, "Logros", _show_global_achievements.bind(Callable(self, "_show_play")), false, 40)
+		menu.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")).left(38), 13, _current_theme["sub"], true))
+		var resume := _add_menu_button(menu, "Continuar", _open_slot.bind(recent, "solo"), true, 46)
+		resume.tooltip_text = "Última partida · " + str(saved.get("player_name", "Estudiante"))
+		primary_action = resume
+	else:
+		menu.add_child(_label("Elige tu recorrido", 13, _current_theme["sub"], true))
+	var new_game := _add_menu_button(menu, "Nueva carrera", _new_available_game, recent == 0, 46)
+	if primary_action == null:
+		primary_action = new_game
+	_add_menu_button(menu, "Mis partidas", _show_solo_slots, false, 46)
+	_add_menu_button(menu, "Explorar la facultad", _show_exploration, false, 46).name = "ExplorationEntry"
+	_add_menu_button(menu, "Logros", _show_global_achievements.bind(Callable(self, "_show_play")), false, 46)
+	for action in menu.get_children():
+		if action is Button:
+			_style_menu_action(action, action == primary_action, 276)
 
 
 func _show_simulate() -> void:
@@ -1477,7 +1523,7 @@ func _complete_menu_transition(effect: Control) -> void:
 
 func _show_options() -> void:
 	_use_neutral_theme()
-	var content := _make_page("Opciones del juego", "Elige cómo ver y recorrer el juego. Los cambios se guardan en este equipo.", Callable(self, "_show_main"), true)
+	var content := _make_page("Opciones del juego", "Los cambios se guardan en este equipo.", Callable(self, "_show_main"), true, false, false)
 	_menu_backdrop_active = false
 	_home_art = false
 	set_process(false)
@@ -1486,26 +1532,35 @@ func _show_options() -> void:
 	if is_instance_valid(_ambient):
 		_ambient.visible = false
 		_ambient.set_process(false)
-	var grid := _adaptive_grid(content, 330.0, 2)
+	var tabs := TabContainer.new()
+	tabs.name = "OptionsCategories"
+	_style_menu_tabs(tabs)
+	content.add_child(tabs)
+	var sections := {}
+	for title in ["Pantalla", "Accesibilidad", "Rendimiento"]:
+		var section := VBoxContainer.new()
+		section.name = title
+		section.add_theme_constant_override("separation", 10)
+		tabs.add_child(section)
+		sections[title] = section
+		if title == _options_section:
+			tabs.current_tab = tabs.get_tab_count() - 1
 	var choices := [
-		["DisplayOption", "Pantalla", "Pantalla completa aprovecha el monitor. Ventana permite trabajar junto a otras aplicaciones.", "Usar ventana" if settings["fullscreen"] else "Usar pantalla completa", _toggle_fullscreen, "Pantalla completa" if settings["fullscreen"] else "En ventana"],
-		["MotionOption", "Movimiento y efectos", "Reduce las animaciones si prefieres una experiencia tranquila. Las acciones y resultados siguen disponibles.", "Reducir movimiento" if settings["animations"] else "Activar animaciones", _toggle_animations, "Animaciones activas" if settings["animations"] else "Movimiento reducido"],
-		["SmoothingOption", "Bordes y líneas", "Suaviza la geometría de algunos dibujos. Las texturas y letras pixel conservan sus píxeles definidos. Puede exigir más a la tarjeta gráfica.", "Desactivar suavizado" if settings["antialiasing"] else "Activar suavizado", _toggle_antialiasing, "Suavizado activado" if settings["antialiasing"] else "Suavizado desactivado"],
-		["PerformanceOption", "Rendimiento", "Bajo consumo reduce partículas y halos, deja estático el fondo decorativo y limita a 30 FPS. Útil en equipos con menos recursos.", "Usar calidad normal" if settings["low_performance"] else "Activar bajo consumo", _toggle_low_performance, "Bajo consumo" if settings["low_performance"] else "Calidad normal"]
+		["DisplayOption", "Modo de pantalla", "Cambia entre pantalla completa y ventana.", "Usar ventana" if settings["fullscreen"] else "Usar pantalla completa", _toggle_fullscreen, "Pantalla completa" if settings["fullscreen"] else "En ventana", "Pantalla"],
+		["MotionOption", "Movimiento y efectos", "Controla las animaciones decorativas del juego.", "Reducir movimiento" if settings["animations"] else "Activar animaciones", _toggle_animations, "Animaciones activas" if settings["animations"] else "Movimiento reducido", "Accesibilidad"],
+		["SmoothingOption", "Bordes y líneas", "Suaviza la geometría. El texto y las texturas conservan su estilo pixel art.", "Desactivar suavizado" if settings["antialiasing"] else "Activar suavizado", _toggle_antialiasing, "Suavizado activado" if settings["antialiasing"] else "Suavizado desactivado", "Pantalla"],
+		["PerformanceOption", "Calidad gráfica", "Bajo consumo reduce partículas y halos, deja estático el fondo y limita el juego a 30 FPS.", "Usar calidad normal" if settings["low_performance"] else "Activar bajo consumo", _toggle_low_performance, "Bajo consumo" if settings["low_performance"] else "Calidad normal", "Rendimiento"]
 	]
 	for item in choices:
-		var card := _card(grid)
+		var card := _card(sections[item[6]])
 		card.name = item[0]
 		card.add_child(_label(item[1], 21))
 		card.add_child(_label(item[2], 14, _current_theme["sub"]))
 		card.add_child(_label("Actual: " + item[5], 14, _current_theme.get("neon", _current_theme["accent"])))
 		_add_button(card, item[3], item[4], true, 40)
-	var text_card := _card(content, true)
+	var text_card := _card(sections["Accesibilidad"], true)
 	text_card.name = "TextScaleChoices"
-	text_card.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	text_card.get_parent().custom_minimum_size.x = 620
 	text_card.add_child(_label("Tamaño de las letras", 21))
-	text_card.add_child(_label("Ajusta todo el texto de la interfaz. Las páginas se reorganizan para conservar los controles accesibles.", 14, _current_theme["sub"]))
 	var sample := _label("Así leerás los textos · %d%%" % int(float(settings["font_scale"]) * 100), 18)
 	sample.name = "TextScalePreview"
 	text_card.add_child(sample)
@@ -1515,9 +1570,7 @@ func _show_options() -> void:
 	for value in [0.8, 1.0, 1.2]:
 		var button := _add_button(sizes, "%d%%" % int(value * 100), _set_font_scale.bind(value), is_equal_approx(float(settings["font_scale"]), value), 40)
 		button.name = "TextScale%d" % int(value * 100)
-	var pager = find_child("PageNavigator", true, false)
-	pager.page_index = _options_page
-	pager.page_changed.connect(func(index: int, _count: int) -> void: _options_page = index)
+	tabs.tab_changed.connect(func(index: int) -> void: _options_section = tabs.get_tab_title(index))
 
 
 func _set_font_scale(value: float) -> void:
@@ -1686,7 +1739,7 @@ func _show_new_solo(name_error: String = "") -> void:
 		error_label.visible = not valid and not error_label.text.is_empty())
 	field.text_submitted.connect(func(_value: String) -> void: _choose_faculty_from_field(field))
 	content.add_child(_label("Elige una carrera y después explora sus menciones. Puedes consultar el plan antes de comenzar.", 15))
-	var grid := _adaptive_grid(content, 380.0, 2)
+	var grid := _adaptive_grid(content, 315.0, 2)
 	for program in Catalog.PROGRAMS:
 		var card := _card(grid)
 		var preview_theme := NeonVisuals.career(str(program["id"]))
@@ -1694,6 +1747,8 @@ func _show_new_solo(name_error: String = "") -> void:
 		card.add_child(_label(str(program["name"]), 22, preview_theme["neon"]))
 		card.add_child(_label(str(program["summary"]), 16))
 		var button := _add_button(card, "Explorar menciones", _choose_new_program.bind(str(program["id"])), true, 46)
+		button.custom_minimum_size.x = 238
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		for state in ["normal", "hover", "pressed", "disabled"]:
 			button.add_theme_stylebox_override(state, NeonVisuals.button(preview_theme, true, state))
 		button.disabled = draft_player_name.strip_edges().is_empty()
@@ -1748,9 +1803,15 @@ func _show_mentions(program_id: String) -> void:
 	var info_card := _card(content)
 	info_card.add_child(_label(str(program["name"]), 21, accent))
 	info_card.add_child(_label(str(program.get("description", "")), 15, theme.get("sub", Color("#5f6257"))))
-	var rows := _adaptive_grid(content, 440.0, 2)
+	var tabs := TabContainer.new()
+	_style_menu_tabs(tabs)
+	content.add_child(tabs)
+	var names := {"gestion_sistemas": "Gestión empresarial", "gestion_informacion": "Información", "modelamiento_optimizacion": "Optimización", "desarrollo_sw": "Software", "telematica": "Telemática"}
 	for mention in Catalog.mentions_for_program(program_id):
-		var card := _card(rows)
+		var tab := VBoxContainer.new()
+		tab.name = names[mention["id"]]
+		tabs.add_child(tab)
+		var card := _card(tab)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 14)
 		card.add_child(row)
@@ -1766,9 +1827,10 @@ func _show_mentions(program_id: String) -> void:
 		copy.add_child(_label("Proyecto de muestra: " + str(mention["activity"]), 13, theme.get("sub", Color("#767262"))))
 		var actions := HFlowContainer.new()
 		actions.add_theme_constant_override("h_separation", 8)
+		actions.alignment = FlowContainer.ALIGNMENT_CENTER
 		card.add_child(actions)
-		_add_button(actions, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 42)
-		_add_button(actions, "Plan y simulación", Callable(self, "_show_curriculum").bind(program_id, str(mention["id"])), false, 42)
+		_add_button(actions, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 42).custom_minimum_size.x = 240
+		_add_button(actions, "Plan y simulación", Callable(self, "_show_curriculum").bind(program_id, str(mention["id"])), false, 42).custom_minimum_size.x = 240
 
 
 func _create_solo_save(program_id: String, mention_id: String) -> void:

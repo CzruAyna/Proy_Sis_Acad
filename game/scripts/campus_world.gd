@@ -16,6 +16,7 @@ const Architecture = preload("res://scripts/campus_architecture.gd")
 const GameTables = preload("res://scripts/minigame_preview.gd")
 const Land = preload("res://scripts/campus_landscape.gd")
 const Terrain = preload("res://scripts/campus_terrain.gd")
+const Perimeter = preload("res://scripts/campus_perimeter.gd")
 const Foliage = preload("res://scripts/campus_foliage.gd")
 const LandmarkArt = preload("res://scripts/campus_landmark_art.gd")
 const Cast = preload("res://scripts/campus_cast.gd")
@@ -48,6 +49,7 @@ var _held: Dictionary = {}
 var _textures: Dictionary = {}
 var _last_context := ""
 var _outside := Map.SPAWN
+var _exterior_facing := Vector2.UP
 var _tree_positions: Array[Vector2] = []
 var _interior_key := ""
 var _interior_walls: Array[Rect2] = []
@@ -87,6 +89,8 @@ func _take_focus() -> void:
 
 func restore(saved: Dictionary) -> void:
 	player = Map.SPAWN
+	_exterior_facing = Vector2.UP
+	facing = _exterior_facing
 	room_id = ""
 	room_name = ""
 	floor_level = 0
@@ -96,6 +100,12 @@ func restore(saved: Dictionary) -> void:
 	if from_map not in [Map.ID, Map.PREVIOUS_ID, Map.LEGACY_ID] or int(saved.get("version", 0)) != 1:
 		camera = player
 		return
+	var heading: Variant = saved.get("exterior_facing", [])
+	if heading is Array and heading.size() == 2 and (heading[0] is float or heading[0] is int) and (heading[1] is float or heading[1] is int):
+		var direction := Vector2(heading[0], heading[1])
+		if direction.is_finite() and direction.length_squared() > 0.001:
+			_exterior_facing = direction.normalized()
+			facing = _exterior_facing
 	AmbientCast.migrate_positions(_life_saved, from_map)
 	var stored: Variant = saved.get("position", [])
 	if stored is Array and stored.size() == 2 and (stored[0] is float or stored[0] is int) and (stored[1] is float or stored[1] is int):
@@ -135,7 +145,7 @@ func _valid_visit(id: String) -> bool:
 
 func snapshot() -> Dictionary:
 	var outside := player if room_id.is_empty() else _outside
-	return {"version": 1, "map_id": Map.ID, "position": [outside.x, outside.y], "room_id": room_id, "room_name": room_name, "floor": floor_level, "visited": visited.duplicate(), "life": ambient_cast.snapshot() if not ambient_cast.actors.is_empty() else _life_saved.duplicate(true)}
+	return {"version": 1, "map_id": Map.ID, "position": [outside.x, outside.y], "exterior_facing": [_exterior_facing.x, _exterior_facing.y], "room_id": room_id, "room_name": room_name, "floor": floor_level, "visited": visited.duplicate(), "life": ambient_cast.snapshot() if not ambient_cast.actors.is_empty() else _life_saved.duplicate(true)}
 
 
 func _process(delta: float) -> void:
@@ -166,7 +176,10 @@ func _process(delta: float) -> void:
 			_cast_tick = 0
 	if animations_enabled and room_id.is_empty():
 		_ambient_tick += delta
+		var previous_frame := floori(_ambient_phase * 20)
 		_ambient_phase += delta
+		if floori(_ambient_phase * 20) != previous_frame and Perimeter.near_road(camera, 360):
+			queue_redraw()
 		if _ambient_tick > 0.2:
 			_ambient_tick = 0
 			for fountain in Land.fountains():
@@ -217,6 +230,8 @@ func move_player(direction: Vector2, delta: float, running: bool = false) -> voi
 	moving = motion.length_squared() > 0.001
 	if moving:
 		facing = direction.normalized()
+		if room_id.is_empty():
+			_exterior_facing = facing
 		stride += motion.length() * (0.24 if room_id.is_empty() else 0.12)
 		var steps := maxi(1, ceili(motion.length() / 4.0))
 		for step in range(steps):
@@ -502,6 +517,7 @@ func _draw() -> void:
 
 func _draw_campus(view: Rect2) -> void:
 	Terrain.draw(self, view, _ambient_phase if animations_enabled else 0)
+	Perimeter.draw_traffic(self, view, _ambient_phase if animations_enabled else 0)
 	for row in Map.COURTS:
 		var rect := Architecture.court_rect(row)
 		if not view.intersects(rect):

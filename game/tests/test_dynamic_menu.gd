@@ -75,7 +75,7 @@ func _run() -> void:
 			options = button
 	options.pressed.emit()
 	await _settle()
-	_check(game.find_child("PageNavigator", true, false) != null, "La acción de opciones sigue funcionando tras la destrucción")
+	_check(game.find_child("OptionsCategories", true, false) != null, "La acción de opciones sigue funcionando tras la destrucción")
 	game.queue_free()
 	viewport.queue_free()
 	await process_frame

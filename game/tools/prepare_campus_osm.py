@@ -86,6 +86,8 @@ def generate(source):
         "buildings": {key: feature(osm_id, True) for key, osm_id in BUILDINGS.items()},
         "courts": {key: feature(osm_id, True) for key, osm_id in COURTS.items()},
         "roads": [feature(osm_id) for osm_id in SERVICE],
+        "perimeter": [feature(721056391)],
+        "public_road": [feature(377934502)],
         "walkways": walkways,
         "gardens": gardens,
         "parking": [feature(422071978, True), feature(658187649, True)],

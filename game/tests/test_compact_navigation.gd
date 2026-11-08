@@ -34,9 +34,16 @@ func _inspect(screen: String) -> void:
 		_check(pager == null, "Inicio utiliza un solo menú sin paginación")
 		var panel: Control = game.find_child("MainMenuPanel", true, false)
 		_check(panel != null and Rect2(Vector2.ZERO, viewport.size).encloses(panel.get_global_rect()), "Inicio compacto dentro de la ventana")
+		_check(panel.get_global_rect().get_center().distance_to(Vector2(viewport.size) * 0.5) <= 1, "Inicio centrado")
 		for control in panel.find_children("*", "Control", true, false):
 			if control is Button or control is Label:
 				_check(panel.get_global_rect().encloses(control.get_global_rect()), "Inicio: acción o texto visible completo: " + str(control.get("text")))
+		return
+	if screen in ["opciones", "jugar", "exploración-mapa", "mapa interactivo"]:
+		_check(pager == null, screen + ": vista directa sin paginador")
+		for control in game.find_children("*", "Control", true, false):
+			if control.is_visible_in_tree() and (control is Button or control is Label):
+				_check(Rect2(Vector2.ZERO, viewport.size).grow(1).encloses(control.get_global_rect()), screen + ": control visible dentro de la ventana")
 		return
 	_check(pager != null, screen + ": navegación explícita")
 	if pager == null:
@@ -154,12 +161,15 @@ func _run() -> void:
 	graph.fit_view()
 	_check(graph.view_zoom < zoom, "Ver todo amplía el contexto disponible sin rueda")
 	game._show_options()
+	var tabs: TabContainer = game.find_child("OptionsCategories", true, false)
+	tabs.current_tab = 1
+	_check(tabs.get_tab_title(1) == "Accesibilidad", "Opciones con pestañas por categoría")
 	game._set_font_scale(0.8)
 	_check(is_equal_approx(float(game.settings["font_scale"]), 0.8), "El botón permite texto al 80%")
 	game._set_font_scale(1.2)
 	_check(is_equal_approx(float(game.settings["font_scale"]), 1.2), "El botón permite texto al 120%")
 	var options = game.find_child("TextScalePreview", true, false)
-	_check(options != null and options.text.contains("120%"), "Vista previa de letras actualizada")
+	_check(options != null and options.is_visible_in_tree() and options.text.contains("120%"), "Vista previa de letras actualizada sin perder la categoría")
 	game._campus()._new_request_form()
 	await _settle()
 	var chooser: Control

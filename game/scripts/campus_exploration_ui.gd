@@ -8,7 +8,6 @@ const MinigamePreview = preload("res://scripts/minigame_preview.gd")
 const MinigameSessions = preload("res://scripts/minigame_session_ui.gd")
 const Inspection = preload("res://scripts/campus_inspection_overlay.gd")
 const Achievements = preload("res://scripts/achievement_catalog.gd")
-const Land = preload("res://scripts/campus_landscape.gd")
 const Geo = preload("res://scripts/campus_cartography.gd")
 
 var host: WeakRef
@@ -16,7 +15,6 @@ var world_ref: WeakRef
 var saved: Dictionary = {}
 var session_key := ""
 var guest_name := ""
-var target_id := ""
 var minigames: RefCounted
 
 
@@ -52,7 +50,6 @@ func _session() -> void:
 	if key != session_key:
 		session_key = key
 		saved = profile.get("campus_exploration", {}).duplicate(true) if profile.get("campus_exploration", {}) is Dictionary else {}
-		target_id = ""
 
 
 func open() -> void:
@@ -153,12 +150,6 @@ func show_world() -> void:
 			button.add_theme_font_size_override("font_size", font_size)
 			button.custom_minimum_size.x = maxf(120, Neon.PIXEL_FONT.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 32)
 			button.autowrap_mode = TextServer.AUTOWRAP_OFF
-	if not target_id.is_empty():
-		var destination := Map.building(target_id)
-		if destination.is_empty():
-			destination = Land.destination(target_id)
-		if not destination.is_empty():
-			_text(workspace, "Destino señalado: " + str(destination["name"]) + " · pulsa M para localizarlo", 13)
 	workspace.add_child(world)
 	var hint := _text(workspace, world.interaction_text(), 15)
 	hint.name = "ExplorationContext"
@@ -227,47 +218,42 @@ func show_progress() -> void:
 func show_map() -> void:
 	capture()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Mapa del campus", "Ciudad Universitaria · escala exterior aproximada", show_world)
-	_text(page, "Marca un destino y vuelve a caminar. El punto dorado es tu posición; el borde azul señala tu destino.", 15)
+	var page: VBoxContainer = _ui()._make_page("Mapa del campus", "", show_world, false, false, false)
 	var map := Overview.new()
 	map.name = "CampusOverview"
 	map.state = saved.duplicate(true)
-	map.target_id = target_id
-	map.grid_font_size = roundi(11 * float(_ui().settings["font_scale"]))
-	map.custom_minimum_size = Vector2(0, 330)
-	map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	map.set_meta("page_atomic", true)
-	page.add_child(map)
-	var row := _actions(page)
-	_ui()._add_button(row, "Volver a caminar", show_world, true, 40)
-	_ui()._add_button(row, "Cuadrícula y coordenadas", show_map_guide, false, 40)
-	var points := _actions(page)
-	for item in [["piedritas", "Piedritas"], ["chivato", "Chivato"], ["bosque", "Bosque"], ["laguna", "Laguna de Civil"], ["fis_mat", "Bloque 100"], ["basicas", "Bloque en cruz"]]:
-		_ui()._add_button(points, item[1], _select_target.bind(item[0]), false, 36)
-	for building in Map.buildings():
-		var card: VBoxContainer = _ui()._card(page)
-		_text(card, str(building["name"]), 18)
-		_text(card, "Espacios del bloque: " + ", ".join(building["rooms"]), 14)
-		_ui()._add_button(card, "Señalar destino", _select_target.bind(str(building["id"])), false, 38)
-
-
-func _select_target(id: String) -> void:
-	target_id = id
-	show_map()
-
-
-func show_map_guide() -> void:
-	var page: VBoxContainer = _ui()._make_page("Coordenadas del campus", "Esquema del juego · cuadrícula 8×8", show_map)
-	var map := Overview.new()
-	map.state = saved.duplicate(true)
-	map.grid_font_size = roundi(11 * float(_ui().settings["font_scale"]))
-	map.custom_minimum_size = Vector2(0, 300)
-	map.set_meta("page_atomic", true)
-	page.add_child(map)
-	_text(page, "Filas A–H de arriba abajo y columnas 1–8 de izquierda a derecha. Cada celda equivale a unos 110 × 61 m en el exterior.", 15)
-	_text(page, "Escala de diseño de 8 unidades por metro. El juego acelera los desplazamientos. Las puertas y la distribución interior son provisionales.", 15)
-	_text(page, "Orientación indicada: norte → derecha; sur → izquierda; este → abajo; oeste → arriba.", 15)
-	_ui()._add_button(page, "Créditos cartográficos · OpenStreetMap", func() -> void: OS.shell_open(Geo.COPYRIGHT_URL), false, 36)
+	map.label_size = roundi(14 * float(_ui().settings["font_scale"]))
+	var frame := Control.new()
+	frame.clip_contents = true
+	frame.custom_minimum_size.y = 220
+	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(frame)
+	frame.add_child(map)
+	map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	map.closed.connect(show_world, CONNECT_DEFERRED)
+	var controls := _actions(page)
+	controls.alignment = FlowContainer.ALIGNMENT_CENTER
+	var minus: Button = _ui()._add_button(controls, "−", map.change_zoom.bind(-1), false, 40)
+	var reset: Button = _ui()._add_button(controls, "Vista general", map.reset_view, false, 40)
+	var plus: Button = _ui()._add_button(controls, "+", map.change_zoom.bind(1), false, 40)
+	minus.name = "CampusZoomOut"
+	plus.name = "CampusZoomIn"
+	minus.tooltip_text = "Alejar · tecla menos"
+	plus.tooltip_text = "Acercar · tecla más"
+	minus.accessibility_name = "Alejar mapa"
+	plus.accessibility_name = "Acercar mapa"
+	for action in [minus, plus]:
+		action.custom_minimum_size.x = 48
+	reset.name = "CampusZoomReset"
+	map.view_changed.connect(func() -> void:
+		minus.disabled = not map.can_zoom(-1)
+		plus.disabled = not map.can_zoom(1))
+	minus.disabled = true
+	var credit: Button = _ui()._add_button(controls, "Créditos del mapa", func() -> void: OS.shell_open(Geo.COPYRIGHT_URL), false, 40)
+	credit.tooltip_text = "OpenStreetMap · ODbL"
+	var hint := _text(page, "Arrastra o usa las flechas para mover el mapa. + / − para el zoom · M o Esc para volver.", 13)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ui()._focus_control.call_deferred(weakref(map))
 
 
 func _inspect(content: Array[Dictionary]) -> void:

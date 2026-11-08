@@ -38,13 +38,12 @@ func _run() -> void:
 			var panel = game.find_child("MainMenuPanel", true, false)
 			var style = panel.get_theme_stylebox("panel")
 			_check(style.chunk_size >= 32 and style.fracture_depth >= 24, "Ruptura con bloques grandes y profundidad")
-			var max_width := 0.0
-			var buttons := []
-			for node in panel.find_children("*", "Button", true, false):
-				max_width = maxf(max_width, node.get_theme_font("font").get_string_size(node.text, HORIZONTAL_ALIGNMENT_LEFT, -1, node.get_theme_font_size("font_size")).x + 36)
-				buttons.append(node)
+			var buttons := panel.find_children("*", "Button", true, false)
 			for button in buttons:
-				_check(absf(button.size.x - max_width) < 2, "Botón limitado al contenido más largo")
+				_check(button.size == buttons[0].size and button.size.x < panel.size.x * 0.65, "Acciones uniformes y contenidas")
+				var normal: StyleBox = button.get_theme_stylebox("normal")
+				var hover: StyleBox = button.get_theme_stylebox("hover")
+				_check(hover.get("border_width") > normal.get("border_width") and hover.get("border_color") != normal.get("border_color"), "El hover cambia el grosor y el color del borde")
 	game.settings["font_scale"] = 1.0
 	game.draft_player_name = "Prueba compacta"
 	game.active_slot = 1

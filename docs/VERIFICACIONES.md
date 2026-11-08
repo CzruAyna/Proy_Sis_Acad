@@ -1,5 +1,46 @@
 # Registro de verificaciones
 
+## Ejecución del 8 de noviembre de 2026 · menús y perímetro
+
+Cambios locales sobre `f79e107`, Godot 4.7.2 en Windows. Se usaron
+directorios de prueba independientes de las partidas personales.
+
+| Suite | Aserciones | Fallos |
+|---|---:|---:|
+| `test_compact_navigation` | 2.228 | 0 |
+| `test_dynamic_menu` | 663 | 0 |
+| `test_cave_visuals` | 275 | 0 |
+| `test_exploration_navigation` | 428 | 0 |
+| `test_exploration` | 524 | 0 |
+| `test_large_campus` | 1.423 | 0 |
+| `test_natural_campus` | 4.658 | 0 |
+| `test_campus_life` | 2.731 | 0 |
+| `test_player_rules` | 64 | 0 |
+| `test_grid8_and_cast` | 711 | 0 |
+| `test_games_room` | 1.714 | 0 |
+| `test_exploration_handoff` | 34 | 0 |
+| **Subtotal de suites aprobadas** | **15.453** | **0** |
+| `test_building_interiors` | 434 | 17 |
+
+Una copia limpia de `f79e107` reprodujo los 17 fallos de interiores en el
+mismo orden. Afectan las comprobaciones de entrada con E, registro de aula y
+colisión interior. Motor debe revisar esos casos de la prueba existente.
+
+Se comprobó el inicio centrado en tres tamaños de ventana y el acceso a
+controles con escala de letras de hasta 120 %. En el mapa se verificaron
+el zoom, la posición de la flecha, el desplazamiento por teclas, el
+restablecimiento y la ausencia de acciones de destino. Las 40 entradas del
+exterior resultaron transitables. Se verificó el bloqueo de la malla y el
+muro y la abertura del ingreso. Tras sumar el cerco, Física y Sistemas A
+se mantienen en 6,31 s y 14,67 s. Básicas pasa de 14,03 s a 14,27 s.
+
+Se generaron siete capturas gráficas a 1152 × 720 del inicio, el foco,
+Jugar, Opciones, el acceso y el mapa en dos escalas. El controlador gráfico
+usó ANGLE. La exportación Windows x64 empaquetó el perímetro y el JSON
+cartográfico. El arranque aislado terminó con código 0 y emitió el aviso
+de certificados de Windows. Queda pendiente un recorrido manual completo
+en el ejecutable exportado.
+
 ## Ejecución del 8 de noviembre de 2026 · cartografía y escala
 
 Cambios locales sobre `113037c`, Godot 4.7.2 en Windows, con datos de usuario

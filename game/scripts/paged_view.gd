@@ -43,15 +43,16 @@ func configure(ui: Control) -> void:
 	navigation.add_theme_constant_override("separation", 12)
 	add_child(navigation)
 	navigation.visible = false
-	previous = ui._add_button(navigation, "← Página anterior", change_page.bind(-1), false, 36)
+	navigation.alignment = BoxContainer.ALIGNMENT_CENTER
+	previous = ui._add_button(navigation, "↑ Anterior", change_page.bind(-1), false, 36)
 	previous.name = "PreviousPage"
-	counter = ui._label("Página 1 / 1", 14, ui._current_theme.get("sub", Color.WHITE), true)
+	counter = ui._label("", 14, ui._current_theme.get("sub", Color.WHITE), true)
 	counter.name = "PageCounter"
 	navigation.add_child(counter)
-	next = ui._add_button(navigation, "Página siguiente →", change_page.bind(1), false, 36)
+	next = ui._add_button(navigation, "Siguiente ↓", change_page.bind(1), false, 36)
 	next.name = "NextPage"
 	for action in [previous, next]:
-		action.custom_minimum_size = Vector2(176, 36)
+		action.custom_minimum_size = Vector2(128, 36)
 		action.autowrap_mode = TextServer.AUTOWRAP_OFF
 		action.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
 	viewport.resized.connect(request_layout)
@@ -166,7 +167,7 @@ func _apply_page() -> void:
 	content.position.y = -page_offsets[page_index]
 	previous.disabled = page_index == 0
 	next.disabled = page_index == page_offsets.size() - 1
-	counter.text = "Página %d / %d" % [page_index + 1, page_offsets.size()]
+	counter.text = _section_title()
 	for control in content.find_children("*", "Control", true, false):
 		if control.focus_mode == Control.FOCUS_NONE:
 			continue
@@ -175,6 +176,14 @@ func _apply_page() -> void:
 			control.focus_entered.connect(show_control.bind(control))
 			_focus_connections[id] = true
 	page_changed.emit(page_index, page_offsets.size())
+
+
+func _section_title() -> String:
+	for label in content.find_children("*", "Label", true, false):
+		var top: float = label.global_position.y - content.global_position.y
+		if label.is_visible_in_tree() and top >= page_offsets[page_index] - 1 and top < page_ends[page_index]:
+			return label.text.get_slice("\n", 0).left(38) + ("…" if label.text.length() > 38 else "")
+	return "Contenido"
 
 
 func current_range() -> Vector2:

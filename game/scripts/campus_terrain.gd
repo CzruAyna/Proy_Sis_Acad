@@ -2,6 +2,7 @@ extends RefCounted
 const Land = preload("res://scripts/campus_landscape.gd")
 const Geo = preload("res://scripts/campus_cartography.gd")
 const Roads = preload("res://scripts/campus_roads.gd")
+const Perimeter = preload("res://scripts/campus_perimeter.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 static var _lawns: Array[PackedVector2Array] = []
 static var _lawn_bounds: Array[Rect2] = []
@@ -51,6 +52,7 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool
 					if posmod(x + y, 5) == 0:
 						canvas.draw_rect(Rect2(p + Vector2(10, 7), Vector2(24, 34)), Color("#3e5b6b"))
 	Roads.draw(canvas, view)
+	Perimeter.draw_road(canvas, view, detail)
 	if _bounds(_pond).grow(24).intersects(view):
 		canvas.draw_colored_polygon(_pond, Color("#a7805e"))
 		var inner := PackedVector2Array()
@@ -76,6 +78,7 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool
 		for index in range(-3, 4):
 			canvas.draw_rect(Rect2(entrance + Vector2(index * 8, -4), Vector2(4, 16)), Color("#d8d1b4"))
 		canvas.draw_string(FONT, entrance + Vector2(-50, -24), "INGRESO FNI", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ede6ca"))
+	Perimeter.draw_boundary(canvas, view, detail)
 
 
 static func _bounds(points: PackedVector2Array) -> Rect2:

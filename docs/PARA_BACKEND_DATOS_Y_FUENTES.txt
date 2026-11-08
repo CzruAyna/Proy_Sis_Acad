@@ -165,3 +165,11 @@ OpenStreetMap. Los identificadores de edificios y aulas se conservan.
 - Mantener las coordenadas ligadas al map_id y las velocidades de exteriores
   separadas de las unidades de interiores y del reloj académico.
 Consultar los originales fuera del repositorio, según la regla 26.
+
+PERÍMETRO EXTERIOR, 08/11/2026
+Consultar docs/MENUS_MAPA_Y_PERIMETRO.md. Para confirmar materiales, alturas y
+accesos, hacen falta fotos fechadas del cerco frontal y los muros posteriores
+con orientación, o un croquis institucional con las puertas y tramos
+identificados. Si se implementan paradas o rutas reales de los minis, pedir
+un plano vigente de circulación y las paradas confirmadas por el operador.
+La animación actual de tránsito es ambiental.

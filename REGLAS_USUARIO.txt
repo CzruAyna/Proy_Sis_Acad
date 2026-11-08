@@ -269,3 +269,15 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     cartográfica del ritmo de juego. Conservar la orientación de la regla 27
     y la matriz de la regla 26. Documentar las fuentes, la calibración y lo que
     falta verificar. Dejar en docs/ los requisitos para motor/backend.
+
+30. MENÚS CENTRADOS Y MAPA JUGABLE, indicada el 08/11/2026.
+    Centrar el inicio y el flujo de Jugar. Separar los botones, usar tamaños
+    uniformes dentro de cada grupo y dar una respuesta clara al puntero y al
+    foco. Organizar Opciones por categorías con nombre. Evitar el indicador
+    genérico «Página 1 / N» en las interfaces y mantener el acceso sin rueda.
+    En el mapa jugable, sustituir el punto del jugador por una flecha y añadir
+    zoom y rótulos de sectores. Retirar cuadrícula, coordenadas y botones de
+    destinos de esa vista. La matriz 8×8 se conserva como material externo de
+    revisión. Representar el enmallado, los muros traseros y el tránsito de
+    camiones y minis fuera de la FNI. Consultar referencias de exteriores y
+    pautas de diseño. Distinguir los detalles recreados de los verificados.
