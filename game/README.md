@@ -36,7 +36,7 @@ Requisitos y pasos completos en [`../docs/DESARROLLO_LOCAL.md`](../docs/DESARROL
 - **Auxiliatura:** postulación durante la carrera, competencia con rivales simulados, asignación de paralelo y trabajo con el docente.
 - **Graduación:** excelencia sin reprobaciones y promedio mayor que 65, o tesis/proyecto con defensa. Concluir materias no entrega automáticamente el título.
 - **Campus gráfico:** navegación común entre materias, malla, trámites, historial, auxiliatura y graduación. La matrícula, los documentos, las solicitudes y las defensas se realizan con botones y formularios.
-- **Exploración:** F10 conserva una consola opcional; `/desbloquear todo` habilita las materias sin aprobarlas automáticamente. No hace falta utilizar comandos para el recorrido normal.
+- **Consola opcional:** F10 abre la consola y `/desbloquear todo` habilita materias para una prueba sin aprobarlas automáticamente.
 - **Guardado:** tres espacios individuales, archivo temporal y respaldo `.bak`; se migran las materias conocidas de partidas antiguas sin inventar sus notas. Los archivos multijugador anteriores se conservan sin cargarlos como modo jugable.
 - **Interfaz:** contenido paginado con botones de navegación y regreso, sin rueda, barras de desplazamiento ni deslizadores; incluye columnas adaptables, texto 80–120%, repaso libre, malla con estados y teclado, y modelos interactivos de estudio.
 - **Identidad visual:** Sistemas azul e Informática roja; fondos oscuros temáticos para las cinco menciones, grafos, ecuaciones y controles con resplandor neón. Detalle en `docs/DISENO_VISUAL_CAMPUS.md`.
@@ -44,9 +44,9 @@ Requisitos y pasos completos en [`../docs/DESARROLLO_LOCAL.md`](../docs/DESARROL
 
 ## Exploración espacial
 
-**Explorar la facultad** abre el campus pixel art con nombre obligatorio.
+**Jugar → Explorar la facultad** abre el campus pixel art con nombre obligatorio.
 WASD o flechas mueven al personaje; Shift permite correr; E interactúa con
-puertas y tableros. P abre progreso y M el mapa. Desde una partida también
+puertas y tableros. P abre progreso y M el mapa con zoom y flecha. Desde una partida también
 se accede con **Explorar FNI** y **Caminar por la FNI**; posición y visitas
 se guardan junto con el perfil. La visita libre dura la sesión.
 
@@ -57,21 +57,25 @@ recordatorios de decoración, fuentes y pendientes se detallan en
 
 ## Minijuegos del bloque E
 
-En Exploración → Sistemas E están disponibles billar de seis bolas,
-ping-pong arcade, ajedrez y Monopolio en la variante propia Ruta del campus.
+En Exploración → Sistemas E están disponibles billar de ocho bolas,
+ping-pong arcade, ajedrez y Ruta del campus. El juego puede recuperar
+sesiones de billar de seis bolas guardadas en versiones anteriores.
 Se juegan contra rivales sencillos, con pausa, reglas, reinicio y recuperación.
 Los estados se guardan separados del expediente académico; la visita libre
 los conserva durante la sesión. Controles, algoritmos y límites en
 [Sala de juegos del bloque E](../docs/JUEGOS_BLOQUE_E.md).
 
-## Historia demostrativa
+## Simular
 
-En el menú, **Historia de una carrera** permite generar un recorrido ficticio
+**Historia de una carrera** permite generar un recorrido ficticio
 con nombre, carrera, mención y enfoque. Incluye resultados aleatorios,
 recuperación de materias, auxiliatura y titulación, con capítulos, grafos y
 modelos didácticos. No cambia partidas ni logros. El nombre personaliza el
 relato y no predice rendimiento. Detalles y análisis de mejoras en
-`docs/MODULO_HISTORIA_CARRERA.md`.
+[Historia demostrativa](../docs/MODULO_HISTORIA_CARRERA.md).
+
+**Demostración automática** presenta las carreras y sus menciones mediante
+una terminal en bucle que puede pausarse. [Modo demostrativo](../docs/MODO_DEMOSTRATIVO.md)
 
 Los grafos permiten **Mover: esfera/rama**, giro de rama con **↻**, cámara,
 zoom y encuadre de toda la distribución, conservando la protección de aristas.

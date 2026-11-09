@@ -10,7 +10,7 @@ este abajo y oeste arriba. Esa orientación sustituye la falta de referencia
 cardinal del avance del 04/11 descrito debajo; siguen sin equivaler a metros.
 Detalles en [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md).
 
-Estado: 4 de noviembre de 2026, cambios locales sin commit propio. Este avance
+Entrega del 4 de noviembre de 2026, incorporada en `c0bd256`. Este avance
 actualiza [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md) y sustituye
 la revisión en cuatro cuadrantes por una matriz de 64 celdas.
 

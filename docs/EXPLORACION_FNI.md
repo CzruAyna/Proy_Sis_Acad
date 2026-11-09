@@ -1,29 +1,18 @@
 # SIS-INF: exploración de la FNI
 
-Revisado: 4 de noviembre de 2026. La exploración comenzó en `389dc82` y fue
-ampliada hasta `b122e96`. El nombre anterior del juego era CAMPUS EN JUEGO.
-
-Actualización del 04/11/2026: las referencias originales se consultan fuera
-del proyecto y se retiraron de los recursos. La interfaz ofrece el esquema
-propio en 8×8, con personajes mayores, huella de pies ampliada y 51 personajes
-en paseos ambientales. Los tamaños, límites y referencias actuales están en
-[Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md).
-
-La ampliación del 03/11/2026 incorpora el plano marcado, un mundo de
-12288 × 8704 unidades, bosque, jardines, fuentes, laguna de Civil y
-estacionamientos. Piedritas y el Chivato abren fichas con ruptura central;
-**Personajes** muestra los diseños de profesionales, estudiantes y perros.
-Los bloques 100 y en cruz tienen escaleras y planos de dos y cinco niveles.
-Los detalles, fuentes y límites de funcionamiento están en
-[Campus ampliado y vida del campus](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md).
+Revisión del 9 de noviembre de 2026, al corte `4095c2e`. El mapa jugable
+`fni_ciudad_v3` usa geometría derivada de OpenStreetMap. Las 64 láminas
+del atlas quedan como material externo de revisión. Los originales
+aportados se consultan fuera del proyecto. [Cartografía y escala](CARTOGRAFIA_FNI_Y_ESCALA.md)
 
 ## Uso actual
 
-En el inicio, **Explorar la facultad** abre una visita libre con nombre o apodo
+En **Jugar → Explorar la facultad** se abre una visita libre con nombre o apodo
 obligatorio. En una partida, **Explorar FNI** y **Caminar por la FNI** abren el
 mismo campus y conservan su relación con el progreso académico.
 
-El mapa jugable adapta el plano `AULAS-FNI.jpg` entregado por el usuario.
+El mapa se apoya en OpenStreetMap para la geometría exterior y en el plano
+`AULAS-FNI.jpg` del usuario como referencia histórica de distribución.
 Incluye bloques de Sistemas, administración, Decanatura, Matemáticas,
 Geología, Química, Física, Minas, Mecánica, Civil, Metalurgia, laboratorios,
 comedor, canchas, caminos y áreas abiertas. Todas las entradas del catálogo
@@ -31,8 +20,10 @@ son accesibles desde el ingreso. Las puertas iluminadas permiten pasar a un
 interior. Los bloques con varios ambientes abren un pasillo transitable:
 acercarse a cada puerta y pulsar E permite elegir aula. El umbral del aula
 devuelve a su puerta en el pasillo; la salida del corredor lleva al campus.
-Los bloques de un solo ambiente conservan la entrada directa. El tablero del
-interior abre sus actividades y el directorio del bloque.
+Los bloques de un solo ambiente conservan la entrada directa. Las escaleras
+permiten cambiar de planta en el bloque 100 y el bloque en cruz. Piedritas
+y el Chivato abren sus fichas al interactuar. Los perros pueden acariciarse
+y los NPC tienen rutinas ficticias. [Vida del campus](VIDA_CAMPUS_Y_RENDIMIENTO.md)
 
 Sistemas A incorpora LSIA-1 y LSIA-4; Sistemas B, LSIB-1, LSIB-2 y LSIB-4.
 Los nombres aparecen en el sitio de la carrera; su agrupación A/B se infiere
@@ -40,8 +31,8 @@ de la nomenclatura y debe validarse, al igual que las plantas y los accesos.
 Los laboratorios se distinguen con monitores, teclados, canaletas y un armario;
 las aulas mantienen pupitres y las otras salas de prácticas tienen mesones.
 La cantidad de puestos dibujados no representa un inventario real.
-Sistemas E abre una sala recreada con mesas de billar, ping-pong, ajedrez y
-Monopolio. Acercarse a una mesa y pulsar E abre una partida contra un rival
+Sistemas E abre una sala recreada con billar de ocho bolas, ping-pong, ajedrez
+y Ruta del campus. Acercarse a una mesa y pulsar E abre una partida contra un rival
 automático; el cartel del fondo permite elegir entre las cuatro. Incluyen
 pausa, reinicio y guardado independiente. Las variantes y el material por
 confirmar están en [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md).
@@ -56,17 +47,15 @@ y Windows. Las letras pequeñas también usan la fuente pixel. Se retiró
 el recuadro separado de citas. La exploración dispone
 de un lienzo ancho y barra propia, sin repetir las pestañas académicas.
 
-La geometría es una adaptación para jugar, sin escala topográfica. Las
+La escala exterior aproximada es de ocho unidades por metro. Las
 fachadas, cubiertas y siluetas tienen variaciones entre bloques; los árboles
 incluyen copas anchas, altas, cónicas y ramificadas. El paseo adoquinado y
 los detalles deportivos se inspiran en el plano y fotos exteriores revisadas
 en Google Maps, sin copiar sus imágenes ni afirmar una distribución actual
 verificada. Las colisiones y el mapa de orientación siguen los contornos.
-Las entradas se sitúan en el frente inferior de los bloques como decisión de
-diseño; no se afirma que sean sus puertas físicas reales. El recuadro de
-Aulas Básicas del plano se incorpora como una zona del esquema: su conexión
-espacial exacta queda pendiente de confirmación. No se ha añadido la sede del
-centro, cuyo plano todavía no se recibió.
+Las entradas conectan con los caminos del juego. Las puertas físicas y la
+conexión exacta de Aulas Básicas siguen por verificar, igual que el plano
+de la sede del centro. [Fuentes pendientes](PARA_BACKEND_DATOS_Y_FUENTES.txt)
 
 ### Controles
 
@@ -76,7 +65,7 @@ centro, cuyo plano todavía no se recibió.
 | Shift | Correr. |
 | E o Enter | Entrar cerca de una puerta, salir desde el umbral interior o consultar el tablero. |
 | P o Tab | Pausar y consultar progreso. |
-| M | Consultar el mapa y señalar un destino. |
+| M | Abrir o cerrar el mapa. Usa los botones + y − para el zoom. |
 | Escape | Volver desde la vista actual. En el mundo, regresar al campus académico o al inicio de la visita libre. |
 | Botones visibles | Abrir progreso, mapa, ayuda o interacción sin recordar sus atajos. |
 
@@ -99,11 +88,10 @@ administrativos abre Trámites. Son enlaces generales a las funciones existentes
 todavía no hay una asignación institucional verificada entre materia, paralelo,
 horario y aula, ni entre cada oficina real y un paso del expediente.
 
-El mapa muestra edificios visitados en verde, la posición exterior en dorado y
-el destino señalado con borde azul. El directorio enumera bloques y aulas.
-Señalar un destino no teletransporta al personaje. **Cuadrícula y coordenadas**
-explica las 64 celdas del esquema propio y las unidades de juego. Los originales
-aportados ya no se muestran ni se incluyen como recursos.
+El mapa muestra los sectores y la última orientación exterior del personaje
+con una flecha amarilla. En la vista ampliada puedes arrastrar o desplazarte
+con flechas. **Vista general** recupera el encuadre completo. La rosa sitúa
+el norte a la derecha. [Menús, mapa y perímetro](MENUS_MAPA_Y_PERIMETRO.md)
 
 ## Guardado y cambio de nombre
 
@@ -112,15 +100,20 @@ En una partida se añade `campus_exploration` al perfil, separado de `simulation
 ```json
 {
   "version": 1,
-  "map_id": "fni_ciudad_v2",
-  "position": [6784, 8144],
+  "map_id": "fni_ciudad_v3",
+  "position": [3696, 3616],
+  "exterior_facing": [0, -1],
   "room_id": "",
   "room_name": "",
-  "visited": []
+  "floor": 0,
+  "visited": [],
+  "life": {}
 }
 ```
 
-Se actualiza en memoria al caminar y se guarda mediante el almacén existente
+El ejemplo muestra un estado en el ingreso con `life` todavía vacío. Tras
+iniciar las rutinas, ese campo incluye el sorteo de Piedritas, los NPC y sus
+interacciones. El estado se actualiza en memoria y se guarda mediante el almacén existente
 al consultar progreso, actividades, salir o guardar el perfil. Se conservan
 posición exterior, aula y visitas. Al recargar un aula se usa un punto seguro
 interior. Coordenadas inválidas, identificadores desconocidos y visitas ajenas
@@ -133,9 +126,10 @@ El formato espacial sigue en versión 1. Un `room_id` válido con `room_name`
 vacío identifica ahora el pasillo de un bloque con varias aulas. Se recupera
 en su entrada segura. Las antiguas salas genéricas `sis_a/SIS A` y
 `sis_b/SIS B` se retoman en ese pasillo y conservan sus visitas históricas.
-El mapa `fni_ciudad_v1` se adapta proporcionalmente al mapa ampliado; si la
-posición queda bloqueada se recupera en el ingreso. Los planos de pisos aún
-no añaden un campo de planta al guardado ni simulan un cambio de nivel.
+Las posiciones exteriores de `fni_ciudad_v1` y `fni_ciudad_v2` se migran
+al mapa actual. Una posición inválida se recupera en un punto seguro. Si
+falta la planta del pasillo o su valor está malformado, se usa la planta
+baja. Al volver desde un aula se conserva la planta y se retorna a su puerta.
 
 El título de ventana, portada, icono y exportación ahora usan SIS-INF. En
 Windows se conserva explícitamente la ruta anterior de datos de Godot,
@@ -150,7 +144,8 @@ en otros sistemas operativos.
 | `game/scripts/campus_map.gd` | Bloques, aulas, caminos, coordenadas y mobiliario de colisión. Datos de presentación, no catálogo académico. |
 | `game/scripts/campus_world.gd` | Movimiento, colisiones, cámara, entradas, visitas y dibujo pixel art del mundo/personaje/interiores. |
 | `game/scripts/campus_exploration_ui.gd` | Visita libre, menús, enlaces con la partida y conservación del estado espacial. |
-| `game/scripts/campus_overview.gd` | Esquema general del campus y marcas de posición, visitas y destino. |
+| `game/scripts/campus_overview.gd` | Mapa con flecha exterior, rótulos de sectores, zoom y vista general. |
+| `game/scripts/campus_life.gd` | Elenco, rutinas persistentes, caricias y encuentro raro. |
 | `game/scripts/game.gd` | Entradas del menú, logo, integración con guardado y navegación existente. |
 | Conversor histórico `prepare_brand_assets.gd` | Retirado el 04/11/2026: las referencias originales ya no se copian a los recursos del juego. |
 

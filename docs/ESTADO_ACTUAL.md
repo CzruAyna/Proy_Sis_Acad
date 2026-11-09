@@ -1,54 +1,9 @@
 # Estado actual de SIS-INF
 
-Actualización del 09/11/2026 sobre `72b6443`. Volver de un aula emite una
-sola actualización del pasillo en su planta. La exploración recupera el
-ingreso o la planta baja si encuentra una versión o planta malformada.
-El controlador de rutinas sustituye al prototipo de paseos y las colisiones
-interiores reutilizan sus límites. Ver [Verificaciones](VERIFICACIONES.md).
+Revisión del 9 de noviembre de 2026. Código de referencia `4095c2e`.
 
-Actualización de motor del 06/11/2026, sobre `e206909`, sin commit nuevo:
-pisos transitables, NPC con recorridos y clases ficticias persistentes, perros
-acariciables, Piedritas con sorteo único 1/100 y logros globales de exploración.
-Colisiones indexadas y ruptura en caché; bajo consumo detiene el fondo
-decorativo. Esta entrega sustituye los pendientes funcionales de esas áreas
-indicados en los cortes del 03 y 04/11, conservados debajo como antecedentes.
-Detalle y límites en [Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md).
-
-Actualización del 06/11/2026: inicio con Jugar, Simular, Opciones y Salir;
-caminos continuos, rosa con norte a la derecha y ambientes con distintas
-proporciones y equipamiento ilustrativo. Fuentes, contrato y pendientes en
-[Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md).
-
-Actualización del 04/11/2026: matriz 8×8 con 64 láminas, originales de referencia
-retirados, jugador de 24×32 y radio de pies 12, mayor velocidad y 51 personajes
-en paseos ambientales. Los edificios incorporan ajustes de cubiertas a partir
-de una consulta satelital, con vigencia de las fotos pendiente. El movimiento
-global con clases, caricias y logros todavía corresponde a motor/backend.
-Estado y notas para frontend en [Matriz 8×8](MAPA_8X8_Y_PERSONAJES.md).
-
-Ampliación del campus del 03/11/2026, sin commit propio: mapa de 12288 × 8704,
-bosque, jardines, fuentes, estacionamientos, laguna de Civil, estatuas de
-Piedritas y el Chivato con fichas, planos de dos y cinco niveles y catálogo
-de personajes. Movimiento autónomo, caricias, encuentros raros, logros y
-cambio de planta siguen para motor/backend. Fuentes y contratos en
-[Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md).
-
-Revisión: 2 de noviembre de 2026. Código de referencia: `b122e96`.
-
-Actualización local del 03/11/2026, sin commit nuevo: se corrigieron el anclaje
-del personaje hacia la izquierda y la retirada del campus durante la entrada
-al abrir mesas. Se añadió el icono pixel art y la
-[demostración automática](MODO_DEMOSTRATIVO.md). Las animaciones laterales
-ilustradas siguen pendientes de frontend; ya existe el contrato y una columna
-con esquemas explicativos. Las entradas restantes conservan el corte anterior.
-
-Ampliación posterior del mismo día: tableros más amplios con piezas de ajedrez
-sin letras, billar de ocho bolas, impulso en ping-pong y controles de dados,
-casillas, compras y construcción en Ruta del campus. Se conservan las sesiones
-antiguas de seis bolas con su motor original. El detalle vigente está en
-[Sala de juegos](JUEGOS_BLOQUE_E.md). La pausa demostrativa ya selecciona un
-arquetipo y emite su contrato; dibujar el personaje y la abertura corresponde
-a frontend según [Modo demostrativo](MODO_DEMOSTRATIVO.md).
+La [bitácora](BITACORA_DESARROLLO.md) conserva la evolución por jornada. El
+[historial de pushes](HISTORIAL_PUSHES.md) indica qué cambió en cada envío.
 
 ## Qué se puede utilizar
 
@@ -62,22 +17,23 @@ ejecutar la partida local.
 | Recorrido académico | Inscripción, cursado, intentos, cambios de plan, trámites, auxiliatura y titulación. | [Simulación](SIMULACION_ESTUDIANTE.md) |
 | Presentación | Pixel art, identidad azul/roja, ambientes por mención y navegación con botones. | [Diseño visual](DISENO_VISUAL_CAMPUS.md) |
 | Malla | Selección, movimiento de nodos y ramas, giro, zoom por botones y validación geométrica. | [Diseño visual](DISENO_VISUAL_CAMPUS.md) |
-| Inicio | Menú único, terminal simulada interior, desintegración visual y emblema geométrico. | [Ruptura y emblema](DISENO_RUPTURA_Y_EMBLEMA.md) |
-| Historia | Recorrido con semilla y reglas del motor, aislado de partidas y logros. | [Historia](MODULO_HISTORIA_CARRERA.md) |
-| Exploración | Personaje, colisiones, pasillos, aulas, orientación y accesos al expediente. | [Exploración](EXPLORACION_FNI.md) |
-| Sala E | Ajedrez, billar, ping-pong y Ruta del campus contra rivales locales, con pausa y recuperación. | [Sala de juegos](JUEGOS_BLOQUE_E.md) |
+| Inicio | Jugar, Simular, Opciones y Salir en un panel centrado. Opciones tiene categorías. | [Menús y mapa](MENUS_MAPA_Y_PERIMETRO.md) |
+| Simular | Historia con semilla y terminal automática en bucle para ambas carreras y sus menciones. | [Historia](MODULO_HISTORIA_CARRERA.md) · [Demostración](MODO_DEMOSTRATIVO.md) |
+| Exploración | Mapa `fni_ciudad_v3`, con flecha, zoom y rótulos. Pasillos, aulas, pisos transitables y enlaces al expediente. | [Exploración](EXPLORACION_FNI.md) · [Cartografía](CARTOGRAFIA_FNI_Y_ESCALA.md) |
+| Vida del campus | NPC con rutinas ficticias, perros acariciables, logros globales y encuentro raro de Piedritas con sorteo de 1/100 por recorrido. | [Vida y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md) |
+| Sala E | Ajedrez, billar de ocho bolas, ping-pong y Ruta del campus contra rivales locales, con pausa y recuperación. | [Sala de juegos](JUEGOS_BLOQUE_E.md) |
 | API y web | Catálogo, oferta, inscripción autenticada y actas; recorrido separado del juego. | [Arquitectura](ARQUITECTURA.md) |
 
-La versión del 31 de octubre solo presentaba las mesas. Las partidas se
-habilitaron en `b122e96`, el 2 de noviembre. El contrato de frontend del 31
-queda como antecedente, no como una limitación todavía vigente.
+El perímetro y el tránsito exterior forman parte de la recreación. Las 64
+láminas del atlas se usan para revisar la geometría fuera del mapa jugable.
 
 ## Persistencia y separación de responsabilidades
 
 El perfil mantiene tres grupos distintos:
 
 - `simulation`: expediente académico. Lo modifica el motor del estudiante.
-- `campus_exploration`: posición, ambiente y visitas al campus.
+- `campus_exploration`: posición, orientación exterior, edificio, aula,
+  planta, visitas y estado de las rutinas del campus.
 - `minigames`: hasta cuatro sesiones recreativas, con versión, revisión y estado
   aleatorio serializado como texto.
 
@@ -103,23 +59,25 @@ es una variante propia, con economía y duración limitadas. Los parámetros de
 dificultad y la reproducción de sucesos pertenecen al juego, no a estadísticas
 universitarias.
 
-`campus_map.gd` prepara un índice por ID y devuelve copias de los edificios.
-Así evita reconstruir todo el catálogo en cada consulta sin compartir objetos
-mutables con sus consumidores. La terminal también acota líneas y fragmentos;
-no mantiene una salida infinita en memoria.
+`campus_collision.gd` usa un índice para las consultas exteriores.
+`campus_world.gd` reutiliza los límites de colisión de cada recinto y planta,
+omite comprobaciones por ejes inmóviles y emite un único estado al volver
+al pasillo. Al cargar campos espaciales malformados, el ingreso y la planta
+baja sirven de respaldo según el campo afectado.
 
 ## Qué está comprobado y qué falta
 
-El historial documenta el código y las pruebas incorporadas. Los resultados de
-ejecución de otras entregas se conservan en [Verificaciones](VERIFICACIONES.md).
-No se presenta su total como una batería nueva ni se suman comprobaciones de
-versiones distintas.
+La entrega de depuración del 9 de noviembre registró 29 suites de Godot,
+113.728 aserciones y un arranque aislado de la exportación Windows.
+Los resultados por entrega y sus límites están en [Verificaciones](VERIFICACIONES.md).
 
 | Responsable | Pendiente | Criterio para cerrarlo |
 |---|---|---|
 | Autor y backend/datos | Versiones de mallas, cohortes, requisitos y normativa. | Originales identificados y datos contrastados; véase [Fuentes](PARA_BACKEND_DATOS_Y_FUENTES.txt). |
 | Autor y frontend | Planta interior, distribución y equipamiento de la sala E. | Fotos o croquis autorizados; el testimonio no confirma las medidas. |
 | Autor y frontend | Sede del centro. | Plano original todavía no recibido. |
+| Autor y frontend | Puertas, perímetro, plantas y distancias de referencia. | Fotos fechadas, un croquis de accesos y mediciones del recorrido. |
+| Frontend | Ilustraciones laterales y arte del personaje al pausar la demostración. | Integrar el arte y verificar una sesión prolongada con movimiento reducido. |
 | Motor y jugadores | Dificultad, duración y sesiones prolongadas de los minijuegos. | Partidas humanas con observaciones y ajustes medidos. |
 | Motor recreativo | Posiciones muertas complejas, reloj y protocolo arbitral de ajedrez. | Alcance y casos de referencia acordados; no se declara cobertura arbitral completa. |
 | Backend | Validaciones y casos límite de la inscripción web. | Pruebas de periodos, carga y concurrencia sobre PostgreSQL. |

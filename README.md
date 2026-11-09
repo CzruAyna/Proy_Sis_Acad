@@ -5,9 +5,10 @@ permite explorar carreras de Ingeniería, cursar materias, resolver actividades,
 gestionar trámites simulados y avanzar por auxiliatura y graduación. El progreso
 de las partidas y los logros se guardan localmente en el equipo.
 
-Incluye campus pixel art, historia demostrativa y cuatro minijuegos locales.
-El alcance revisado y lo que falta están en
-[Estado actual](docs/ESTADO_ACTUAL.md).
+En **Jugar** puedes continuar una partida o visitar el campus pixel art con
+sus aulas, pisos transitables y cuatro minijuegos locales en el bloque E.
+**Simular** reúne la historia de una carrera y una terminal automática que
+presenta las dos carreras y sus cinco menciones.
 
 Este repositorio también conserva una API académica en Django y una interfaz
 web en Next.js. Son componentes separados del juego Godot: la partida de
@@ -52,6 +53,7 @@ sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 
 ## Documentación
 
+- [Estado actual de SIS-INF](docs/ESTADO_ACTUAL.md)
 - [Índice de documentación](docs/README.md)
 - [Arquitectura y componentes](docs/ARQUITECTURA.md)
 - [Desarrollo y compilación local](docs/DESARROLLO_LOCAL.md)
@@ -61,7 +63,8 @@ sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 - [Información institucional y fuentes pendientes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
 - [Guía de documentación](docs/GUIA_DOCUMENTACION.md)
 - [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md)
-- [Detalle técnico de los 32 commits revisados](docs/HISTORIAL_COMMITS.md)
+- [Historial de pushes](docs/HISTORIAL_PUSHES.md)
+- [Detalle técnico por commit](docs/HISTORIAL_COMMITS.md)
 - [Resultados y límites de verificación](docs/VERIFICACIONES.md)
 - [Licencia y libertades del código](docs/LICENCIA_CODIGO_LIBRE.md)
 

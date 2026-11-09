@@ -1,25 +1,7 @@
 # Arquitectura
 
-Actualización del 09/11/2026. `campus_life.gd` reúne la creación del elenco,
-sus rutinas y su guardado. Absorbió la preparación de personajes del prototipo
-de paseos citado en el corte del 04/11. `campus_world.gd` reutiliza límites
-y obstáculos de colisión durante la permanencia en el mismo recinto y piso.
-
-Actualización del 04/11/2026: `campus_grid.gd` define las 64 celdas;
-`campus_scale.gd`, tamaños, radios y velocidades; `campus_ambient_cast.gd`,
-paseos visuales temporales separados del expediente. Las referencias originales
-se consultan fuera del proyecto. [Contrato y límites](MAPA_8X8_Y_PERSONAJES.md).
-
-Revisada: 2 de noviembre de 2026. Código de referencia: `b122e96`.
-
-Actualización local del 03/11/2026: terminal demostrativa independiente,
-transiciones de exploración diferidas al terminar la entrada e icono pixel art.
-
-La ampliación posterior del campus separa paisaje (`campus_landscape.gd`),
-dibujo de terreno (`campus_terrain.gd`), índice de árboles (`campus_foliage.gd`),
-arte procedural de monumentos y personajes, planos y fichas superpuestas.
-El [contrato de campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md) identifica
-las señales y el trabajo de motor todavía pendiente, sin cambiar sus reglas.
+Revisión del 9 de noviembre de 2026. Código de referencia `4095c2e`.
+La evolución de los módulos se recoge en el [historial técnico](HISTORIAL_COMMITS.md).
 
 ## Alcance
 
@@ -64,6 +46,9 @@ interfaz invente resultados.
 | `game/scripts/student_simulation.gd` | Modelo de la partida. Controla elegibilidad, inscripción, inicio/cierre de periodo, respuestas, resultados, trámites, auxiliatura, graduación y `snapshot()`. |
 | `game/scripts/student_campus.gd` | Construye las vistas de campus, materias, historial, trámites, auxiliatura, graduación y detalle del grafo a partir del modelo. Envía acciones al controlador. |
 | `game/scripts/campus_map.gd`, `campus_world.gd`, `campus_exploration_ui.gd`, `campus_overview.gd` | Mapa de exploración FNI, movimiento con colisiones, interiores, menús y estado espacial separado del expediente académico. Véase [Exploración FNI](EXPLORACION_FNI.md). |
+| `game/scripts/campus_cartography.gd`, `campus_scale.gd`, `campus_grid.gd` | Geometría local derivada de OpenStreetMap, escala y ritmo exterior, matriz de 64 celdas para el atlas de revisión. |
+| `game/scripts/campus_collision.gd`, `campus_perimeter.gd`, `campus_room_layout.gd` | Índice de colisiones exteriores, tramos del cerco y perfiles de tamaño, mobiliario y accesos por ambiente. |
+| `game/scripts/campus_life.gd`, `campus_routes.gd`, `campus_cast.gd` | Catálogo, población, rutas y rutinas persistentes, caricias y encuentro raro. El estado se guarda con la exploración. |
 | `game/scripts/simulation_procedures.gd` | Define los pasos simulados de cada trámite. |
 | `game/scripts/simulation_commands.gd` | Analiza comandos de la consola opcional y delega las acciones al modelo. |
 | `game/scripts/simulation_save_store.gd` | Lee, guarda y elimina espacios de partida; encapsula los archivos y respaldos locales. |

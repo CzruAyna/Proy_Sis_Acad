@@ -1,7 +1,6 @@
 # Menús, mapa jugable y perímetro FNI
 
-Avance local del 8 de noviembre de 2026 sobre `f79e107`. El menú y la
-exploración pertenecen a Godot.
+Cambios de Godot del 8 de noviembre de 2026, incorporados en `72b6443`.
 
 ## Menús y controles
 

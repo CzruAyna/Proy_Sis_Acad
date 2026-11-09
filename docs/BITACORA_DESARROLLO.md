@@ -1,71 +1,8 @@
 # Bitácora de desarrollo de SIS-INF
 
-## 9 de noviembre de 2026 · depuración y limpieza
+Revisión del 9 de noviembre de 2026. Corte `4095c2e`.
 
-Revisión local sobre `72b6443`. Actualicé las pruebas que todavía esperaban
-ocho acciones de inicio o todas las puertas en un solo pasillo. Ahora recorren
-los pisos reales del juego y verifican que salir de un aula solo publica el
-estado de la planta correcta. Corregí la recuperación de guardados con campos
-malformados y reuní los paseos y clases en el controlador de vida del campus.
-Retiré una plantilla temporal de Windows idéntica a la de herramientas.
-
-Guardé los límites y obstáculos interiores entre comprobaciones y eliminé
-las consultas de colisión de los ejes sin movimiento. La medición y el alcance
-de las pruebas quedan en [Verificaciones](VERIFICACIONES.md).
-
-## 6 de noviembre de 2026: cerrar contratos y reducir trabajo repetido
-
-Cambios locales sobre `e206909`, sin commit propio. Revisé las notas de frontend
-y conecté escaleras, plantas, rutinas de personajes, caricias y logros con el
-guardado. Los NPC usan la misma población visual y rutas sobre los caminos;
-sus clases son ficticias y no afectan las notas. El usuario eligió 1 entre 100
-para Piedritas, con un solo sorteo conservado por recorrido.
-
-La colisión consulta ahora un índice espacial y la ruptura reutiliza geometría
-en una caché acotada. Se redujeron consultas de contexto y copias de progreso,
-y bajo consumo deja estático el fondo decorativo. La medición local de estas
-funciones bajó; no la presento como una garantía de FPS en cualquier PC.
-
-La matriz de nueve suites suma 9.902 aserciones sin fallos y se generaron cinco
-capturas. Los detalles y límites están en [Verificaciones](VERIFICACIONES.md).
-Dejé para frontend el acabado de animaciones y para datos las plantas,
-horarios, equipamiento y fuentes originales en
-[Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md).
-
-
-## 6 de noviembre de 2026: caminos, inicio e interiores
-
-Cambios locales sin commit propio. El usuario señaló los caminos que se
-encimaban y pidió cuatro acciones en el inicio. Se unificó el dibujo de la
-red vial por capas, se suavizaron giros y se incorporó la rosa con norte a la
-derecha. Jugar conserva partidas y exploración; Simular reúne las demostraciones.
-
-Se revisaron fotografías de RTvU–UTO y referencias institucionales para variar
-las proporciones, ventanales y mobiliario de los interiores. Las medidas siguen
-siendo ilustrativas. Tamaño, colisión, aparición y salida ahora comparten un
-perfil por ambiente. Se actualizaron las láminas 8×8 y la compilación Windows.
-Fuentes y responsabilidades en [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md);
-las once suites y sus límites están en [Verificaciones](VERIFICACIONES.md).
-
-## 4 de noviembre de 2026: matriz 8×8 y escala del campus
-
-Cambios locales sin commit propio. El usuario pidió retirar los originales
-de referencia del sistema, obtener una matriz mayor para corregir dimensiones
-y aumentar los personajes y su avance. Se retiraron los dos planos, la copia
-del logo original y el conversor, conservando los originales en Descargas.
-La consulta de Google Maps sí permitió ver la Ciudad Universitaria en satélite;
-su fecha de captura no quedó confirmada. Se ajustaron cubiertas y se registró
-qué fachadas y plantas todavía necesitan fotos fechadas.
-
-El mapa ahora se revisa en 64 celdas de 1536×1088 unidades. Se ampliaron sprites,
-huella de pies, puertas y velocidades; 51 personajes variados realizan paseos
-ambientales locales. Los horarios y la asistencia a aulas siguen para motor.
-Los contratos y referencias están en [Matriz 8×8](MAPA_8X8_Y_PERSONAJES.md),
-y las comprobaciones de esta entrega en [Verificaciones](VERIFICACIONES.md).
-
-Actualizada: 2 de noviembre de 2026. Corte: `b122e96`; 32 commits en 15 fechas.
-
-Esta es la memoria por jornada. El detalle de cada versión, con su mensaje original y archivos de referencia, está en [Historial por commit](HISTORIAL_COMMITS.md). Las fechas siguen Git (UTC−04:00), no horas de dedicación. Las notas personales citadas proceden de los mensajes; no completé jornadas sin registro con experiencias supuestas.
+La bitácora sigue las fechas de los commits en UTC−04:00. El [historial de pushes](HISTORIAL_PUSHES.md) registra los envíos y el [historial técnico](HISTORIAL_COMMITS.md) conserva sus mensajes y archivos. Las horas de Git son marcas del registro. Las notas personales entre comillas proceden de los mensajes originales.
 
 ## 15 de octubre de 2026: Arranque del sistema académico
 
@@ -153,94 +90,48 @@ Amplié los edificios con pasillos y ambientes distintos. Recreé el emblema con
 
 ## 2 de noviembre de 2026: Las mesas ya se pueden jugar
 
-**Commits:** `b122e96`.
+**Commits:** `b122e96`, `564a85e`.
 
 Implementé las partidas contra rivales locales: ajedrez, billar, ping-pong y Ruta del campus. Los motores quedaron separados de la vista y del expediente académico, con pausa y recuperación por perfil. La búsqueda de ajedrez tiene un presupuesto y la física usa pasos fijos. Aproveché para evitar que el mapa reconstruyera todos los edificios en cada consulta. Faltan partidas con personas para ajustar la dificultad: que el rival funcione no demuestra que el juego resulte cómodo o divertido.
 
-## Revisión de la documentación del 2 de noviembre
+Después ordené los primeros 32 commits y separé las funciones disponibles, las pruebas y los pendientes. En el mensaje de ese envío dejé «Wachando nomas, creo que sera todo por hoy».
 
-Relacioné las entradas que todavía decían «sin commit» con sus versiones reales. Separé la memoria por jornada del detalle técnico y actualicé las guías al nombre SIS-INF, la exploración y los minijuegos ya jugables. Los resultados registrados por entregas anteriores quedan fechados en [Verificaciones](VERIFICACIONES.md); no son una ejecución nueva.
+## 3 de noviembre de 2026 · la terminal y las mesas
 
-Esta revisión todavía no tiene commit. Las fuentes institucionales, el interior de la sala E, la sede del centro y las pruebas con jugadores continúan pendientes según [Estado actual](ESTADO_ACTUAL.md).
+**Commits:** `b3d549b`, `1977fd8`.
 
-## 3 de noviembre de 2026: Entrada a las mesas y demostración automática
+Corregí el sprite al mirar a la izquierda y el cambio de pantalla al abrir una mesa. La prueba anterior llamaba a `interact()` directamente. Añadí casos con E, Enter y clic para recorrer la entrada que podía quedarse sin viewport. De paso preparé el icono pixel art y una terminal automática que explica las carreras y las cinco menciones en bucle.
 
-**Estado:** cambios locales, sin commit nuevo.
+En la segunda entrega pasé el billar a ocho bolas y conservé el motor antiguo para las partidas de seis. Redibujé las piezas de ajedrez, añadí impulso en ping-pong y moví los dados y las compras de Ruta del campus al tablero. También amplié el campus con los bloques de varios niveles y las fichas de Piedritas y el Chivato. Los pisos y los personajes todavía eran diseños en este corte. La pausa de la terminal ya elegía un arquetipo, con su arte pendiente.
 
-El usuario reportó que el personaje se separaba de su sombra al mirar a la
-izquierda y que entrar a una mesa cerraba el juego. Corregí el anclaje del
-reflejo y reproduje un acceso al viewport después de retirar el campus durante
-la entrada de teclado. Ahora la entrada se consume primero y las señales que
-cambian de pantalla se atienden de forma diferida. Las pruebas anteriores
-llamaban a `interact()` directamente; añadí eventos reales de E, Enter y ratón
-para cubrir ese camino. No se obtuvo un registro nativo del cierre completo.
+[Demostración automática](MODO_DEMOSTRATIVO.md) · [Sala E](JUEGOS_BLOQUE_E.md) · [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md)
 
-Añadí una terminal de presentación separada: resumen de ambas carreras y cinco
-menciones, recorrido completo por materias, escritura progresiva y repetición.
-El guion usa el catálogo existente y no modifica una partida. Dejé una columna
-de esquemas y el contrato para que frontend incorpore las animaciones. El icono
-del EXE y la ventana pasó a una síntesis geométrica pixel art del emblema, con
-PNG e ICO generados desde código. Ajusté la separación del inicio para mantener
-todas las acciones visibles al añadir el nuevo modo.
+## 4 de noviembre de 2026 · una matriz para revisar el mapa
 
-Ejecuté cinco suites: 5.553 aserciones y cero fallos en la matriz final; generé
-ocho capturas y exporté/arranqué el ejecutable actualizado. La matriz, el fallo
-reproducido y los límites están en [Verificaciones](VERIFICACIONES.md). Falta
-evaluar una exposición prolongada, integrar las animaciones de frontend y
-contrastar el contenido con programas y normas vigentes según
-[Modo demostrativo](MODO_DEMOSTRATIVO.md).
+**Commit:** `c0bd256`.
 
-### Ampliación: jugar sobre el tablero
+Retiré del proyecto las copias de los planos y del logo original. Preparé 64 láminas para comparar distancias y aumenté el tamaño de los personajes, su velocidad y la huella de colisión. Añadí paseos ambientales alrededor de los sectores. La vista satelital ayudó con las cubiertas, pero la fecha de captura quedó sin confirmar. [Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md)
 
-**Estado:** cambios locales del mismo día, sin commit nuevo.
+## 6 de noviembre de 2026 · caminos, pisos y personajes
 
-El usuario confirmó que los juegos funcionan y pidió piezas de ajedrez sin
-letras, billar más cercano a las mecánicas de ocho bolas, ping-pong más dinámico
-y una Ruta del campus que dependa menos de botones exteriores. Amplié el lienzo
-de los juegos y trasladé al tablero los dados, las propiedades, la promoción y
-los controles de billar. Las piezas tienen siluetas propias de 32×40; los
-tableros comparten la ruptura negra del inicio. La economía de Ruta del campus
-conserva su variante de veinte casillas, ahora con consulta, casas y recorrido
-visual de las fichas.
+**Commits:** `e206909`, `113037c`, agrupados en un push.
 
-El billar pasó a dieciséis cuerpos, grupos, faltas, bola en mano, efectos arcade
-y negra en tronera elegida. El tiro se prepara retirando el taco y se ejecuta
-al soltar; no añadí una barra deslizante. Guardé el motor de seis bolas como
-compatibilidad para las sesiones existentes: sólo Reiniciar las cambia a ocho.
-En ping-pong añadí impulso con recuperación y una devolución sensible al
-movimiento de la paleta. La pausa de la terminal prepara un personaje aleatorio
-y emite un contrato; su diseño y la abertura siguen para frontend, como pidió
-el usuario.
+El inicio estaba cargado de botones. Lo reduje a Jugar, Simular, Opciones y Salir. Uní el dibujo de los caminos y añadí la rosa con el norte a la derecha. Separé los tamaños y las colisiones por ambiente para que las aulas y laboratorios se pudieran diferenciar también al caminar.
 
-La matriz de esta ampliación reúne siete suites y 14.422 aserciones sin fallos,
-con doce capturas gráficas. Los casos nuevos comprueban reglas de ocho bolas,
-gestos del taco, colocación, dados, compras y mensajes de pausa. El alcance y
-los resultados se registran por separado en [Verificaciones](VERIFICACIONES.md).
-Faltan sesiones humanas para ajustar puntería y ritmo, el arte de pausa y
-pruebas en otros equipos. No cambié reglas académicas ni servicios web.
+Conecté las escaleras, las rutinas ficticias de los NPC, las caricias y los logros con el guardado. Dejé un sorteo de Piedritas de 1 entre 100 por recorrido, como se acordó. Para reducir el trabajo repetido usé un índice de colisiones exteriores y una caché para la ruptura del menú. En bajo consumo dejé estático el fondo decorativo. [Caminos e interiores](CAMINOS_MENU_Y_AMBIENTES.md) · [Vida y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md)
 
-### 3 de noviembre de 2026: campus ampliado y diseños de vida del campus
+## 8 de noviembre de 2026 · un mapa para caminar y otro para revisar
 
-Cambios locales sin commit propio. El usuario entregó un plano marcado y pidió
-un mapa mucho mayor, con las distancias, áreas verdes, caminos, fuentes y
-elementos del campus. Se amplió a 12288 × 8704 unidades de juego y se separó
-el bosque del ingreso de los jardines. Se añadieron estacionamientos, laguna
-de Civil, asientos FNI y quirquinchos diferenciados. El terreno, los árboles
-y los detalles de las cubiertas se dibujan según la región visible; el arte
-procedural se conserva en caché.
+**Commits:** `f79e107`, `72b6443`.
 
-Las fotos aportadas sirven de referencia para el Chivato de piedra y Piedritas
-de bronce. E abre sus fichas mediante ruptura central y conserva el recorrido
-al cerrarlas. La fecha del 3 de julio de 1906 procede de FNI-UTO; la organización
-en recuerdo de Piedritas se identifica como relato pendiente de respaldar.
-Se prepararon planos de dos niveles para el bloque 100 y cinco para el bloque
-en cruz, más profesionales, estudiantes y perros variados. Los paseos, clases,
-caricias, logros, encuentro raro y cambio de planta se dejaron como contratos
-de motor/backend, sin simular que ya estuvieran funcionando.
+Calibré el mapa con OpenStreetMap y separé las proporciones del terreno de la velocidad del personaje. Así pude acortar las caminatas sin encoger cada edificio. Conservé las 64 láminas en el atlas de revisión y dejé en el mapa jugable la flecha, los rótulos y el zoom.
 
-Cuatro suites de esta ampliación sumaron 3.664 aserciones sin fallos; se
-generaron veinte capturas y se exportó Windows. El arranque aislado del binario
-terminó con salida cero. Los registros y límites reales están en
-[Verificaciones](VERIFICACIONES.md); las fuentes, IDs y tareas de cada área,
-en [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md). Se mantuvieron los
-cambios paralelos de minijuegos y terminal. No se modificó el motor académico.
+Después centré Inicio y Jugar, agrupé las opciones por categoría y marqué mejor el foco y el puntero. Añadí la malla, el muro y el tránsito ambiental exterior. Los acabados del perímetro y las puertas reales siguen sujetos a fotos o planos fechados. [Cartografía y escala](CARTOGRAFIA_FNI_Y_ESCALA.md) · [Menús y perímetro](MENUS_MAPA_Y_PERIMETRO.md)
+
+## 9 de noviembre de 2026 · volver al piso correcto
+
+**Commit:** `4095c2e`.
+
+Hice que volver de un aula actualice una sola vez el pasillo de su planta. Revisé la recuperación de datos malformados y reutilicé las colisiones interiores mientras no cambie el recinto. Quité el prototipo de paseos cuando el controlador de vida asumió su población. En el mensaje quedó «por el momento un cafecito sera».
+
+Las 29 suites y el arranque aislado de la exportación están registrados en [Verificaciones](VERIFICACIONES.md). La medición de colisiones corresponde a una escena y una máquina.

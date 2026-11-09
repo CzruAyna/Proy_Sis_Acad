@@ -1,6 +1,6 @@
 # Vida del campus y bajo consumo
 
-Estado: 6 de noviembre de 2026, cambios locales sin commit propio. Se revisaron
+Entrega del 6 de noviembre de 2026, incorporada en `113037c`. Se revisaron
 los contratos de [campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md),
 [matriz 8×8](MAPA_8X8_Y_PERSONAJES.md) y
 [caminos e interiores](CAMINOS_MENU_Y_AMBIENTES.md). Esta actualización resuelve

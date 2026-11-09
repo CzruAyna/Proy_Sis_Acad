@@ -1,6 +1,6 @@
 # Guía de documentación del proyecto
 
-Actualizada: 2 de noviembre de 2026.
+Actualizada el 9 de noviembre de 2026.
 
 ## Para qué se mantiene esta documentación
 
@@ -48,7 +48,9 @@ del repositorio ni se debe confundir con el estado actual del producto.
 | Reglas del recorrido individual | `SIMULACION_ESTUDIANTE.md` |
 | Navegación, identidad y comportamiento del grafo | `DISENO_VISUAL_CAMPUS.md` |
 | Generador de historia demostrativa | `MODULO_HISTORIA_CARRERA.md` |
-| Historial por fecha y commits | `BITACORA_DESARROLLO.md` |
+| Avances por jornada | [Bitácora](BITACORA_DESARROLLO.md) |
+| Cambios, mensajes y archivos por commit | [Historial técnico](HISTORIAL_COMMITS.md) |
+| Hora y agrupación de commits por envío | [Historial de pushes](HISTORIAL_PUSHES.md) |
 | Material institucional y verificaciones de datos | `PARA_BACKEND_DATOS_Y_FUENTES.txt` |
 | Coordinación entre interfaz y motor | `PENDIENTES_FRONTEND_SIMULACION.md` |
 | Licencia, alcance y revisiones de terceros | `LICENCIA_CODIGO_LIBRE.md` |
@@ -83,6 +85,12 @@ muletillas en cada entrada ni introducir faltas para aparentar una voz.
 El detalle por commit se mantiene en `HISTORIAL_COMMITS.md`; la bitácora agrupa
 las jornadas sin repetir todos sus archivos. Los resultados de otras entregas
 se fechan en `VERIFICACIONES.md` y se distinguen de una ejecución nueva.
+
+Para registrar un push, usar el movimiento de la rama remota que conste en el
+reflog local o en la actividad remota. Registrar la hora, la referencia y los
+commits incorporados entre el valor anterior y el nuevo. Si hay varios commits,
+agruparlos bajo el mismo envío. Si falta evidencia del envío, conservar el
+commit en el historial técnico y dejar el límite explícito en el de pushes.
 
 En las guías operativas describir el estado actual. En la bitácora se puede
 redactar en primera persona para la memoria del autor, conservando trazabilidad

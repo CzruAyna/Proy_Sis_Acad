@@ -1,10 +1,10 @@
 # Historial técnico por commit
 
-Revisión: 2 de noviembre de 2026. Corte: `b122e96`.
+Revisión del 9 de noviembre de 2026. Corte `4095c2e`.
 
-Revisé los 32 commits disponibles en `main`: mensaje completo, archivos y diferencias. Los títulos originales se conservan tal como fueron escritos; el encabezado técnico explica el cambio. Las notas personales entre comillas son extractos del mensaje original, no recuerdos añadidos.
+Revisé los 41 commits de `main` con sus mensajes, archivos y diferencias. Los títulos originales se conservan tal como fueron escritos. Las notas personales entre comillas proceden de los mensajes.
 
-Para leer el avance por jornada, véase [Bitácora](BITACORA_DESARROLLO.md). Para el producto vigente, [Estado actual](ESTADO_ACTUAL.md). Las pruebas mencionadas son archivos añadidos o modificados; los resultados de ejecución se separan en [Verificaciones](VERIFICACIONES.md).
+La [bitácora](BITACORA_DESARROLLO.md) agrupa el avance por jornada y el [historial de pushes](HISTORIAL_PUSHES.md) muestra cómo se agruparon los commits en cada envío. Los archivos de prueba mencionados se añadieron o cambiaron en su versión. Los resultados de ejecución están en [Verificaciones](VERIFICACIONES.md) y las funciones disponibles en [Estado actual](ESTADO_ACTUAL.md).
 
 ## 15 de octubre de 2026
 
@@ -324,6 +324,100 @@ Habilité ajedrez, billar, ping-pong y Ruta del campus contra rivales locales. S
 
 **Pruebas tocadas en esta versión:** `test_games_room.gd`, `test_recreation_models.gd`, `test_recreation_ui.gd`.
 
-## Esta revisión documental
+### 564a85e: Bitácora técnica, estado y verificaciones
 
-La actualización del 2 de noviembre que añade este catálogo y reconcilia los documentos todavía no tiene commit. No modifica los mensajes ni reescribe el historial. El cambio más reciente del producto sigue siendo `b122e96`.
+**Mensaje original:** `docs: documentar los commits y actualizar el estado de SIS-INF`. **Hora:** 18:05:11 (UTC−04:00).
+
+Organicé el historial de los primeros 32 commits, separé lo que podía usarse de lo que faltaba y reuní los resultados de pruebas por versión. Actualicé el README y las guías al nombre SIS-INF. El cambio fue documental.
+
+**Archivos de referencia:** `docs/HISTORIAL_COMMITS.md`, `docs/ESTADO_ACTUAL.md`, `docs/VERIFICACIONES.md`.
+
+## 3 de noviembre de 2026
+
+### b3d549b: Entrada segura a las mesas y terminal automática
+
+**Mensaje original:** `feat: añade demostración automática y corrige la exploración`. **Hora:** 15:31:08 (UTC−04:00).
+
+Ajusté el anclaje del personaje al mirar a la izquierda y diferí los cambios de pantalla que nacían de una entrada. Añadí la terminal automática en bucle para las dos carreras y sus cinco menciones, además del icono pixel art generado para Windows y la ventana. Quedó un contrato para las animaciones laterales.
+
+**Archivos de referencia:** `game/scripts/campus_world.gd`, `game/scripts/career_presentation.gd`, `game/scripts/pixel_app_icon.gd`.
+
+**Pruebas tocadas en esta versión:** `test_exploration_handoff.gd`, `test_career_presentation.gd`.
+
+### 1977fd8: Mapa ampliado, tableros y personaje de pausa
+
+**Mensaje original:** `feat: amplía el campus, mejora minijuegos y prepara personajes de pausa`. **Hora:** 17:53:43 (UTC−04:00).
+
+Amplié el mapa con sectores, monumentos y planos de varios niveles. Redibujé las piezas de ajedrez, incorporé billar de ocho bolas conservando las partidas de seis, añadí impulso en ping-pong y pasé acciones de Ruta del campus al tablero. La pausa selecciona un arquetipo y emite su estado para que frontend lo dibuje.
+
+**Archivos de referencia:** `game/scripts/campus_floor_plan.gd`, `game/scripts/pool_game.gd`, `game/scripts/legacy_pool_game.gd`, `game/scripts/minigame_board.gd`.
+
+**Pruebas tocadas en esta versión:** `test_large_campus.gd`, `test_eight_ball.gd`, `test_recreation_surface.gd`, `test_career_presentation.gd`.
+
+## 4 de noviembre de 2026
+
+### c0bd256: Personajes mayores y matriz de revisión
+
+**Mensaje original:** `feat: amplía personajes`. **Hora:** 17:06:03 (UTC−04:00).
+
+Retiré del juego las copias de los planos y del logo original. Preparé las 64 láminas del mapa de entonces y amplié sprites, velocidad, huella y puertas. Incorporé un elenco ambiental con paseos locales, sustituido después por las rutinas persistentes.
+
+**Archivos de referencia:** `game/scripts/campus_grid.gd`, `game/scripts/campus_scale.gd`, `game/tools/export_campus_quadrants.gd`.
+
+**Pruebas tocadas en esta versión:** `test_grid8_and_cast.gd`, `test_exploration.gd`.
+
+## 6 de noviembre de 2026
+
+### e206909: Caminos continuos, cuatro acciones e interiores propios
+
+**Mensaje original:** `feat: conecta caminos y simplifica el menú principal`. **Hora:** 08:54:15 (UTC−04:00).
+
+Unifiqué el dibujo de los caminos, añadí la rosa con el norte hacia la derecha y dejé cuatro acciones en el inicio. Los interiores pasaron a compartir un perfil por ambiente para su tamaño, mobiliario, colisiones y accesos.
+
+**Archivos de referencia:** `game/scripts/campus_roads.gd`, `game/scripts/campus_compass.gd`, `game/scripts/campus_room_layout.gd`, `game/scripts/game.gd`.
+
+**Pruebas tocadas en esta versión:** `test_natural_campus.gd`, `test_building_interiors.gd`, `test_exploration_navigation.gd`.
+
+### 113037c: Rutinas, pisos transitables y bajo consumo
+
+**Mensaje original:** `feat(campus): completar la exploración y optimizar el rendimiento`. **Hora:** 09:34:57 (UTC−04:00).
+
+Conecté el cambio de piso, las rutinas de NPC, las caricias y los logros de exploración con el guardado. El encuentro raro de Piedritas se sortea una sola vez por recorrido con probabilidad de 1/100. Indexé colisiones exteriores, reutilicé geometría del menú y dejé estático el fondo decorativo en bajo consumo.
+
+**Archivos de referencia:** `game/scripts/campus_life.gd`, `game/scripts/campus_routes.gd`, `game/scripts/campus_collision.gd`, `game/tools/benchmark_lightweight.gd`.
+
+**Pruebas tocadas en esta versión:** `test_campus_life.gd`, `test_grid8_and_cast.gd`, `test_player_rules.gd`.
+
+## 8 de noviembre de 2026
+
+### f79e107: Cartografía v3 y recorrido exterior más corto
+
+**Mensaje original:** `feat(campus): calibra el mapa de la FNI y agiliza la exploración`. **Hora:** 15:28:57 (UTC−04:00).
+
+Proyecté el recorte de OpenStreetMap en un mapa de 7.040 × 3.904 unidades y ajusté huellas, rutas y puntos de acceso. Separé la escala aproximada de 8 unidades por metro del ritmo exterior. Añadí migración de posiciones anteriores y regeneré el atlas externo con la geometría nueva.
+
+**Archivos de referencia:** `game/assets/cartography/fni_osm.json`, `game/scripts/campus_cartography.gd`, `game/scripts/campus_scale.gd`, `game/tools/prepare_campus_osm.py`.
+
+**Pruebas tocadas en esta versión:** `test_exploration.gd`, `test_large_campus.gd`, `test_campus_life.gd`.
+
+### 72b6443: Menús centrados, mapa con zoom y perímetro
+
+**Mensaje original:** `feat(frontend): centra los menús y rediseña el mapa de la FNI`. **Hora:** 15:59:15 (UTC−04:00).
+
+Centré Inicio y Jugar, separé las opciones por categoría y diferencié el foco y el puntero. El mapa jugable usa una flecha, rótulos y zoom por botones, mientras la matriz queda en el atlas. Añadí cerco y muros con colisión, paso en el ingreso y tránsito ambiental fuera del campus.
+
+**Archivos de referencia:** `game/scripts/game.gd`, `game/scripts/campus_overview.gd`, `game/scripts/campus_perimeter.gd`, `game/scripts/campus_collision.gd`.
+
+**Pruebas tocadas en esta versión:** `test_compact_navigation.gd`, `test_dynamic_menu.gd`, `test_exploration_navigation.gd`, `test_large_campus.gd`.
+
+## 9 de noviembre de 2026
+
+### 4095c2e: Recuperación de guardados y colisiones interiores
+
+**Mensaje original:** `fix(campus): corregir guardados, optimizar colisiones y retirar código obsoleto`. **Hora:** 16:58:36 (UTC−04:00).
+
+Validé la versión, la posición y la planta guardadas antes de usarlas. Al volver de un aula, el pasillo conserva su planta y emite una sola actualización. Guardé en caché los obstáculos interiores por recinto y piso, y evité consultas en ejes sin movimiento. El controlador de vida absorbió el elenco del prototipo y este se retiró.
+
+**Archivos de referencia:** `game/scripts/campus_world.gd`, `game/scripts/campus_map.gd`, `game/scripts/campus_life.gd`.
+
+**Pruebas tocadas en esta versión:** `test_building_interiors.gd`, `test_campus_life.gd`, `test_grid8_and_cast.gd`.

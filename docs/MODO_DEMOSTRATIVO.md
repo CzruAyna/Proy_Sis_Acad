@@ -1,10 +1,11 @@
 # Modo demostrativo automático
 
-Actualizado: 3 de noviembre de 2026. Implementación local sin commit nuevo.
+Implementado en `b3d549b`. La selección del personaje de pausa se añadió
+en `1977fd8` y el acceso se trasladó a Simular en `e206909`.
 
 ## Estado actual
 
-El inicio incluye **Demostración automática**, separado de **Historia de una
+**Simular** incluye **Demostración automática**, separado de **Historia de una
 carrera** y del recorrido interactivo. Al entrar se escribe el comando virtual
 `sis-inf demo --loop` y comienza una presentación que vuelve al inicio al
 terminar. No abre una consola del sistema ni ejecuta órdenes externas.
