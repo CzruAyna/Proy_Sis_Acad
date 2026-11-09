@@ -79,9 +79,10 @@ func _run() -> void:
 	_check(str(world.cast_instances) != before, "El controlador del mundo activa los paseos al volver al exterior")
 	for actor in world.cast_instances:
 		actor["moving"] = false
-		actor["wait"] = 1.0
+		actor["cooldown"] = 1.0
 	world.cast_instances[0]["moving"] = true
-	_check(world.ambient_cast.advance(0.1, world.player), "Cambiar de paso a reposo solicita redibujado")
+	world.cast_instances[0]["state"] = "WAIT"
+	_check(world.ambient_cast.advance(0.1, world.cast_instances[0]["point"]), "Cambiar de paso a reposo solicita redibujado")
 	world.queue_free()
 	await process_frame
 	for failure in failures:

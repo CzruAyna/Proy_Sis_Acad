@@ -222,15 +222,14 @@ static func room_floor(id: String, room: String) -> int:
 	return -1
 
 
-static func hall_rooms(id: String, level: int = -1) -> Array[Dictionary]:
+static func hall_rooms(id: String, level: int = 0) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	var block := building(id)
-	var names: Array = block.get("rooms", []) if level < 0 else floor_rooms(id, level).map(func(item: Dictionary) -> String: return str(item["id"]))
-	for index in range(names.size()):
+	var rooms := floor_rooms(id, level)
+	for index in range(rooms.size()):
 		var left := index % 2 == 0
 		var row := index / 2
 		var top := 52.0 + floorf(row) * 92
-		result.append({"name": names[index],
+		result.append({"name": rooms[index]["id"],
 			"rect": Rect2(36 if left else 416, top, 268, 84),
 			"door": Vector2(318 if left else 402, top + 44)})
 	return result
@@ -249,7 +248,7 @@ static func hall_exit(id: String) -> Vector2:
 	return Vector2(360, hall_size(id).y - 30)
 
 
-static func interior_obstacles(id: String, room: String, level: int = -1) -> Array[Rect2]:
+static func interior_obstacles(id: String, room: String, level: int = 0) -> Array[Rect2]:
 	if room.is_empty():
 		var walls: Array[Rect2] = []
 		for space in hall_rooms(id, level):

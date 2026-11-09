@@ -281,3 +281,9 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     revisión. Representar el enmallado, los muros traseros y el tránsito de
     camiones y minis fuera de la FNI. Consultar referencias de exteriores y
     pautas de diseño. Distinguir los detalles recreados de los verificados.
+
+31. DEPURACIÓN Y LIMPIEZA, indicada el 09/11/2026.
+    Revisar las reglas y notas vigentes, corregir los errores reproducibles,
+    limpiar y optimizar el código y retirar duplicados y sobrantes verificados.
+    Someter el juego a pruebas de uso y de entradas problemáticas cuando haga
+    falta para comprobar las correcciones.

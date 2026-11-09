@@ -1,7 +1,14 @@
-extends "res://scripts/campus_ambient_cast.gd"
+extends RefCounted
 ## Persistent fictional routines, pet interactions and once-per-run rare encounter.
+const Map = preload("res://scripts/campus_map.gd")
+const Land = preload("res://scripts/campus_landscape.gd")
+const Cast = preload("res://scripts/campus_cast.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 const Routes = preload("res://scripts/campus_routes.gd")
 const RARE_DENOMINATOR := 100 # Explicitly selected by the user, 06/11/2026.
+var actors: Array[Dictionary] = []
+var rng := RandomNumberGenerator.new()
+var walkable: Callable
 var routes := Routes.new()
 var elapsed := 0.0
 var seed_value := 0
@@ -20,30 +27,79 @@ func build(can_walk: Callable, saved: Dictionary = {}, new_seed: int = -1) -> vo
 	monuments.clear()
 	elapsed = 0
 	state_revision = 0
-	super.build(can_walk)
+	walkable = can_walk
+	_blocks = Map.buildings()
+	_spawn_cast()
 	seed_value = new_seed if new_seed >= 0 else randi() & 0x7fffffff
-	if int(saved.get("version", 0)) == 1 and saved.get("seed") is String:
+	var version: Variant = saved.get("version")
+	var valid_save: bool = (version is int or version is float) and version == 1
+	if valid_save and saved.get("seed") is String:
 		seed_value = str(saved["seed"]).to_int()
 	rng.seed = seed_value
 	rare = rng.randi_range(1, RARE_DENOMINATOR) == 1
-	if int(saved.get("version", 0)) == 1 and saved.get("rare") is bool:
+	if valid_save and saved.get("rare") is bool:
 		rare = saved["rare"]
 	if rare:
 		_spawn("piedritas_recuerdo", Land.PIEDRITAS + Vector2(0, 75))
 	routes.build(can_walk)
-	_blocks = Map.buildings()
+	var assigned_buildings := {}
+	for row in Cast.PROFESSIONS + Cast.STAFF:
+		assigned_buildings[row[0]] = Map.building(row[4])
 	for index in range(actors.size()):
 		var actor: Dictionary = actors[index]
-		var home: Dictionary = _blocks[(index * 7 + 8) % _blocks.size()]
-		for profession in Cast.PROFESSIONS + Cast.STAFF:
-			if profession[0] == actor["id"]:
-				home = Map.building(profession[4])
+		var home: Dictionary = assigned_buildings.get(actor["id"], _blocks[(index * 7 + 8) % _blocks.size()])
 		actor.merge({"index": index, "state": "WAIT", "home_id": home["id"], "building_id": home["id"], "room_name": str(home["rooms"][0]), "floor": 0, "route": PackedVector2Array(), "cursor": 0, "cooldown": rng.randf_range(1, 8), "pending": 0.0, "class_count": 0, "pet_count": 0})
-	_restore(saved)
+	if valid_save:
+		_restore(saved)
+
+
+func _spawn_cast() -> void:
+	for row in Cast.PROFESSIONS:
+		_spawn(row[0], Map.building(row[4])["door"] + Vector2(31, 16))
+	for index in range(Cast.STUDENT_COUNT):
+		var block: Dictionary = _blocks[(index * 7 + 8) % _blocks.size()]
+		_spawn("estudiante_%d" % index, block["door"] + Vector2(-32 if index % 2 == 0 else 32, 28))
+	for row in Cast.STAFF:
+		_spawn(row[0], Map.building(row[4])["door"] + Vector2(-45, 26))
+	for index in range(Cast.DOGS.size() - 1):
+		_spawn(Cast.DOGS[index][0], Land.PIEDRITAS + Vector2(-78 + index * 38, 66))
+
+
+func _spawn(id: String, origin: Vector2) -> void:
+	var radius := Scale.DOG_RADIUS if _is_dog_design(id) else Scale.OUTDOOR_RADIUS
+	for offset in [0, 12, 24, 40, 64, 96]:
+		for index in range(1 if offset == 0 else 8):
+			var candidate := (origin + Vector2.from_angle(index * TAU / 8) * float(offset)).round()
+			if _available_spawn(candidate, radius):
+				actors.append({"id": id, "instance_id": "ambient/" + id, "point": candidate, "origin": candidate, "target": candidate, "facing": Vector2.DOWN, "stride": 0.0, "moving": false, "radius": radius})
+				return
+
+
+func _available_spawn(point: Vector2, radius: float) -> bool:
+	if not walkable.call(point, radius):
+		return false
+	for other in actors:
+		if point.distance_to(other["point"]) < radius + float(other["radius"]) + 3:
+			return false
+	return true
+
+
+func _destination(actor: Dictionary) -> Vector2:
+	var start: Vector2 = actor["point"]
+	for attempt in range(10):
+		var candidate: Vector2 = actor["origin"] + Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(18, 72)
+		candidate = candidate.snapped(Vector2(2, 2))
+		if routes.clear_line(start, candidate, actor["radius"]):
+			return candidate
+	return start
+
+
+func _is_dog_design(id: String) -> bool:
+	return id.begins_with("perro_") or id == "piedritas_recuerdo"
 
 
 func is_dog(actor: Dictionary) -> bool:
-	return str(actor["id"]).begins_with("perro_") or actor["id"] == "piedritas_recuerdo"
+	return _is_dog_design(actor["id"])
 
 
 func find_instance(id: String) -> Dictionary:
@@ -175,6 +231,7 @@ func _move(actor: Dictionary, target: Vector2, dt: float, player: Vector2) -> bo
 		if not walkable.call(start.lerp(next, float(i) / steps), actor["radius"]):
 			actor["state"] = "WAIT"
 			actor["route"] = PackedVector2Array()
+			actor["target"] = start
 			actor["cooldown"] = 3.0
 			return false
 	actor["point"] = next
@@ -198,8 +255,6 @@ func snapshot() -> Dictionary:
 
 
 func _restore(saved: Dictionary) -> void:
-	if int(saved.get("version", 0)) != 1:
-		return
 	if saved.get("actors") is Array:
 		for record in saved["actors"].slice(0, actors.size()):
 			if not record is Dictionary or not record.get("point") is Array or record["point"].size() != 2:
@@ -239,8 +294,10 @@ static func migrate_positions(saved: Dictionary, from_map: String) -> void:
 			continue
 		var position: Variant = record.get("point")
 		if position is Array and position.size() == 2 and (position[0] is float or position[0] is int) and (position[1] is float or position[1] is int):
-			var point := Map.migrate_outside(Vector2(position[0], position[1]), from_map)
-			record["point"] = [point.x, point.y]
+			var point := Vector2(position[0], position[1])
+			if point.is_finite():
+				point = Map.migrate_outside(point, from_map)
+				record["point"] = [point.x, point.y]
 
 
 func _saved_number(value: Variant, maximum: float) -> float:

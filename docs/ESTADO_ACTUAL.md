@@ -1,5 +1,11 @@
 # Estado actual de SIS-INF
 
+Actualización del 09/11/2026 sobre `72b6443`. Volver de un aula emite una
+sola actualización del pasillo en su planta. La exploración recupera el
+ingreso o la planta baja si encuentra una versión o planta malformada.
+El controlador de rutinas sustituye al prototipo de paseos y las colisiones
+interiores reutilizan sus límites. Ver [Verificaciones](VERIFICACIONES.md).
+
 Actualización de motor del 06/11/2026, sobre `e206909`, sin commit nuevo:
 pisos transitables, NPC con recorridos y clases ficticias persistentes, perros
 acariciables, Piedritas con sorteo único 1/100 y logros globales de exploración.

@@ -1,5 +1,18 @@
 # Bitácora de desarrollo de SIS-INF
 
+## 9 de noviembre de 2026 · depuración y limpieza
+
+Revisión local sobre `72b6443`. Actualicé las pruebas que todavía esperaban
+ocho acciones de inicio o todas las puertas en un solo pasillo. Ahora recorren
+los pisos reales del juego y verifican que salir de un aula solo publica el
+estado de la planta correcta. Corregí la recuperación de guardados con campos
+malformados y reuní los paseos y clases en el controlador de vida del campus.
+Retiré una plantilla temporal de Windows idéntica a la de herramientas.
+
+Guardé los límites y obstáculos interiores entre comprobaciones y eliminé
+las consultas de colisión de los ejes sin movimiento. La medición y el alcance
+de las pruebas quedan en [Verificaciones](VERIFICACIONES.md).
+
 ## 6 de noviembre de 2026: cerrar contratos y reducir trabajo repetido
 
 Cambios locales sobre `e206909`, sin commit propio. Revisé las notas de frontend

@@ -1,5 +1,10 @@
 # Arquitectura
 
+Actualización del 09/11/2026. `campus_life.gd` reúne la creación del elenco,
+sus rutinas y su guardado. Absorbió la preparación de personajes del prototipo
+de paseos citado en el corte del 04/11. `campus_world.gd` reutiliza límites
+y obstáculos de colisión durante la permanencia en el mismo recinto y piso.
+
 Actualización del 04/11/2026: `campus_grid.gd` define las 64 celdas;
 `campus_scale.gd`, tamaños, radios y velocidades; `campus_ambient_cast.gd`,
 paseos visuales temporales separados del expediente. Las referencias originales

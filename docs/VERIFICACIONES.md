@@ -1,5 +1,29 @@
 # Registro de verificaciones
 
+## Ejecución del 9 de noviembre de 2026 · depuración
+
+Revisión local sobre `72b6443`, con Godot 4.7.2 en Windows. Pasaron las 29
+suites de `game/tests/test_*.gd`, con 113.728 aserciones. Se repitieron las
+11 suites de exploración, interiores y sala E afectadas por los últimos
+ajustes. Se aisló el directorio de partidas para las pruebas.
+
+La cobertura nueva comprueba entradas a aulas en cada piso, una sola
+actualización de estado al regresar al pasillo, reanudación y recuperación
+ante campos de guardado malformados. Las pruebas de interacción usan E,
+Enter y clic para abrir los juegos y prueban P y M desde el campus.
+
+En una medición local de cinco repeticiones de 30.000 consultas en LSIA-1,
+la mediana bajó de 654 a 274 ms. Las dos versiones aceptaron los mismos
+18.636 puntos. Un paso horizontal de 0,1 s hizo 4 consultas exteriores
+frente a 8, con el mismo desplazamiento. Los tiempos corresponden a la
+colisión aislada. Queda por medir FPS sostenidos y consumo en otros equipos.
+Los registros locales están en `game/.test-artifacts/audit-1109-final/`.
+
+Se regeneraron `game/build/SIS-INF.exe` y `SIS-INF.pck`. El registro del
+exportador confirma que el paquete contiene la cartografía derivada. El
+ejecutable arrancó en modo headless con un perfil aislado y salió con código
+0. Los recorridos y minijuegos se probaron con el proyecto fuente.
+
 ## Ejecución del 8 de noviembre de 2026 · menús y perímetro
 
 Cambios locales sobre `f79e107`, Godot 4.7.2 en Windows. Se usaron

@@ -51,7 +51,10 @@ var _last_context := ""
 var _outside := Map.SPAWN
 var _exterior_facing := Vector2.UP
 var _tree_positions: Array[Vector2] = []
-var _interior_key := ""
+var _collision_building := ""
+var _collision_room := ""
+var _collision_floor := -1
+var _interior_bounds := Rect2()
 var _interior_walls: Array[Rect2] = []
 var animations_enabled := true
 var _ambient_phase := 0.0
@@ -78,10 +81,6 @@ func _ready() -> void:
 	set_process(true)
 
 
-func _can_plant(point: Vector2) -> bool:
-	return Foliage.can_plant(point, buildings)
-
-
 func _take_focus() -> void:
 	if is_inside_tree() and is_visible_in_tree():
 		grab_focus()
@@ -94,12 +93,15 @@ func restore(saved: Dictionary) -> void:
 	room_id = ""
 	room_name = ""
 	floor_level = 0
-	_life_saved = saved.get("life", {}).duplicate(true) if saved.get("life") is Dictionary else {}
+	_life_saved = {}
 	visited.clear()
 	var from_map := str(saved.get("map_id", ""))
-	if from_map not in [Map.ID, Map.PREVIOUS_ID, Map.LEGACY_ID] or int(saved.get("version", 0)) != 1:
+	var version: Variant = saved.get("version")
+	if from_map not in [Map.ID, Map.PREVIOUS_ID, Map.LEGACY_ID] or not (version is int or version is float) or version != 1:
 		camera = player
 		return
+	if saved.get("life") is Dictionary:
+		_life_saved = saved["life"].duplicate(true)
 	var heading: Variant = saved.get("exterior_facing", [])
 	if heading is Array and heading.size() == 2 and (heading[0] is float or heading[0] is int) and (heading[1] is float or heading[1] is int):
 		var direction := Vector2(heading[0], heading[1])
@@ -110,9 +112,8 @@ func restore(saved: Dictionary) -> void:
 	var stored: Variant = saved.get("position", [])
 	if stored is Array and stored.size() == 2 and (stored[0] is float or stored[0] is int) and (stored[1] is float or stored[1] is int):
 		var point := Vector2(float(stored[0]), float(stored[1]))
-		point = Map.migrate_outside(point, from_map)
 		if point.is_finite():
-			player = _safe_outside_position(point)
+			player = _safe_outside_position(Map.migrate_outside(point, from_map))
 	var previous: Variant = saved.get("visited", [])
 	if previous is Array:
 		for id in previous:
@@ -126,7 +127,11 @@ func restore(saved: Dictionary) -> void:
 		_outside = building["door"]
 		room_id = building["id"]
 		room_name = stored_room
-		floor_level = Map.room_floor(room_id, room_name) if not room_name.is_empty() else clampi(int(saved.get("floor", 0)), 0, Map.floor_count(room_id) - 1)
+		var stored_floor: Variant = saved.get("floor")
+		if not room_name.is_empty():
+			floor_level = Map.room_floor(room_id, room_name)
+		elif (stored_floor is int or stored_floor is float) and is_finite(float(stored_floor)):
+			floor_level = int(clampf(float(stored_floor), 0, Map.floor_count(room_id) - 1))
 		player = Map.hall_spawn(room_id) if room_name.is_empty() else Map.room_spawn(room_id, room_name)
 	camera = player
 
@@ -167,7 +172,8 @@ func _process(delta: float) -> void:
 	if life_enabled:
 		_cast_tick += delta
 		if _cast_tick >= 0.1:
-			if ambient_cast.advance(minf(_cast_tick, 0.1), player):
+			var outdoor_player := player if room_id.is_empty() else Vector2.INF
+			if ambient_cast.advance(_cast_tick, outdoor_player):
 				queue_redraw()
 			if ambient_cast.state_revision != _life_revision:
 				_life_revision = ambient_cast.state_revision
@@ -234,14 +240,16 @@ func move_player(direction: Vector2, delta: float, running: bool = false) -> voi
 			_exterior_facing = facing
 		stride += motion.length() * (0.24 if room_id.is_empty() else 0.12)
 		var steps := maxi(1, ceili(motion.length() / 4.0))
+		var offset := motion / float(steps)
 		for step in range(steps):
-			var offset := motion / float(steps)
-			var candidate := player + Vector2(offset.x, 0)
-			if _can_stand(candidate):
-				player = candidate
-			candidate = player + Vector2(0, offset.y)
-			if _can_stand(candidate):
-				player = candidate
+			if offset.x != 0:
+				var candidate := player + Vector2(offset.x, 0)
+				if _can_stand(candidate):
+					player = candidate
+			if offset.y != 0:
+				var candidate := player + Vector2(0, offset.y)
+				if _can_stand(candidate):
+					player = candidate
 		if _progress_tick >= 0.25:
 			_progress_tick = 0
 			progress_changed.emit(snapshot())
@@ -253,18 +261,20 @@ func _can_stand(point: Vector2) -> bool:
 		return false
 	if room_id.is_empty():
 		return _can_stand_outside(point)
-	else:
+	if _collision_building != room_id or _collision_room != room_name or _collision_floor != floor_level:
 		var extent := Map.hall_size(room_id) if room_name.is_empty() else Map.room_size(room_id, room_name)
-		var bounds := Rect2(Vector2(22, 30), extent - Vector2(44, 50))
-		if not bounds.grow(-PLAYER_RADIUS).has_point(point):
+		_interior_bounds = Rect2(Vector2(22, 30), extent - Vector2(44, 50)).grow(-PLAYER_RADIUS)
+		_interior_walls = Map.interior_obstacles(room_id, room_name, floor_level).duplicate()
+		for index in range(_interior_walls.size()):
+			_interior_walls[index] = _interior_walls[index].grow(PLAYER_RADIUS)
+		_collision_building = room_id
+		_collision_room = room_name
+		_collision_floor = floor_level
+	if not _interior_bounds.has_point(point):
+		return false
+	for obstacle in _interior_walls:
+		if obstacle.has_point(point):
 			return false
-		var key := room_id + "/" + room_name + "/" + str(floor_level)
-		if key != _interior_key:
-			_interior_key = key
-			_interior_walls = Map.interior_obstacles(room_id, room_name, floor_level)
-		for obstacle in _interior_walls:
-			if obstacle.grow(PLAYER_RADIUS).has_point(point):
-				return false
 	return true
 
 
@@ -435,14 +445,16 @@ func enter_building(id: String) -> bool:
 
 func return_to_hall() -> void:
 	var previous_room := room_name
-	var previous_floor := floor_level
-	if not enter_building(room_id):
+	if room_id.is_empty() or Map.building(room_id).get("rooms", []).size() < 2:
 		return
-	floor_level = previous_floor
+	room_name = ""
+	player = Map.hall_spawn(room_id)
 	for space in Map.hall_rooms(room_id, floor_level):
 		if space["name"] == previous_room:
 			player = space["door"]
-			camera = player
+			break
+	camera = player
+	_held.clear()
 	progress_changed.emit(snapshot())
 	context_changed.emit(interaction_text())
 	queue_redraw()
@@ -450,12 +462,13 @@ func return_to_hall() -> void:
 
 func enter_room(id: String, selected_room: String) -> bool:
 	var building := Map.building(id)
-	if building.is_empty() or Map.room_floor(id, selected_room) < 0:
+	var level := Map.room_floor(id, selected_room)
+	if building.is_empty() or level < 0:
 		return false
 	_outside = building["door"]
 	room_id = id
 	room_name = selected_room
-	floor_level = Map.room_floor(id, selected_room)
+	floor_level = level
 	player = Map.room_spawn(id, selected_room)
 	camera = player
 	var visit := id + "/" + room_name
@@ -486,7 +499,6 @@ func change_floor(level: int) -> bool:
 	floor_level = level
 	player = Vector2(360, Map.hall_size(room_id).y - 108)
 	camera = player
-	_interior_key = ""
 	_held.clear()
 	progress_changed.emit(snapshot())
 	context_changed.emit(interaction_text())
@@ -686,11 +698,3 @@ func player_sprite_rect() -> Rect2:
 	if facing.x < -0.4:
 		rect.size.x *= -1
 	return rect
-
-
-func _near_road(point: Vector2) -> bool:
-	for route in Map.routes():
-		for index in range(route.size() - 1):
-			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, route[index], route[index + 1])) < 34:
-				return true
-	return false

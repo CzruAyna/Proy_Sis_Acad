@@ -36,10 +36,11 @@ func _run() -> void:
 	await _settle()
 	var menu = game.find_child("PageContent", true, false)
 	var widths := []
-	for child in menu.get_children():
-		if child is Button:
-			widths.append(child.size.x)
-	_check(widths.size() == 8, "Inicio conserva ocho acciones con partida reciente, historia y exploración")
+	var labels: Array[String] = []
+	for button in menu.find_children("*", "Button", true, false):
+		widths.append(button.size.x)
+		labels.append(button.text)
+	_check(labels == ["Jugar", "Simular", "Opciones", "Salir"], "El inicio conserva cuatro acciones con una partida reciente")
 	for width in widths:
 		_check(is_equal_approx(width, widths[0]), "Todos los botones del inicio tienen el mismo ancho")
 	var motifs := {}

@@ -102,7 +102,7 @@ variante rara sigue solo en el catálogo y no se introduce con probabilidad
 inventada. El personal incluye docencia, biblioteca, laboratorio, mantenimiento,
 jardinería, seguridad, administración y visitas; son personajes ficticios.
 
-`campus_ambient_cast.gd` produce paseos locales de ambientación alrededor de
+`campus_ambient_cast.gd` producía, en el corte del 04/11, paseos locales alrededor de
 las zonas de origen. Comprueba trayectos y huellas, alterna poses de paso y
 evita penetrar edificios, bases o agua. Se detiene al pausar, entrar en un
 interior, desactivar animaciones o activar bajo consumo. La lógica usa semilla

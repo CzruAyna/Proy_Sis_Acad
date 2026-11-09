@@ -108,9 +108,6 @@ func _rebuild() -> void:
 		for item in page["items"]:
 			labels.append(item["label"])
 		copy.add_child(ui._label(" · ".join(labels), 13))
-	if page.get("planned_action", "") != "":
-		var action: Button = ui._add_button(copy, str(page["planned_action"]), Callable(), false, 38)
-		action.disabled = true
 	for item in page.get("actions", []):
 		var action: Button = ui._add_button(copy, str(item["label"]), _request_action.bind(item), false, 38)
 		action.disabled = not bool(item.get("enabled", true))

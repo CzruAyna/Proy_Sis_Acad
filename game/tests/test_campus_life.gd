@@ -74,6 +74,10 @@ func _run() -> void:
 		_check(not world.change_floor(99), "Rechaza nivel inexistente")
 		for level in range(Map.floor_count(block) - 2, -1, -1):
 			_check(world.change_floor(level), "Baja por la escalera")
+	world.restore({"version": {}, "map_id": Map.ID, "life": {"rare": true}})
+	_check(world.player == Map.SPAWN and world.snapshot()["life"].is_empty(), "Una versión inválida vuelve al ingreso y descarta sus rutinas")
+	world.restore({"version": 1.0, "map_id": Map.ID, "room_id": "basicas", "floor": ["dañado"]})
+	_check(world.room_id == "basicas" and world.floor_level == 0, "Una planta dañada recupera el pasillo de planta baja")
 	world.free()
 	var rng := RandomNumberGenerator.new()
 	var rare_seed := -1

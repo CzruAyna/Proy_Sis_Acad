@@ -55,21 +55,30 @@ func _run() -> void:
 		world.player = building["door"]
 		world.interact()
 		_check(world.room_id == building["id"] and world.room_name.is_empty(), "La entrada lleva al pasillo de " + str(building["id"]))
-		var hall_spawn: Vector2 = world.player
-		_check(world._can_stand(hall_spawn), "Aparición segura en pasillo")
-		for space in Map.hall_rooms(str(building["id"])):
-			_check(_walkable_route(world, hall_spawn, space["door"]), "Puerta interior accesible a pie: " + str(space["name"]))
-			_check(not world._can_stand(Rect2(space["rect"]).get_center()), "No atraviesa la pared del aula")
-			world.player = space["door"]
-			world.interact()
-			_check(world.room_name == space["name"], "E entra en el aula elegida")
-			_check(world.visited.has(str(building["id"]) + "/" + str(space["name"])), "Registra el aula exacta")
-			world.interact()
-			_check(world.room_id == building["id"] and world.room_name.is_empty(), "E vuelve al pasillo sin salir del bloque")
-			_check(world.player.distance_to(space["door"]) < 1 and world._can_stand(world.player), "Regresa a la misma puerta sin colisión")
+		for level in range(Map.floor_count(building["id"])):
+			if level > 0:
+				world.player = Vector2(360, Map.hall_size(building["id"]).y - 108)
+				_check(world.change_floor(level), "La escalera lleva a la planta adyacente")
+			var hall_spawn: Vector2 = world.player
+			_check(world._can_stand(hall_spawn), "Aparición segura en pasillo")
+			for space in Map.hall_rooms(building["id"], level):
+				_check(_walkable_route(world, hall_spawn, space["door"]), "Puerta interior accesible a pie: " + str(space["name"]))
+				_check(not world._can_stand(Rect2(space["rect"]).get_center()), "No atraviesa la pared del aula")
+				world.player = space["door"]
+				world.interact()
+				_check(world.room_name == space["name"], "E entra en el aula elegida")
+				_check(world.visited.has(str(building["id"]) + "/" + str(space["name"])), "Registra el aula exacta")
+				var reported_floors: Array = []
+				var record := func(state: Dictionary) -> void: reported_floors.append(state["floor"])
+				world.progress_changed.connect(record)
+				world.interact()
+				world.progress_changed.disconnect(record)
+				_check(world.room_id == building["id"] and world.room_name.is_empty(), "E vuelve al pasillo sin salir del bloque")
+				_check(reported_floors == [level], "Volver del aula publica una sola vez la planta real")
+				_check(world.player.distance_to(space["door"]) < 1 and world._can_stand(world.player), "Regresa a la misma puerta sin colisión")
 		var restored := World.new()
 		restored.restore(JSON.parse_string(JSON.stringify(world.snapshot())))
-		_check(restored.room_id == building["id"] and restored.room_name.is_empty() and restored._can_stand(restored.player), "Guardar y recargar el pasillo")
+		_check(restored.room_id == building["id"] and restored.floor_level == world.floor_level and restored.room_name.is_empty() and restored._can_stand(restored.player), "Guardar y recargar el pasillo y su planta")
 		restored.free()
 	_check(Map.building("sis_a")["rooms"] == ["LSIA-1", "LSIA-4"], "Ambientes A publicados en la fuente institucional")
 	_check(Map.room_kind("sis_a", "LSIA-4") == "computer_lab", "Sistemas tiene equipamiento informático propio")
