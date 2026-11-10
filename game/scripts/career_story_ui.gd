@@ -3,6 +3,7 @@ extends RefCounted
 const Story = preload("res://scripts/career_story.gd")
 const Catalog = preload("res://scripts/catalog.gd")
 const Graph = preload("res://scripts/curriculum_graph.gd")
+const SubjectPopup = preload("res://scripts/graph_subject_popup.gd")
 const Demo = preload("res://scripts/study_demo.gd")
 const DOCUMENT_NAMES := {"ci": "identidad", "matricula": "matrícula vigente", "historial": "historial académico", "formulario": "formulario de solicitud", "conclusion": "conclusión de estudios", "solvencia": "solvencia", "perfil": "perfil y tutor", "borrador": "borrador del trabajo", "plan_aux": "plan de trabajo", "plan_firmado": "plan firmado", "permiso_aula": "permiso de aula", "informe_aux": "informe de actividades"}
 
@@ -180,15 +181,17 @@ func show_summary() -> void:
 
 func show_graph() -> void:
 	var item: Dictionary = report["chapters"][chapter]
-	var page := _page("Grafo de la historia", "Estado acumulado al terminar el periodo %d" % int(item["term"]), show_chapter)
-	var workspace := VBoxContainer.new()
-	workspace.set_meta("page_atomic", true)
-	page.add_child(workspace)
+	var ui := _ui()
+	ui._apply_career_theme(str(report["program_id"]), str(report["mention_id"]))
+	var page: VBoxContainer = ui._make_page("Grafo de la historia", "", show_chapter, false, false, false)
+	_text(page, "%s · %s" % [report["player_name"], Catalog.mention_by_id(str(report["program_id"]), str(report["mention_id"]))["name"]], 14).name = "StoryIdentity"
+	var counter := _text(page, "", 15)
 	var graph := Graph.new()
 	graph.name = "StoryCurriculumGraph"
-	graph.font_scale = float(_ui().settings["font_scale"])
-	graph.animations_enabled = bool(_ui().settings["animations"])
-	graph.low_performance = bool(_ui().settings.get("low_performance", false))
+	graph.font_scale = float(ui.settings["font_scale"])
+	graph.animations_enabled = bool(ui.settings["animations"])
+	graph.low_performance = bool(ui.settings.get("low_performance", false))
+	graph.display_height = 220
 	graph.personal_states = item["states"].duplicate(true)
 	graph.manual_positions = graph_layouts.duplicate(true)
 	graph.setup(str(report["program_id"]), str(report["mention_id"]), 800)
@@ -197,32 +200,31 @@ func show_graph() -> void:
 		if str(item["states"].get(subject["sigla"], "")).contains("Reprobada"):
 			graph.carry_subjects.append(subject)
 	graph._build_semester()
-	var row := _actions(workspace)
-	var previous: Button = _ui()._add_button(row, "← Nivel", graph.move_semester.bind(-1), false, 36)
-	var counter := _text(row, "", 15)
-	var next: Button = _ui()._add_button(row, "Nivel →", graph.move_semester.bind(1), false, 36)
-	_ui()._add_button(row, "−", graph.zoom_at_center.bind(0.85), false, 36)
-	_ui()._add_button(row, "+", graph.zoom_at_center.bind(1.18), false, 36)
-	_ui()._add_button(row, "Ver todo", graph.fit_view, false, 36)
-	_ui()._add_button(row, "Restablecer", graph.reset_layout, false, 36)
-	_text(workspace, "Arrastra esferas o ramas; el fondo mueve la vista. Verde: aprobada · ámbar: recursar. Selecciona una materia para explorar su contenido.", 13)
-	workspace.add_child(graph)
-	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var frame := Control.new()
+	frame.clip_contents = true
+	frame.custom_minimum_size.y = 220
+	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(frame)
+	frame.add_child(graph)
+	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_text(page, Graph.KEY_GUIDE, 13)
 	var update := func(_index: int = 0, _count: int = 0) -> void:
 		graph_semester = graph.semester_index
-		counter.text = "Semestre curricular %d / %d" % [graph_semester + 1, graph.semesters.size()]
-		previous.disabled = graph_semester == 0
-		next.disabled = graph_semester == graph.semesters.size() - 1
+		counter.text = "Semestre curricular %d de %d · Historia hasta el periodo %d" % [graph_semester + 1, graph.semesters.size(), int(item["term"])]
 	graph.semester_changed.connect(update)
 	graph.layout_changed.connect(func() -> void: graph_layouts = graph.manual_positions.duplicate(true))
-	graph.subject_selected.connect(func(_code: String, data: Dictionary) -> void:
+	graph.subject_selected.connect(func(code: String, data: Dictionary) -> void:
+		if ui.find_child("GraphSubjectPopup", false, false) != null:
+			return
+		var popup := SubjectPopup.new()
+		var detail := popup.open(ui, graph)
+		_text(detail, str(data["name"]), 22)
+		_text(detail, str(data.get("desc", "")), 16)
 		if not data.get("admission", false):
-			show_subject(data))
+			_text(detail, str(graph.personal_states.get(code, "Materia del plan")), 15)
+			ui._add_button(detail, "Explorar modelo", show_subject.bind(data), true, 40))
 	update.call()
-	var pager = _ui().find_child("PageNavigator", true, false)
-	pager.space_changed.connect(func(available: Vector2) -> void:
-		graph.set_display_height(available.y - workspace.get_combined_minimum_size().y + graph.custom_minimum_size.y - 50))
-	_ui()._add_button(page, "Volver al relato", show_chapter, false, 38)
+	ui._focus_control.call_deferred(weakref(graph))
 
 
 func show_learning() -> void:

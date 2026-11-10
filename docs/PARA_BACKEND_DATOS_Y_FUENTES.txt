@@ -173,3 +173,11 @@ con orientación, o un croquis institucional con las puertas y tramos
 identificados. Si se implementan paradas o rutas reales de los minis, pedir
 un plano vigente de circulación y las paradas confirmadas por el operador.
 La animación actual de tránsito es ambiental.
+
+TRÁMITES EN EL ENTORNO, 09/11/2026
+Consultar docs/EXPLORACION_CONTEXTUAL_Y_MALLA.md. La ventanilla en
+Administración de Sistemas es provisional y agrupa la presentación del motor
+actual. Para separar Caja, Kardex, Cómputo y otras oficinas hacen falta una
+ubicación comprobada por oficina, su punto de atención y horarios vigentes.
+El ciclo actual de iluminación es visual. El motor debe decidir el contrato
+de reloj persistente y cuándo habilitar interacciones o emitir avisos.

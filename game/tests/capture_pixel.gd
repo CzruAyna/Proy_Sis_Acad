@@ -30,7 +30,7 @@ func _run() -> void:
 		await _capture(id + "-grafo")
 		game._show_campus_section("materias")
 		await _capture(id + "-materias")
-		game._show_campus_section("tramites")
+		game._campus().open_office(game._show_solo_hub)
 		await _capture(id + "-tramites")
 		game._campus()._new_request_form()
 		for frame in range(16):

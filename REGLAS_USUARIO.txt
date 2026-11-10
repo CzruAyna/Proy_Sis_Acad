@@ -287,3 +287,16 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     limpiar y optimizar el código y retirar duplicados y sobrantes verificados.
     Someter el juego a pruebas de uso y de entradas problemáticas cuando haga
     falta para comprobar las correcciones.
+
+32. EXPLORACIÓN CONTEXTUAL Y MALLA POR TECLADO, indicada el 09/11/2026.
+    Eliminar el recuadro o saliente bajo las letras de los botones. Mostrar
+    solo las acciones necesarias según el lugar y el estado de la partida.
+    Los trámites se inician al interactuar con el entorno. La graduación se
+    anuncia al cumplir los requisitos. La facultad alterna día y noche con
+    un reloj acelerado. Documentar la integración pendiente para motor/backend.
+    La malla abre encuadrada y se opera con teclas y ratón, sin botoneras
+    alrededor. Usar dos colores afines por carrera y un acento de contraste.
+    Destacar las materias en curso y su avance. Atenuar las aprobadas hacia
+    el fondo y conservar la referencia a niveles anteriores, sin ocultar
+    reprobaciones ni alterar conexiones. La ficha de una materia se muestra
+    como ruptura pixel art sobre el grafo y se recoge al hacer clic fuera.

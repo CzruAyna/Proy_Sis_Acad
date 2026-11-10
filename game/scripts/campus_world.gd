@@ -6,6 +6,7 @@ signal map_requested
 signal activity_requested(building: Dictionary, room: String)
 signal minigame_requested(id: String)
 signal context_changed(text: String)
+signal clock_changed(text: String)
 signal landmark_requested(id: String)
 signal actor_requested(id: String)
 signal stairs_requested(id: String)
@@ -27,6 +28,10 @@ const AmbientCast = preload("res://scripts/campus_life.gd")
 const Collision = preload("res://scripts/campus_collision.gd")
 const SPEED := Scale.WALK_SPEED
 const PLAYER_RADIUS := Scale.FOOT_RADIUS
+const MINUTES_PER_DAY := 1440
+const LIGHTING_RATE := 4.0
+const MORNING := 540.0
+const PROVISIONAL_DESK := "admin_sis"
 const SPRITE := [
 	"....hhhh....", "...hhhhhh...", "...hssssh...", "...hssssh...", "....ssss....",
 	"...bbbbbb...", "..sbbbbbbs..", "..sbbppbbs..", "..sbbppbbs..", "...bbbbbb...",
@@ -57,6 +62,7 @@ var _collision_floor := -1
 var _interior_bounds := Rect2()
 var _interior_walls: Array[Rect2] = []
 var animations_enabled := true
+var lighting_minutes := MORNING
 var _ambient_phase := 0.0
 var _ambient_tick := 0.0
 var cast_instances: Array[Dictionary] = []
@@ -156,6 +162,7 @@ func snapshot() -> Dictionary:
 func _process(delta: float) -> void:
 	if paused:
 		return
+	_advance_lighting(delta)
 	var was_moving := moving
 	var direction := Vector2(float(_pressed(KEY_D) or _pressed(KEY_RIGHT)) - float(_pressed(KEY_A) or _pressed(KEY_LEFT)), float(_pressed(KEY_S) or _pressed(KEY_DOWN)) - float(_pressed(KEY_W) or _pressed(KEY_UP)))
 	move_player(direction, delta, _pressed(KEY_SHIFT))
@@ -193,6 +200,26 @@ func _process(delta: float) -> void:
 					queue_redraw()
 			if Terrain._bounds(Land.polygon(Land.POND)).grow(420).has_point(player):
 				queue_redraw()
+
+
+func _advance_lighting(delta: float) -> void:
+	var previous := floori(lighting_minutes)
+	lighting_minutes += delta * LIGHTING_RATE
+	if floori(lighting_minutes) != previous:
+		clock_changed.emit(clock_text())
+		if animations_enabled and room_id.is_empty():
+			queue_redraw()
+
+
+func clock_text() -> String:
+	var minute := posmod(floori(lighting_minutes), MINUTES_PER_DAY)
+	return "Día %d · %02d:%02d" % [floori(lighting_minutes / MINUTES_PER_DAY) + 1, minute / 60, minute % 60]
+
+
+func _night_strength() -> float:
+	var minute := fposmod(lighting_minutes, MINUTES_PER_DAY)
+	var daylight := smoothstep(300.0, 435.0, minute) * (1.0 - smoothstep(1050.0, 1200.0, minute))
+	return 1.0 - daylight
 
 
 func _pressed(key: Key) -> bool:
@@ -325,6 +352,8 @@ func interaction_text() -> String:
 		if not feature.is_empty():
 			return "E · " + str(feature["title"])
 		if player.y < 92:
+			if room_id == PROVISIONAL_DESK:
+				return "E · Consultar ventanilla académica simulada"
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
 	var building := nearby_building()
@@ -525,6 +554,8 @@ func _draw() -> void:
 		_draw_room()
 	_draw_player()
 	draw_set_transform(Vector2.ZERO)
+	if animations_enabled and room_id.is_empty():
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.07, 0.12, 0.29, _night_strength() * 0.48))
 
 
 func _draw_campus(view: Rect2) -> void:

@@ -25,7 +25,7 @@ func _run() -> void:
 	for program in Catalog.PROGRAMS:
 		for mention in Catalog.mentions_for_program(program["id"]):
 			graph.setup(program["id"], mention["id"], 1090)
-			var sphere: Image = graph._sphere["image"]
+			var sphere: Image = graph._sphere_resource(graph._node_color(0))["image"]
 			_check(sphere.get_pixel(65, 55).get_luminance() > sphere.get_pixel(140, 145).get_luminance() * 2, "La esfera tiene luz y sombra con relieve")
 			_check(sphere.get_pixel(0, 0).a == 0 and sphere.get_pixel(96, 96).a == 1, "Textura esférica transparente fuera del volumen")
 			for semester in range(graph.semesters.size()):
@@ -40,6 +40,12 @@ func _run() -> void:
 				for edge in graph.edges:
 					var points := graph._edge_points(edge, 0)
 					_check(points.size() > 2 and points[0].distance_to(graph.visible_nodes[edge.x]["pos"]) >= graph._radius(edge.x), "Arista comienza fuera del volumen")
+				graph.fit_view()
+				for index in range(graph.visible_nodes.size()):
+					var center := Vector2(graph.visible_nodes[index]["pos"]) * graph.view_zoom + graph.view_offset
+					var extent := Vector2.ONE * graph._radius(index) * graph.view_zoom
+					_check(Rect2(Vector2.ZERO, graph.size).encloses(Rect2(center - extent, extent * 2)), "El encuadre inicial muestra la esfera completa")
+				graph.reset_view()
 	graph.setup("sistemas", "gestion_sistemas", 1090)
 	var original: Vector2 = graph.visible_nodes[1]["pos"]
 	var press := InputEventMouseButton.new()
@@ -66,7 +72,7 @@ func _run() -> void:
 	graph._set_zoom(100, anchor)
 	_check(is_equal_approx(graph.view_zoom, 1.65), "Acercamiento limitado")
 	graph._set_zoom(0.001, anchor)
-	_check(is_equal_approx(graph.view_zoom, 0.35), "Alejamiento limitado")
+	_check(is_equal_approx(graph.view_zoom, 0.08), "Alejamiento limitado")
 	graph.reset_view()
 	press.position = Vector2(40, 40)
 	press.pressed = true

@@ -1,5 +1,7 @@
 extends SceneTree
 
+const CampusMap = preload("res://scripts/campus_map.gd")
+
 class TestGame extends "res://scripts/game.gd":
 	var writes := 0
 
@@ -52,10 +54,25 @@ func _click(text: String) -> bool:
 
 
 func _text_present(text: String) -> bool:
-	for label in game.find_children("*", "Label", true, false):
-		if label.text.contains(text):
+	for control in game.find_children("*", "Control", true, false):
+		if (control is Label or control is Button) and control.text.contains(text):
 			return true
 	return false
+
+
+func _visit_desk() -> void:
+	game._show_exploration()
+	var world = game.find_child("CampusWorld", true, false)
+	if not world.room_id.is_empty():
+		world.leave_room()
+	world.player = CampusMap.building("admin_sis")["door"]
+	world.interact()
+	_check(world.room_id == "admin_sis", "E abre la oficina desde su puerta exterior")
+	world.player = Vector2(148, 80)
+	_check(world.interaction_text().contains("ventanilla"), "La ventanilla se anuncia al acercarse en el interior")
+	world.interact()
+	await _settle()
+	_check(_text_present("Ventanilla académica simulada") and game.find_child("CampusNavigation", true, false) == null, "La interacción abre trámites en contexto")
 
 
 func _finish_matriculation() -> void:
@@ -63,6 +80,7 @@ func _finish_matriculation() -> void:
 	for request in game.simulation.snapshot()["procedures"]:
 		if request["kind"] == "matricula" and request["status"] == "PENDIENTE":
 			request_id = request["id"]
+	await _visit_desk()
 	game._campus().open_request(request_id)
 	var writes: int = game.writes
 	_click("Presentar en Caja")
@@ -90,7 +108,7 @@ func _run() -> void:
 	game._show_new_solo()
 	_check(game.find_child("StudentName", true, false).text == "Estudiante de prueba", "Volver de menciones conserva el borrador")
 	game._create_solo_save("sistemas", "gestion_sistemas")
-	_check(game.find_child("CampusNavigation", true, false).get_child_count() == 8, "Ocho áreas de navegación común, incluida exploración")
+	_check(game.find_child("CampusNavigation", true, false).get_child_count() == 4 and not _text_present("Graduación"), "La navegación inicial muestra cuatro accesos esenciales")
 	game._show_campus_section("materias")
 	_check(game.find_child("SubjectResults", true, false).get_child_count() == 5, "Búsqueda vacía muestra las cinco materias inscritas")
 	var search = game.find_child("SubjectSearch", true, false)
@@ -100,11 +118,14 @@ func _run() -> void:
 	search.text = ""
 	search.text_changed.emit(search.text)
 	_check(game.find_child("SubjectResults", true, false).get_child_count() == 5, "Limpiar búsqueda recupera la lista")
-	_finish_matriculation()
+	await _finish_matriculation()
 	game._show_campus_section("resumen")
 	_click("Iniciar semestre")
 	_check(game.simulation.state["phase"] == "CURSANDO", "Inicio gráfico del semestre")
 	var keys: Array = game.simulation.state["enrollments"].keys().duplicate()
+	game._show_campus_section("malla")
+	var active_graph = game.find_child("ExpandedCurriculumGraph", true, false)
+	_check(active_graph.personal_states.values().any(func(status: String) -> bool: return status.begins_with("Cursando · 0/3")), "La malla identifica las materias en curso")
 	for key in keys:
 		for partial in range(3):
 			game._start_subject(str(key))
@@ -116,12 +137,28 @@ func _run() -> void:
 	if not dialogs.is_empty():
 		dialogs[0].confirmed.emit()
 	_check(game.simulation.state["term"] == 2, "Cierre gráfico y siguiente periodo")
+	game.settings["animations"] = true
+	game._show_campus_section("malla")
+	var approved_graph = game.find_child("ExpandedCurriculumGraph", true, false)
+	approved_graph.move_semester(-approved_graph.semester_index)
+	var approved_node := -1
+	for index in range(approved_graph.visible_nodes.size()):
+		if approved_graph._node_status(index) == "Aprobada":
+			approved_node = index
+			break
+	_check(approved_node >= 0, "La malla conserva las materias aprobadas")
+	if approved_node >= 0:
+		approved_graph.motion_time = 0.0
+		var before_depth: float = approved_graph._node_depth(approved_node)
+		approved_graph.motion_time = 2.0
+		_check(approved_graph._node_depth(approved_node) < before_depth, "La aprobación consolidada pasa al fondo")
+	game.settings["animations"] = false
 	game._show_campus_section("historial")
 	_check(_text_present("Semestre cursado 1"), "Historial gráfico conserva intentos")
 	var before: String = JSON.stringify(game.simulation.snapshot())
 	game._show_course_preview(str(keys[0]))
 	_check(before == JSON.stringify(game.simulation.snapshot()), "Repasar no registra notas ni modifica historial")
-	_finish_matriculation()
+	await _finish_matriculation()
 	game._show_campus_section("auxiliatura")
 	_click("Postular")
 	var applications: Array = game.simulation.snapshot()["applications"]
@@ -182,13 +219,13 @@ func _layout_scenarios() -> void:
 				game._show_campus_section(destination)
 				await _settle()
 				var scroll = game.find_child("PageViewport", true, false)
-				_check(scroll != null, "Página tiene navegación por botones: " + destination)
+				_check((scroll == null) == (destination == "malla"), "La malla tiene lienzo directo y los listados mantienen acceso al contenido: " + destination)
 				if scroll != null:
 					_check(scroll.get_global_rect().end.y <= dimensions.y + 1, "El contenido paginado conserva el límite vertical: " + destination)
 				var nav = game.find_child("CampusNavigation", true, false)
-				_check((nav != null and nav.get_global_rect().end.x <= dimensions.x + 1) or (nav == null and destination == "malla"), "Navegación compacta o vista amplia del grafo: " + destination)
+				_check((nav != null and nav.get_global_rect().end.x <= dimensions.x + 1) or (nav == null and destination in ["malla", "tramites", "auxiliatura", "graduacion"]), "Navegación compacta o vista amplia del grafo: " + destination)
 				var page = game.find_child("PageContent", true, false)
-				_check(page.size.x <= scroll.size.x + 1, "No hay desborde horizontal: " + destination)
+				_check(page.size.x <= (scroll.size.x if scroll != null else dimensions.x) + 1, "No hay desborde horizontal: " + destination)
 			game._show_mentions("sistemas")
 			await _settle()
 			var back_button: Button
@@ -211,16 +248,21 @@ func _layout_scenarios() -> void:
 			_check(graph != null and not graph.is_processing(), "Malla respeta animaciones reducidas")
 			if graph != null:
 				_check(graph.size.x >= dimensions.x - 80, "El grafo aprovecha todo el ancho disponible")
-				var detail = game.find_child("GraphSubjectDetail", true, false)
-				_check(not detail.get_parent().visible, "La ficha vacía no ocupa espacio junto al grafo")
-				_check(not graph.personal_states.is_empty(), "Malla recibe estados personales")
+				_check(game.find_child("GraphSubjectPopup", true, false) == null, "El lienzo comienza sin ficha ni botoneras")
+				_check(graph.find_children("*", "Button", true, false).is_empty() and not graph.personal_states.is_empty(), "La malla recibe estados y se maneja desde el teclado")
 				var keyboard := InputEventKey.new()
 				keyboard.keycode = KEY_RIGHT
 				keyboard.pressed = true
 				graph._gui_input(keyboard)
-				_check(graph.selected == 0, "Las flechas seleccionan nodos de la malla")
+				_check(graph.selected == 0 and game.find_child("GraphSubjectPopup", true, false) == null, "Flechas seleccionan y Enter abre la ficha")
+				keyboard.keycode = KEY_ENTER
+				graph._gui_input(keyboard)
 				await _settle()
-				_check(detail.get_parent().visible and detail.get_global_rect().position.y >= graph.get_global_rect().end.y, "La selección abre el detalle debajo del grafo")
+				var popup = game.find_child("GraphSubjectPopup", true, false)
+				_check(popup != null and popup.is_visible_in_tree() and graph.is_visible_in_tree(), "Enter abre la ficha sobre el grafo")
+				if popup != null:
+					popup.close()
+					await _settle()
 				var before_layout: String = JSON.stringify(game.simulation.snapshot())
 				graph._move_node(0, Vector2(180, 180))
 				var saved_point: Vector2 = graph.visible_nodes[0]["pos"]
@@ -246,6 +288,7 @@ func _graduation_scenarios() -> void:
 	model._refresh_indexes()
 	model._update_completion()
 	model._sync_profile()
+	await _visit_desk()
 	game._show_campus_section("graduacion")
 	_click("Iniciar excelencia")
 	_check(_text_present("Graduación por excelencia"), "Excelencia abre expediente gráfico")

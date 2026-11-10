@@ -1,5 +1,30 @@
 # Registro de verificaciones
 
+## Ejecución del 9 de noviembre de 2026 · exploración contextual y malla
+
+Cambios locales sobre `286f86a`. Godot 4.7.2 en Windows con perfiles aislados.
+La matriz de esta entrega reúne **17 suites y 97.380 aserciones sin fallos**.
+Cada suite se cuenta una vez. Para exploración se usó la repetición posterior
+al ajuste visual del reloj.
+
+| Grupo | Suites | Aserciones |
+|---|---|---:|
+| Inicio, campus y navegación | `dynamic_menu`, `cave_visuals`, `compact_navigation`, `frontend_campus`, `ambient_layout`, `player_rules` | 3.067 |
+| Malla y demostración | `graph_interaction`, `graph_clearance`, `neon_visuals`, `career_story` | 82.254 |
+| Exploración e interiores | `exploration_navigation`, `exploration`, `large_campus`, `natural_campus`, `campus_life`, `building_interiors`, `games_room` | 12.059 |
+
+Se comprobó el encuadre inicial de esferas de los cinco planes, el
+arrastre con separación de aristas y la ficha con Enter y clic fuera.
+Se probó la navegación con letra al 120 %, el acceso a la ventanilla
+con E y el ciclo visual completo. Se revisaron capturas del inicio,
+campus, Materias, malla, ficha, retorno y exploración de día y noche.
+
+Se exportó Windows x64 y el ejecutable arrancó en modo headless con código 0.
+Godot emitió el aviso de lectura del almacén de certificados del entorno
+aislado. Quedan pendientes una sesión completa con ese ejecutable y la
+validación institucional descrita en
+[Exploración contextual y malla](EXPLORACION_CONTEXTUAL_Y_MALLA.md).
+
 La revisión documental del 9 de noviembre de 2026 contrastó el historial de
 commits con los movimientos de `origin/main` y revisó las guías contra el
 código. Los resultados que siguen corresponden a las ejecuciones de sus

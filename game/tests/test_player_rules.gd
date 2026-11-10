@@ -70,7 +70,7 @@ func _run() -> void:
 	_check(game.find_child("StudentName", true, false).text == "María López", "El nombre normalizado se conserva al volver")
 	game._create_solo_save("sistemas", "gestion_sistemas")
 	_check(game.current_profile.get("player_name") == "María López", "Se guarda el nombre elegido sin espacios de borde")
-	_check(_buttons(game, "Organizar mis materias").is_empty() and _buttons(game, "Ver mis materias iniciales").size() == 1, "El campus inicial presenta asignación automática")
+	_check(_buttons(game, "Iniciar semestre").is_empty(), "El campus inicial espera la matrícula antes de ofrecer inicio")
 	game._show_campus_section("materias")
 	_check(_buttons(game, "Retirar del semestre").is_empty() and _buttons(game, "Inscribir").is_empty(), "El primer semestre no ofrece acciones de planificación")
 	var model: RefCounted = game.simulation
@@ -85,8 +85,12 @@ func _run() -> void:
 			model.answer(str(key), index, false)
 	_check(model.close_term()["ok"], "Cierre del primer semestre")
 	game._show_solo_hub()
-	_check(_buttons(game, "Organizar mis materias").size() == 1, "Desde el segundo semestre se presenta planificación")
 	game._show_campus_section("materias")
+	var results: Control = game.find_child("SubjectResults", true, false)
+	var courses := results.find_children("*", "Button", true, false)
+	_check(not courses.is_empty(), "El segundo semestre mantiene las materias inscritas accesibles")
+	if not courses.is_empty():
+		courses[0].pressed.emit()
 	_check(not _buttons(game, "Retirar del semestre").is_empty(), "Segundo semestre consume la planificación disponible del motor")
 	game._show_global_achievements()
 	var catalog := Achievements.presentation(game.global_profile)

@@ -20,7 +20,6 @@ var terminal_output := true
 var terminal_strength := 1.0
 var animated_cave := false
 var translucent := false
-var text_backing := Vector2.ZERO
 var terminal_inset_top := 0.0
 
 
@@ -52,9 +51,6 @@ func _draw(item: RID, rect: Rect2) -> void:
 		if translucent:
 			# Stroke the perimeter; an opaque polygon under the fill would hide code.
 			_fill(item, _outline(box), bg_color)
-			if text_backing != Vector2.ZERO:
-				var extent := text_backing.min(box.size - Vector2(12, 8))
-				RenderingServer.canvas_item_add_rect(item, Rect2((box.get_center() - extent * 0.5).round(), extent.ceil()), Color(0, 0, 0, 0.42))
 			var points := _outline(box.grow(-border_width * 0.5))
 			for index in range(points.size()):
 				var a := points[index]

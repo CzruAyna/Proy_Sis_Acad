@@ -1092,7 +1092,7 @@ func _add_campus_navigation(parent: Control) -> void:
 	navigation.add_theme_constant_override("h_separation", 6)
 	navigation.add_theme_constant_override("v_separation", 6)
 	parent.add_child(navigation)
-	var sections := [["resumen", "Mi campus"], ["exploracion", "Explorar FNI"], ["materias", "Materias"], ["malla", "Malla"], ["tramites", "Trámites"], ["historial", "Historial"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]
+	var sections := [["resumen", "Mi campus"], ["exploracion", "Explorar FNI"], ["materias", "Materias"], ["malla", "Malla"]]
 	for section in sections:
 		var button := _add_button(navigation, section[1], _show_campus_section.bind(section[0]), _campus_section == section[0], 38)
 		button.custom_minimum_size.x = maxf(100, NeonVisuals.PIXEL_FONT.get_string_size(section[1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * float(settings["font_scale"]))).x + 42)
@@ -1226,8 +1226,6 @@ func _style_menu_action(button: Button, primary: bool, width: float, translucent
 		style.raised = true
 		style.pressed = state == "pressed"
 		style.shadow_size = 0
-		if translucent:
-			style.text_backing = Vector2(NeonVisuals.PIXEL_FONT.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 20, NeonVisuals.PIXEL_FONT.get_height(font_size) + 4)
 		button.add_theme_stylebox_override(state, style)
 	var focus := _focus_style()
 	focus.border_color = Color("#fff1cb")

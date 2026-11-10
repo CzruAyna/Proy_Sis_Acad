@@ -3,6 +3,7 @@ extends RefCounted
 const Catalog = preload("res://scripts/catalog.gd")
 const Procedures = preload("res://scripts/simulation_procedures.gd")
 const Graph = preload("res://scripts/curriculum_graph.gd")
+const SubjectPopup = preload("res://scripts/graph_subject_popup.gd")
 const Demo = preload("res://scripts/study_demo.gd")
 const Choice = preload("res://scripts/choice_picker.gd")
 const DOCUMENT_NAMES := {"ci": "Identidad", "matricula": "Matrícula vigente", "carnet": "Carnet universitario", "historial": "Historial académico", "formulario": "Formulario de solicitud", "conclusion": "Conclusión de estudios", "solvencia": "Solvencia", "perfil": "Perfil y propuesta de tutor", "borrador": "Borrador del trabajo", "plan_aux": "Plan de trabajo", "plan_firmado": "Plan firmado", "permiso_aula": "Permiso de aula", "informe_aux": "Informe docente", "acta_defensa": "Acta de defensa", "diploma": "Diploma académico", "titulo": "Título"}
@@ -22,6 +23,8 @@ var form_reason := ""
 var graph_semester := 0
 var graph_term_seen := 0
 var graph_layouts: Dictionary = {}
+var _recent_approvals: Dictionary = {}
+var _office_back := Callable()
 var show_request_form := false
 var show_documents := false
 var show_closed_requests := false
@@ -73,6 +76,7 @@ func _friendly(message: String) -> String:
 
 func perform(method: String, arguments: Array = [], destination: String = "", inspect_request: bool = false) -> Dictionary:
 	var model := _model()
+	var previous: Array = _ui().current_profile.get("passed_subjects", []).duplicate() if method == "close_term" else []
 	var result: Dictionary = model.callv(method, arguments)
 	_ui()._save_profile()
 	notice = _friendly(str(result.get("message", "Acción registrada.")))
@@ -82,6 +86,8 @@ func perform(method: String, arguments: Array = [], destination: String = "", in
 		notice_ok = false
 	if result.get("ok", false) and method == "close_term":
 		for sigla in _ui().current_profile.get("passed_subjects", []):
+			if not previous.has(sigla):
+				_recent_approvals[str(sigla)] = true
 			_ui()._record_completed_subject(str(_ui().current_profile["program_id"]), str(_ui().current_profile["mention_id"]), str(sigla))
 	if model.snapshot()["graduated"]:
 		var program := Catalog.program_by_id(str(_ui().current_profile["program_id"]))
@@ -107,7 +113,9 @@ func render(destination: String) -> void:
 	if int(snapshot["term"]) == 1:
 		titles["materias"] = "Materias del primer semestre"
 	var subtitle := "Decisiones y progreso de tu partida" if section == "resumen" else str(profile.get("mention_name", ""))
-	var page: VBoxContainer = ui._make_page(titles.get(section, "Tu campus"), subtitle, ui._return_to_menu)
+	var contextual := section in ["tramites", "auxiliatura", "graduacion"] and _office_back.is_valid()
+	var back: Callable = _leave_office if contextual else (ui._return_to_menu if section == "resumen" else _go.bind("resumen"))
+	var page: VBoxContainer = ui._make_page(titles.get(section, "Tu campus"), subtitle, back, false, not contextual)
 	if not notice.is_empty():
 		var feedback: VBoxContainer = ui._card(page, true)
 		feedback.name = "ActionFeedback"
@@ -145,42 +153,24 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 	_text(stats, str(ui.current_profile.get("mention_name", "")), 15, true)
 	if snapshot["unlocked_all"]:
 		_text(stats, "Exploración activada · desbloquear no equivale a aprobar.", 14, true)
+	if snapshot["graduated"]:
+		return
 	if snapshot["studies_complete"]:
-		_text(stats, "Plan concluido. Continúa tu modalidad de graduación, diploma y título.", 17)
+		_text(stats, "Completaste el plan. Ya puedes consultar tus opciones de graduación.", 17)
 		_button(stats, "Ver mi graduación", _go.bind("graduacion"), true, true)
-	else:
-		var row := _actions(stats)
-		if snapshot["phase"] == "INSCRIPCION":
-			_button(row, "Organizar mis materias" if snapshot["planning_available"] else "Ver mis materias iniciales", _go.bind("materias"), true, true)
-			if int(snapshot["term"]) == 1:
-				_text(stats, "Tus materias iniciales están asignadas. La planificación comienza en el segundo semestre.", 15, true)
-			_button(row, "Iniciar semestre", perform.bind("start_term", [], "resumen"))
+	elif snapshot["phase"] == "INSCRIPCION":
+		if not _document_present("matricula", "", snapshot):
+			_text(stats, "Siguiente paso · Completa la matrícula desde la ventanilla simulada en Administración de Sistemas.", 16)
+		elif enrolled > 0:
+			_button(stats, "Iniciar semestre", perform.bind("start_term", [], "resumen"), true, true)
 		else:
-			_button(row, "Continuar estudiando", _go.bind("materias"), true, true)
-			_button(row, "Cerrar semestre", _confirm_close, finished == enrolled)
-			_text(stats, "%d de %d materias con resultado final. Los nuevos desbloqueos se consolidan al cerrar." % [finished, enrolled], 14, true)
-	var grid: GridContainer = ui._adaptive_grid(page, 340.0, 3)
-	var pending := []
-	for request in snapshot["procedures"]:
-		if ["PENDIENTE", "OBSERVADO"].has(request["status"]):
-			pending.append(request)
-	var next_card: VBoxContainer = ui._card(grid)
-	_text(next_card, "Tus siguientes pasos", 21)
-	if pending.is_empty():
-		_text(next_card, "No tienes expedientes pendientes. Puedes explorar tus materias o iniciar una solicitud.", 15, true)
-	for request in pending.slice(0, 3):
-		var step := Procedures.current_step(request)
-		_button(next_card, "%s · %s" % [request["name"], step.get("office", "Consultar")], open_request.bind(str(request["id"])))
-	var map_card: VBoxContainer = ui._card(grid)
-	_text(map_card, "Elige tu recorrido", 21)
-	_text(map_card, "Consulta lo habilitado y sus requisitos. Materias de distintos semestres pueden convivir en tu periodo.", 15, true)
-	var map_actions := _actions(map_card)
-	_button(map_actions, "Caminar por la FNI", ui._show_exploration)
-	_button(map_actions, "Explorar mi malla", _go.bind("malla"))
-	_button(map_actions, "Ver auxiliaturas", _go.bind("auxiliatura"))
-	var row := _actions(page)
-	_button(row, "Mis partidas", ui._show_solo_slots)
-	_button(row, "Logros", ui._show_titles)
+			_text(stats, "Elige tus materias para poder iniciar el semestre.", 15, true)
+	else:
+		_text(stats, "%d de %d materias con resultado final." % [finished, enrolled], 15, true)
+		if finished == enrolled:
+			_button(stats, "Cerrar semestre", _confirm_close, true, true)
+		else:
+			_button(stats, "Continuar estudiando", _go.bind("materias"), true, true)
 
 
 func _confirm_close() -> void:
@@ -238,16 +228,21 @@ func _pending_retaking(subject: Dictionary, snapshot: Dictionary) -> bool:
 
 
 func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
-	var message := "Puedes ajustar tu inscripción antes de comenzar." if snapshot["planning_available"] else "El periodo ya comenzó; puedes alternar entre las materias inscritas."
-	if int(snapshot["term"]) == 1:
-		message = "Las materias iniciales se asignan automáticamente. Podrás planificar desde el segundo semestre."
+	var message := "Planificación disponible" if snapshot["planning_available"] else "En curso"
+	if int(snapshot["term"]) == 1 and snapshot["phase"] == "INSCRIPCION":
+		message = "Inscripción inicial automática"
 	_text(page, "Carga %d/%d · %s" % [_model().state["enrollments"].size(), int(snapshot["load_limit"]), message], 16)
+	var toolbar := HBoxContainer.new()
+	toolbar.add_theme_constant_override("separation", 10)
+	page.add_child(toolbar)
 	var search := LineEdit.new()
 	search.name = "SubjectSearch"
 	search.placeholder_text = "Buscar por nombre o sigla"
 	search.text = subject_search
 	_ui()._style_input(search)
-	page.add_child(search)
+	search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	search.custom_minimum_size.x = 190
+	toolbar.add_child(search)
 	var picker := Choice.new()
 	picker.name = "SubjectFilter"
 	for label in ["Mi semestre", "Todas las materias", "Habilitadas", "Pendientes", "Aprobadas"]:
@@ -256,11 +251,13 @@ func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
 	picker.custom_minimum_size.y = 44
 	picker.add_theme_font_size_override("font_size", int(16 * float(_ui().settings["font_scale"])))
 	_ui()._style_select(picker)
-	page.add_child(picker)
-	var list := VBoxContainer.new()
+	picker.custom_minimum_size.x = 194
+	picker.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	toolbar.add_child(picker)
+	if not snapshot["history"].is_empty():
+		_button(toolbar, "Historial", _go.bind("historial"))
+	var list: GridContainer = _ui()._adaptive_grid(page, 300.0, 2)
 	list.name = "SubjectResults"
-	list.add_theme_constant_override("separation", 12)
-	page.add_child(list)
 	search.text_changed.connect(func(value: String) -> void:
 		subject_search = value
 		_subject_results(list, snapshot))
@@ -270,7 +267,7 @@ func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
 	_subject_results(list, snapshot)
 
 
-func _subject_results(list: VBoxContainer, snapshot: Dictionary) -> void:
+func _subject_results(list: GridContainer, snapshot: Dictionary) -> void:
 	for child in list.get_children():
 		list.remove_child(child)
 		child.queue_free()
@@ -284,32 +281,14 @@ func _subject_results(list: VBoxContainer, snapshot: Dictionary) -> void:
 			continue
 		count += 1
 		var card: VBoxContainer = _ui()._card(list)
-		_text(card, "%s · %s" % [subject["sigla"], subject["name"]], 19)
-		_text(card, "Semestre curricular %d · %s" % [int(subject.get("semester", 0)), subject_status(subject, snapshot)], 15)
-		if not subject["eligibility"].get("regulars", []).is_empty():
-			var regulars: Array[String] = []
-			for key in subject["eligibility"]["regulars"]:
-				regulars.append(str(_model().course_data(str(key)).get("sigla", key)))
-			_text(card, "Paquete obligatorio de regulares: " + ", ".join(regulars), 14, true)
-		elif entry.is_empty() and not subject["approved"]:
-			_text(card, str(subject["eligibility"]["message"]), 14, true)
-		course_actions(card, subject, snapshot)
+		var course := _button(card, "%s · %s" % [subject["sigla"], subject["name"]], Callable(), true, not entry.is_empty())
+		course.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		course.custom_minimum_size.x = 0
+		course.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		course.pressed.connect(_show_subject_sheet.bind(subject, course, snapshot))
+		_text(card, "Semestre %d · %s" % [int(subject.get("semester", 0)), subject_status(subject, snapshot)], 14, true)
 	if count == 0:
 		_text(list, "No hay materias con este filtro. Prueba «Todas las materias» o cambia la búsqueda.", 16, true)
-
-
-func course_actions(parent: Control, subject: Dictionary, snapshot: Dictionary) -> void:
-	var row := _actions(parent)
-	var key := str(subject["id"])
-	var entry: Dictionary = subject["enrollment"]
-	if snapshot["planning_available"] and not subject["approved"]:
-		if entry.is_empty():
-			_button(row, "Inscribir", _enroll.bind(key), bool(subject["eligibility"]["ok"]), true)
-		else:
-			_button(row, "Retirar del semestre", perform.bind("withdraw", [key], "materias"))
-	elif snapshot["phase"] == "CURSANDO" and not entry.is_empty() and entry["score"] == null:
-		_button(row, "Estudiar y rendir", _ui()._start_subject.bind(key), true, true)
-	_button(row, "Repasar" if subject["approved"] else "Explorar contenido", _ui()._show_course_preview.bind(key))
 
 
 func _enroll(key: String) -> void:
@@ -347,21 +326,51 @@ func open_request(id: String) -> void:
 	_go("tramites")
 
 
+func open_office(back: Callable) -> void:
+	_office_back = back
+	selected_request = ""
+	show_request_form = false
+	_go("tramites")
+
+
+func _leave_office() -> void:
+	var back := _office_back
+	_office_back = Callable()
+	if back.is_valid():
+		back.call()
+
+
+func _office_index() -> void:
+	selected_request = ""
+	show_request_form = false
+	_go("tramites")
+
+
 func _procedures(page: VBoxContainer, snapshot: Dictionary) -> void:
-	_text(page, "Cada oficina revisa su paso. Los documentos y pagos son simulados; el expediente conserva sus observaciones.", 15, true)
-	var quick := _actions(page)
-	_button(quick, "Nueva solicitud académica", _new_request_form, not snapshot["graduated"], true)
-	_button(quick, "Mi carpeta de documentos", _toggle_documents)
-	_button(quick, "Ocultar cerrados" if show_closed_requests else "Ver expedientes cerrados", _toggle_closed_requests)
-	_button(quick, "Abrir matrícula del semestre", perform.bind("open_procedure", ["matricula"], "tramites", true), not snapshot["graduated"])
-	_button(quick, "Registrar pago de historial", perform.bind("pay", ["historial"], "tramites"))
-	_button(quick, "Emitir historial actualizado", perform.bind("issue_document", ["historial"], "tramites"))
+	var contextual := _office_back.is_valid()
+	_text(page, "Ventanilla académica simulada. Consulta el expediente y la oficina indicada para su siguiente paso." if contextual else "Consulta de expedientes. Los documentos y pagos del juego son simulados.", 15, true)
+	if show_request_form and contextual:
+		_procedure_form(page)
+		_button(page, "Volver a expedientes", _office_index)
+		return
 	if not selected_request.is_empty():
 		var request: Dictionary = _model().procedure(selected_request).duplicate(true)
 		if not request.is_empty():
 			_request_detail(page, request, snapshot)
-	if show_request_form:
-		_procedure_form(page)
+			_button(page, "Ver expedientes", _office_index)
+			return
+	var quick := _actions(page)
+	if contextual:
+		if not snapshot["graduated"]:
+			_button(quick, "Nueva solicitud", _new_request_form, true, true)
+			if not _document_present("matricula", "", snapshot) and not snapshot["procedures"].any(func(request: Dictionary) -> bool: return request["kind"] == "matricula" and request["status"] in ["PENDIENTE", "OBSERVADO"]):
+				_button(quick, "Abrir matrícula", perform.bind("open_procedure", ["matricula"], "tramites", true))
+		if snapshot["subjects"].any(func(subject: Dictionary) -> bool: return subject["approved"]):
+			_button(quick, "Auxiliatura", _go.bind("auxiliatura"))
+		if snapshot["studies_complete"] and not snapshot["graduated"]:
+			_button(quick, "Graduación", _go.bind("graduacion"))
+	_button(quick, "Documentos", _toggle_documents)
+	_button(quick, "Ocultar cerrados" if show_closed_requests else "Expedientes cerrados", _toggle_closed_requests)
 	_text(page, "Tus expedientes", 22)
 	for request in snapshot["procedures"]:
 		if not show_closed_requests and not ["PENDIENTE", "OBSERVADO"].has(request["status"]):
@@ -378,6 +387,10 @@ func _procedures(page: VBoxContainer, snapshot: Dictionary) -> void:
 		for key in snapshot["documents"]:
 			var document: Dictionary = snapshot["documents"][key]
 			_text(documents, "%s · semestre %d%s" % [DOCUMENT_NAMES.get(document["kind"], document["kind"]), int(document["term"]), " · " + str(document["request_id"]) if not str(document["request_id"]).is_empty() else ""], 14, true)
+
+		if contextual:
+			_button(documents, "Registrar pago de historial", perform.bind("pay", ["historial"], "tramites"))
+			_button(documents, "Emitir historial", perform.bind("issue_document", ["historial"], "tramites"))
 
 
 func _new_request_form() -> void:
@@ -420,7 +433,9 @@ func _request_detail(page: VBoxContainer, request: Dictionary, snapshot: Diction
 		var marker := "✓" if index < int(request["step"]) else ("→" if index == int(request["step"]) else "○")
 		_text(card, "%s %d. %s · %s" % [marker, index + 1, step["office"], step["label"]], 15, index != int(request["step"]))
 	var current := Procedures.current_step(request)
-	if not current.is_empty():
+	if not current.is_empty() and not _office_back.is_valid():
+		_text(card, "Continúa en la ventanilla simulada de Administración de Sistemas.", 15, true)
+	elif not current.is_empty():
 		_text(card, "En esta oficina necesitas:", 17)
 		for kind in current.get("documents", []):
 			var present := _document_present(str(kind), id, snapshot)
@@ -597,10 +612,17 @@ func _assistant(page: VBoxContainer, snapshot: Dictionary) -> void:
 
 
 func _graduation(page: VBoxContainer, snapshot: Dictionary) -> void:
+	if not snapshot["studies_complete"] and not snapshot["graduated"]:
+		_text(page, "La graduación se anunciará al completar los requisitos del plan.", 17)
+		return
 	var card: VBoxContainer = _ui()._card(page, true)
 	_text(card, "Título emitido" if snapshot["graduated"] else ("Estudios concluidos" if snapshot["studies_complete"] else "Tu camino a la graduación"), 24)
 	_text(card, "Concluir el plan, aprobar una modalidad, obtener el diploma y emitir el título son etapas diferentes.", 16)
 	_text(card, str(snapshot["excellence"]["message"]), 16, true)
+	if not _office_back.is_valid():
+		if not snapshot["graduated"]:
+			_text(card, "Consulta las modalidades en la ventanilla simulada de Administración de Sistemas.", 16)
+		return
 	for request in snapshot["procedures"]:
 		if ["excelencia", "tesis", "proyecto"].has(request["kind"]):
 			_button(card, "%s · %s" % [request["name"], str(request["status"]).capitalize()], open_request.bind(str(request["id"])))
@@ -620,7 +642,7 @@ func show_course_preview(key: String) -> void:
 	if subject.is_empty():
 		return
 	var course := Catalog.course_for_sigla(str(subject["program_id"]), str(subject["sigla"]), str(subject["mention_id"]))
-	var page: VBoxContainer = _ui()._make_page(str(subject["name"]), "Exploración y repaso · no registra notas ni cambia tus intentos", _go.bind(section))
+	var page: VBoxContainer = _ui()._make_page(str(subject["name"]), "Exploración y repaso · no registra notas ni cambia tus intentos", _go.bind(section), false, false)
 	_text(page, str(course.get("desc", subject.get("desc", ""))), 18)
 	for topic in course.get("topics", []):
 		_text(page, "• " + str(topic), 16)
@@ -644,178 +666,121 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	if personal:
 		section = "malla"
 		mention_id = str(ui.current_profile["mention_id"])
-	ui._apply_career_theme(program_id, str(ui.current_profile["mention_id"]) if personal else mention_id)
+	ui._apply_career_theme(program_id, mention_id)
 	var back: Callable = _go.bind("resumen") if personal else ui._show_mentions.bind(program_id)
-	var page: VBoxContainer = ui._make_page("Tu malla y sus conexiones" if personal else "Explora el plan de estudios", "El semestre curricular ubica la materia en el plan; tu periodo de cursado puede combinar varios niveles.", back)
+	var page: VBoxContainer = ui._make_page("Tu malla y sus conexiones" if personal else "Explora el plan de estudios", "", back, false, false, false)
+	var headline := _text(page, "", 15)
+	var archive := _text(page, "", 13, true)
+	archive.name = "GraphApprovedArchive"
 	var graph := Graph.new()
+	graph.name = "ExpandedCurriculumGraph"
 	graph.font_scale = float(ui.settings["font_scale"])
 	graph.animations_enabled = bool(ui.settings["animations"])
 	graph.low_performance = bool(ui.settings.get("low_performance", false))
+	graph.display_height = 220.0
 	graph.manual_positions = graph_layouts.duplicate(true)
+	graph.retiring = _recent_approvals.duplicate()
 	var snapshot: Dictionary = _model().snapshot() if personal else {}
+	var approved: Array[Dictionary] = []
 	if personal:
 		for subject in snapshot["subjects"]:
 			if subject.get("program_id", "") != program_id or subject.get("mention_id", "") != mention_id:
 				continue
 			graph.personal_states[str(subject["sigla"])] = subject_status(subject, snapshot)
-			if _pending_retaking(subject, snapshot):
+			if subject["approved"]:
+				approved.append(subject)
+			elif _pending_retaking(subject, snapshot):
 				graph.carry_subjects.append(subject.duplicate(true))
-	graph.setup(program_id, mention_id, 500.0)
+	graph.setup(program_id, mention_id, 760)
 	if personal:
+		graph.home_semester = _current_graph_semester(snapshot)
 		if graph_term_seen != int(snapshot["term"]):
-			graph_semester = _current_graph_semester(snapshot)
+			graph_semester = graph.home_semester
 			graph_term_seen = int(snapshot["term"])
 		graph.semester_index = clampi(graph_semester, 0, graph.semesters.size() - 1)
 		graph._build_semester()
-	var workspace := VBoxContainer.new()
-	workspace.name = "GraphWorkspace"
-	workspace.set_meta("page_atomic", true)
-	workspace.add_theme_constant_override("separation", 8)
-	page.add_child(workspace)
-	var controls := _actions(workspace)
-	var previous := _button(controls, "← Anterior", graph.move_semester.bind(-1))
-	var counter := _text(controls, "", 16)
-	counter.autowrap_mode = TextServer.AUTOWRAP_OFF
-	counter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var next := _button(controls, "Siguiente →", graph.move_semester.bind(1))
-	previous.custom_minimum_size.x = 120
-	next.custom_minimum_size.x = 120
-	previous.autowrap_mode = TextServer.AUTOWRAP_OFF
-	next.autowrap_mode = TextServer.AUTOWRAP_OFF
-	if personal:
-		var current := _button(controls, "Mi periodo", _graph_current_view.bind(graph, snapshot))
-		current.custom_minimum_size.x = 110
-		current.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
-		current.autowrap_mode = TextServer.AUTOWRAP_OFF
-		current.tooltip_text = "Volver al nivel de las materias inscritas en tu periodo actual"
-	var zoom_out := _button(controls, "−", graph.zoom_at_center.bind(0.85))
-	zoom_out.custom_minimum_size.x = 44
-	zoom_out.tooltip_text = "Alejar el grafo"
-	var zoom_in := _button(controls, "+", graph.zoom_at_center.bind(1.18))
-	zoom_in.custom_minimum_size.x = 44
-	zoom_in.tooltip_text = "Acercar el grafo"
-	var fit := _button(controls, "Ver todo", graph.fit_view)
-	fit.custom_minimum_size.x = 105
-	var reset := _button(controls, "Restablecer", graph.reset_layout)
-	reset.custom_minimum_size.x = 136
-	for button in [previous, next, zoom_out, zoom_in, fit, reset]:
-		button.size_flags_horizontal = Control.SIZE_FILL
-		button.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
-		button.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_text(workspace, "Mueve esferas, ramas completas o el fondo. ↻ gira la rama seleccionada; −/+ cambia el zoom. Ámbar: recursar. Se protegen las conexiones.", 13, true)
-	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	graph.name = "ExpandedCurriculumGraph"
-	workspace.add_child(graph)
-	var pager = ui.find_child("PageNavigator", true, false)
-	pager.space_changed.connect(func(available: Vector2) -> void:
-		var other := workspace.get_combined_minimum_size().y - graph.custom_minimum_size.y
-		graph.set_display_height(available.y - other - 8))
-	var details: VBoxContainer = ui._card(page)
-	details.name = "GraphSubjectDetail"
-	details.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	details.get_parent().custom_minimum_size.x = 740
-	details.get_parent().visible = false
-	var list: GridContainer = ui._adaptive_grid(page, 350, 2)
-	list.name = "GraphSubjectCards"
-	details.set_meta("subject_list", weakref(list))
-	details.set_meta("workspace", weakref(workspace))
+	var frame := Control.new()
+	frame.clip_contents = true
+	frame.custom_minimum_size.y = 220
+	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(frame)
+	frame.add_child(graph)
+	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_text(page, Graph.KEY_GUIDE, 13, true)
+	_text(page, "0: mi nivel · B: esfera o rama · T: girar · R: restaurar", 12, true)
 	var update := func(_index: int = 0, _count: int = 0) -> void:
 		if personal:
 			graph_semester = graph.semester_index
-		counter.text = "Plan: semestre %d / %d" % [graph.semester_index + 1, graph.semesters.size()]
-		previous.disabled = graph.semester_index == 0
-		next.disabled = graph.semester_index >= graph.semesters.size() - 1
-		_clear(details)
-		details.get_parent().visible = false
-		list.visible = true
-		_clear(list)
-		for node in graph.visible_nodes:
-			if node.get("source", false) and not node.get("retained", false):
-				continue
-			var card: VBoxContainer = ui._card(list)
-			_text(card, "%s · %s" % [node["sigla"], node["name"]], 17)
-			if personal:
-				_text(card, str(graph.personal_states.get(node["sigla"], "Pendiente")), 14, true)
-			_button(card, "Ver materia", _graph_detail.bind(node.duplicate(true), details, snapshot))
-
-	graph.subject_selected.connect(func(_sigla: String, data: Dictionary) -> void: _graph_detail(data, details, snapshot))
+		headline.text = "Semestre curricular %d de %d%s" % [graph.semester_index + 1, graph.semesters.size(), " · Ámbar: en curso o por recursar" if personal else ""]
+		var earlier := PackedStringArray()
+		for subject in approved:
+			if int(subject["semester"]) < graph.semester_index + 1:
+				earlier.append(str(subject["sigla"]))
+		archive.visible = not earlier.is_empty()
+		archive.text = "Aprobadas de niveles previos · " + "  ".join(earlier.slice(-5))
+		if earlier.size() > 5:
+			archive.text += "  ·  %d más" % (earlier.size() - 5)
+	graph.subject_selected.connect(func(_sigla: String, data: Dictionary) -> void: _show_subject_sheet(data, graph, snapshot))
 	graph.semester_changed.connect(update)
 	graph.layout_changed.connect(func() -> void: graph_layouts = graph.manual_positions.duplicate(true))
 	update.call()
+	ui._focus_control.call_deferred(weakref(graph))
+	_recent_approvals.clear()
 
 
 func _current_graph_semester(snapshot: Dictionary) -> int:
-	var semester := 1
+	var semester := 0
+	var first_available := 0
 	for subject in snapshot["subjects"]:
-		if subject.get("program_id", "") != _ui().current_profile["program_id"] or subject.get("mention_id", "") != _ui().current_profile["mention_id"]:
+		if subject.get("program_id", "") != _ui().current_profile["program_id"] or subject.get("mention_id", "") != _ui().current_profile["mention_id"] or subject.get("graduation_node", false):
 			continue
-		if not subject["enrollment"].is_empty() and not subject.get("graduation_node", false):
-			semester = maxi(semester, int(subject.get("semester", 1)))
-	return semester - 1
+		var level := int(subject.get("semester", 1))
+		if not subject["enrollment"].is_empty():
+			semester = maxi(semester, level)
+		elif not subject["approved"] and subject["eligibility"]["ok"]:
+			first_available = level if first_available == 0 else mini(first_available, level)
+	return maxi(0, (semester if semester > 0 else first_available) - 1)
 
 
-func _graph_current_view(graph: Control, snapshot: Dictionary) -> void:
-	graph.semester_index = clampi(_current_graph_semester(snapshot), 0, graph.semesters.size() - 1)
-	graph.reset_view()
-	graph._build_semester()
-	graph.semester_changed.emit(graph.semester_index, graph.semesters.size())
-
-
-func _clear(parent: Control) -> void:
-	for child in parent.get_children():
-		parent.remove_child(child)
-		child.queue_free()
-
-
-func _graph_detail(data: Dictionary, details: VBoxContainer, snapshot: Dictionary) -> void:
-	_clear(details)
-	details.get_parent().visible = true
-	if details.has_meta("subject_list"):
-		var list = details.get_meta("subject_list").get_ref()
-		if is_instance_valid(list):
-			list.visible = false
-	_button(details, "← Volver al grafo", _return_graph_detail.bind(details))
-	_focus_graph_detail.call_deferred(weakref(details))
-	_text(details, str(data.get("name", "Ingreso")), 21)
-	_text(details, str(data.get("desc", "")), 16, true)
+func _show_subject_sheet(data: Dictionary, return_focus: Control, snapshot: Dictionary) -> void:
+	var ui := _ui()
+	if ui.find_child("GraphSubjectPopup", false, false) != null:
+		return
+	var popup := SubjectPopup.new()
+	var details := popup.open(ui, return_focus)
+	_text(details, str(data.get("sigla", "")), 14, true)
+	_text(details, str(data.get("name", "Ingreso")), 22)
+	_text(details, str(data.get("desc", "")), 16)
 	if data.get("admission", false):
 		for mode in data.get("admission_modes", []):
 			_text(details, "• " + str(mode), 14, true)
 		return
-	_text(details, "Requiere: " + ", ".join(data.get("prereq", [])), 15)
-	if not snapshot.is_empty():
-		for subject in snapshot["subjects"]:
-			if subject["sigla"] == data["sigla"]:
-				_text(details, subject_status(subject, snapshot), 18)
-				_text(details, str(subject["eligibility"]["message"]), 14, true)
-				if subject.get("graduation_node", false):
-					_button(details, "Ver graduación", _go.bind("graduacion"))
-				else:
-					course_actions(details, subject, snapshot)
-				break
-
-
-func _focus_graph_detail(reference: WeakRef) -> void:
-	var ui := _ui()
-	if not is_instance_valid(ui) or not ui.is_inside_tree():
+	var requirements: Array = data.get("prereq", [])
+	_text(details, "Requisitos · " + (", ".join(requirements) if not requirements.is_empty() else "Sin correlativas"), 14, true)
+	for subject in snapshot.get("subjects", []):
+		if data.has("enrollment"):
+			if subject["id"] != data["id"]:
+				continue
+		elif subject["sigla"] != data["sigla"] or subject["program_id"] != ui.current_profile["program_id"] or subject["mention_id"] != ui.current_profile["mention_id"]:
+			continue
+		_text(details, subject_status(subject, snapshot), 16)
+		_text(details, str(subject["eligibility"]["message"]), 14, true)
+		if not subject["eligibility"].get("regulars", []).is_empty():
+			var regulars := PackedStringArray()
+			for regular in subject["eligibility"]["regulars"]:
+				regulars.append(str(_model().course_data(str(regular)).get("sigla", regular)))
+			_text(details, "Regulares obligatorias · " + ", ".join(regulars), 14, true)
+		if subject.get("graduation_node", false):
+			if snapshot["studies_complete"]:
+				_button(details, "Ver graduación", _go.bind("graduacion"), true, true)
+			return
+		var key := str(subject["id"])
+		var entry: Dictionary = subject["enrollment"]
+		if snapshot["phase"] == "CURSANDO" and not entry.is_empty() and entry["score"] == null:
+			_button(details, "Estudiar y rendir", ui._start_subject.bind(key), true, true)
+		elif snapshot["planning_available"] and entry.is_empty() and subject["eligibility"]["ok"] and not subject["approved"]:
+			_button(details, "Inscribir", _enroll.bind(key), true, true)
+		elif snapshot["planning_available"] and not entry.is_empty() and not subject["approved"]:
+			_button(details, "Retirar del semestre", perform.bind("withdraw", [key], "materias"))
+		_button(details, "Repasar" if subject["approved"] else "Explorar contenido", ui._show_course_preview.bind(key))
 		return
-	var tree := ui.get_tree()
-	for frame in range(7):
-		await tree.process_frame
-	var details = reference.get_ref()
-	if is_instance_valid(details) and details.is_inside_tree():
-		var pager = ui.find_child("PageNavigator", true, false)
-		if pager != null:
-			pager.show_control(details.get_parent())
-
-
-func _return_graph_detail(details: VBoxContainer) -> void:
-	details.get_parent().visible = false
-	var list = details.get_meta("subject_list").get_ref()
-	if is_instance_valid(list):
-		list.visible = true
-	var pager = _ui().find_child("PageNavigator", true, false)
-	if pager != null:
-		pager.change_page(-pager.page_index)
-		pager.request_layout()

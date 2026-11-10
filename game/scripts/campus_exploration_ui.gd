@@ -3,7 +3,6 @@ extends RefCounted
 const World = preload("res://scripts/campus_world.gd")
 const Map = preload("res://scripts/campus_map.gd")
 const Overview = preload("res://scripts/campus_overview.gd")
-const Neon = preload("res://scripts/neon_visuals.gd")
 const MinigamePreview = preload("res://scripts/minigame_preview.gd")
 const MinigameSessions = preload("res://scripts/minigame_session_ui.gd")
 const Inspection = preload("res://scripts/campus_inspection_overlay.gd")
@@ -15,6 +14,7 @@ var world_ref: WeakRef
 var saved: Dictionary = {}
 var session_key := ""
 var guest_name := ""
+var _lighting_minutes := World.MORNING
 var minigames: RefCounted
 
 
@@ -49,6 +49,7 @@ func _session() -> void:
 	var key := "guest" if profile.is_empty() else "%s/%s/%s" % [profile.get("slot", 0), profile.get("created_at", ""), profile.get("player_name", "")]
 	if key != session_key:
 		session_key = key
+		_lighting_minutes = World.MORNING
 		saved = profile.get("campus_exploration", {}).duplicate(true) if profile.get("campus_exploration", {}) is Dictionary else {}
 
 
@@ -100,6 +101,7 @@ func capture() -> void:
 	if world_ref != null:
 		var world = world_ref.get_ref()
 		if is_instance_valid(world) and world.is_inside_tree():
+			_lighting_minutes = world.lighting_minutes
 			_update(world.snapshot())
 
 
@@ -123,40 +125,48 @@ func show_world() -> void:
 		return
 	capture()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Explorar FNI", "Recorrido espacial", leave)
+	var page: VBoxContainer = _ui()._make_page("Explorar FNI", "", leave, false, false, false)
 	var workspace := VBoxContainer.new()
 	workspace.name = "ExplorationWorkspace"
-	workspace.set_meta("page_atomic", true)
+	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	workspace.add_theme_constant_override("separation", 6)
 	page.add_child(workspace)
-	var location := _text(workspace, _name() + " · Ciudad universitaria FNI", 15)
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 10)
+	workspace.add_child(header)
+	var prefix := _name() + " · " if _ui().current_profile.is_empty() else ""
+	var location := _text(header, "", 15)
 	location.name = "ExplorerIdentity"
-	var actions := _actions(workspace)
-	_ui()._add_button(actions, "Progreso [P]", show_progress, false, 36)
-	_ui()._add_button(actions, "Mapa [M]", show_map, false, 36)
 	var world := World.new()
 	world.name = "CampusWorld"
-	world.custom_minimum_size = Vector2(0, 200)
-	world.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	world.custom_minimum_size.y = 180
+	world.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	world.animations_enabled = bool(_ui().settings["animations"]) and not bool(_ui().settings.get("low_performance", false))
+	world.lighting_minutes = _lighting_minutes
 	world.restore(saved)
 	world_ref = weakref(world)
-	_ui()._add_button(actions, "Interactuar [E]", world.interact, true, 36)
-	_ui()._add_button(actions, "Ayuda", show_help, false, 36)
-	_ui()._add_button(actions, "Personajes", show_designs, false, 36)
-	for button in actions.get_children():
-		if button is Button:
-			var font_size := int(14 * float(_ui().settings["font_scale"]))
-			button.add_theme_font_size_override("font_size", font_size)
-			button.custom_minimum_size.x = maxf(120, Neon.PIXEL_FONT.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 32)
-			button.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var clock := _text(header, world.clock_text(), 14)
+	clock.name = "CampusClock"
+	clock.autowrap_mode = TextServer.AUTOWRAP_OFF
+	clock.size_flags_horizontal = Control.SIZE_SHRINK_END
+	world.clock_changed.connect(func(value: String) -> void: clock.text = value)
 	workspace.add_child(world)
-	var hint := _text(workspace, world.interaction_text(), 15)
+	var status := HBoxContainer.new()
+	status.add_theme_constant_override("separation", 10)
+	workspace.add_child(status)
+	var hint := _text(status, world.interaction_text(), 14)
 	hint.name = "ExplorationContext"
-	world.context_changed.connect(func(value: String) -> void:
+	for item in [["Mapa [M]", show_map], ["Pausa [P]", show_progress]]:
+		var button: Button = _ui()._add_button(status, item[0], item[1], false, 36)
+		button.custom_minimum_size.x = 112
+		button.add_theme_font_size_override("font_size", roundi(13 * float(_ui().settings["font_scale"])))
+		button.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var update_location := func(value: String) -> void:
 		hint.text = value
 		var place := world.room_name if not world.room_name.is_empty() else str(Map.building(world.room_id).get("name", "")) + " · pasillo"
-		location.text = _name() + " · " + (place + " · recreación" if not world.room_id.is_empty() else "Ciudad universitaria FNI"))
+		location.text = prefix + (place if not world.room_id.is_empty() else "Ciudad universitaria FNI")
+	world.context_changed.connect(update_location)
+	update_location.call(world.interaction_text())
 	world.progress_changed.connect(_update)
 	# Finish input dispatch before removing its Control hierarchy.
 	world.menu_requested.connect(show_progress, CONNECT_DEFERRED)
@@ -166,10 +176,6 @@ func show_world() -> void:
 	world.landmark_requested.connect(show_monument, CONNECT_DEFERRED)
 	world.actor_requested.connect(show_actor, CONNECT_DEFERRED)
 	world.stairs_requested.connect(show_floors, CONNECT_DEFERRED)
-	var pager = _ui().find_child("PageNavigator", true, false)
-	pager.space_changed.connect(func(available: Vector2) -> void:
-		var other := workspace.get_combined_minimum_size().y - world.custom_minimum_size.y
-		world.custom_minimum_size.y = maxf(160, available.y - other - 8))
 
 
 func _save() -> void:
@@ -192,27 +198,23 @@ func leave() -> void:
 func show_progress() -> void:
 	_save()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Pausa y progreso", "El recorrido está detenido mientras consultas los menús", show_world)
+	var page: VBoxContainer = _ui()._make_page("Pausa y progreso", "El recorrido está detenido", show_world, false, false, false)
 	_text(page, _name() + " · %d espacios visitados" % saved.get("visited", []).size(), 20)
-	_ui()._add_button(page, "Seguir explorando", show_world, true, 42)
+	var row := _actions(page)
 	if not _ui().current_profile.is_empty():
 		var snapshot: Dictionary = _ui().simulation.snapshot()
 		var approved := 0
 		for subject in snapshot["subjects"]:
 			if subject["approved"]:
 				approved += 1
-		_text(page, "Periodo %d · %d materias aprobadas · Promedio %s" % [int(snapshot["term"]), approved, "%.2f" % float(snapshot["average"]) if snapshot["average"] != null else "pendiente"], 17)
+		_text(page, "Periodo %d · %d materias aprobadas" % [int(snapshot["term"]), approved], 17)
 		if _ui()._save_failed:
 			_text(page, "No se pudo guardar: " + str(_ui()._save_feedback), 15)
-		var row := _actions(page)
-		for section in [["resumen", "Mi campus"], ["materias", "Materias"], ["malla", "Grafo curricular"], ["historial", "Historial"], ["tramites", "Trámites"], ["auxiliatura", "Auxiliatura"], ["graduacion", "Graduación"]]:
-			_ui()._add_button(row, section[1], _ui()._show_campus_section.bind(section[0]), false, 40)
+		_ui()._add_button(row, "Mi campus", _ui()._show_solo_hub, true, 40)
+		_ui()._add_button(row, "Malla", _ui()._show_campus_section.bind("malla"), false, 40)
 	else:
-		_text(page, "Visita libre: el recorrido se conserva durante esta sesión. Para guardar posición y visitas junto con tu progreso académico, crea o continúa una carrera.", 16)
-		_ui()._add_button(page, "Crear mi carrera", _ui()._new_available_game, false, 42)
-	_text(page, "Las visitas registran exploración. Las materias y trámites avanzan mediante sus actividades y validaciones académicas.", 15)
-	for id in saved.get("visited", []):
-		_text(page, "Visitado · " + str(id).get_slice("/", 1), 15)
+		_text(page, "Visita libre. El recorrido se conserva durante esta sesión.", 16)
+	_ui()._add_button(row, "Controles", show_help, false, 40)
 
 
 func show_map() -> void:
@@ -347,27 +349,18 @@ func show_room(building: Dictionary, room: String) -> void:
 	if building["kind"] == "games_room":
 		show_games()
 		return
-	var page: VBoxContainer = _ui()._make_page(room, "Interior recreado · " + str(building["name"]), show_world)
-	_text(page, "Estás en " + room + ". La decoración es una recreación didáctica; no representa todavía el mobiliario real.", 17)
-	var actions := _actions(page)
+	var in_partida: bool = not _ui().current_profile.is_empty()
+	if building["id"] == World.PROVISIONAL_DESK and in_partida:
+		_ui()._campus().open_office(show_world)
+		return
+	var page: VBoxContainer = _ui()._make_page(room, "Interior recreado · " + str(building["name"]), show_world, false, false, false)
+	_text(page, "Estás en " + room + ". Este ambiente es una recreación didáctica.", 17)
 	if Map.room_kind(str(building["id"]), room) == "restroom":
-		_text(page, "Ambiente de servicios recreado; no registra actividades académicas.", 15)
-	elif not _ui().current_profile.is_empty():
-		var section := "tramites" if building["kind"] == "office" else "materias"
-		_ui()._add_button(actions, "Consultar trámites" if section == "tramites" else "Estudiar / repasar materias", _ui()._show_campus_section.bind(section), true, 42)
-		_ui()._add_button(actions, "Ver mi progreso", show_progress, false, 42)
-	else:
-		_ui()._add_button(actions, "Ver visita y progreso", show_progress, true, 42)
-	_text(page, "Otros espacios de este bloque", 20)
-	if Map.floor_count(str(building["id"])) > 1:
-		_ui()._add_button(page, "Ver planos de pisos y escaleras", show_floors.bind(str(building["id"])), false, 40)
-	if building["rooms"].size() > 1:
-		_ui()._add_button(page, "Recorrer pasillo del bloque", _choose_hall.bind(str(building["id"])), false, 40)
-	var rooms := _actions(page)
-	for item in Map.floor_rooms(str(building["id"]), int(saved.get("floor", 0))):
-		var name := str(item["id"])
-		_ui()._add_button(rooms, name, _choose_room.bind(str(building["id"]), name), name == room, 40)
-	_ui()._add_button(page, "Volver al interior", show_world, false, 40)
+		_text(page, "Ambiente de servicios.", 15)
+	elif building["id"] == World.PROVISIONAL_DESK:
+		_text(page, "La ventanilla simulada está disponible durante una partida académica.", 15)
+	elif in_partida and building["kind"] != "office":
+		_ui()._add_button(page, "Estudiar o repasar", _ui()._show_campus_section.bind("materias"), true, 42)
 
 
 func show_games() -> void:
@@ -396,29 +389,9 @@ func show_minigame(id: String) -> void:
 	minigames.open(id)
 
 
-func _choose_room(id: String, room: String) -> void:
-	var model := World.new()
-	model.restore(saved)
-	model.enter_room(id, room)
-	_update(model.snapshot())
-	model.free()
-	show_world()
-
-
-func _choose_hall(id: String) -> void:
-	var model := World.new()
-	model.restore(saved)
-	if model.room_id == id and not model.room_name.is_empty():
-		model.return_to_hall()
-	else:
-		model.enter_building(id)
-	_update(model.snapshot())
-	model.free()
-	show_world()
-
-
 func show_help() -> void:
 	capture()
-	var page: VBoxContainer = _ui()._make_page("Controles de exploración", "Controles clásicos y menús por botones", show_world)
-	for line in ["WASD o flechas: moverte. Las diagonales mantienen la misma velocidad.", "Shift: correr. Las paredes, edificios y mesas bloquean el paso.", "E o Enter: entrar cerca de una puerta, salir o consultar el tablero del aula.", "Los bloques con varias aulas tienen un pasillo. Acércate a la puerta de cada ambiente y pulsa E. Desde el aula vuelves al pasillo; la salida del pasillo lleva al campus.", "P o Tab: pausar y consultar progreso, materias, grafo e historial.", "M: abrir el mapa, consultar el plano y señalar un destino.", "Escape: salir de esta vista. La exploración de una partida se guarda junto con su perfil.", "El aula tiene un tablero al fondo: acércate para ver actividades y otras aulas del bloque.", "Los controles por botones permanecen disponibles. El movimiento se detiene al cambiar de menú o perder el foco."]:
-		_text(page, line, 17)
+	var page: VBoxContainer = _ui()._make_page("Controles de exploración", "", show_progress, false, false, false)
+	for line in ["WASD o flechas · Caminar. Shift · Correr.", "E o Enter · Usar la puerta, el tablero, la mesa o el elemento cercano.", "P o Tab · Pausa y progreso. M · Mapa.", "Esc · Volver. El recorrido se detiene durante los menús.", "En una partida, acércate al fondo de Administración de Sistemas y pulsa E para consultar la ventanilla simulada."]:
+		_text(page, line, 16)
+	_ui()._add_button(page, "Personajes del campus", show_designs, false, 40)

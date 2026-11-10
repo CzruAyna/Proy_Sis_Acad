@@ -9,7 +9,12 @@ const NODE_RADIUS := 44.0
 const Neon = preload("res://scripts/neon_visuals.gd")
 const Routing = preload("res://scripts/graph_routing.gd")
 const SOURCE_RADIUS := 40.0
-const PALETTE := [Color("#8bb5c4"), Color("#d0ae74"), Color("#9f91c6"), Color("#80ad8d"), Color("#c98670"), Color("#75a9a0")]
+const CAREER_COLORS := {
+	"sistemas": [Color("#3987f1"), Color("#6cc7df")],
+	"informatica": [Color("#f15163"), Color("#d18bab")]
+}
+const STUDY_ACCENT := Color("#ffd36a")
+const KEY_GUIDE := "Flechas: elegir · Enter: abrir · Q/E: semestre · WASD o arrastre: vista · +/−: zoom · Inicio: encuadrar"
 
 var font_scale := 1.0
 var animations_enabled := true
@@ -43,7 +48,8 @@ var _graph_height := 420.0
 var edge_paths: Array[PackedVector2Array] = []
 var reference_layout := false
 var _default_positions: Array[Vector2] = []
-var _sphere: Dictionary = {}
+var home_semester := 0
+var retiring: Dictionary = {}
 static var _sphere_cache: Dictionary = {}
 
 
@@ -51,9 +57,12 @@ func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip_contents = true
-	set_process(animations_enabled)
+	set_process(animations_enabled and not low_performance)
+	accessibility_name = "Grafo de materias"
+	accessibility_description = KEY_GUIDE + " · 0: nivel inicial · B: mover rama · T: girar · R: restablecer"
+	focus_entered.connect(queue_redraw)
+	focus_exited.connect(queue_redraw)
 	resized.connect(_fit_after_resize)
-	_add_view_buttons()
 
 
 func _process(delta: float) -> void:
@@ -69,7 +78,6 @@ func setup(pid: String, selected_mention: String = "", available_width: float = 
 	mention_id = selected_mention
 	graph_width = maxf(available_width, 360.0)
 	graph_theme = Neon.career(pid, selected_mention)
-	_sphere = _sphere_resource(graph_theme["accent"])
 	semesters = UniCatalog.semesters_for(program_id, mention_id)
 	semester_index = 0
 	_build_semester()
@@ -82,7 +90,7 @@ func move_semester(step: int) -> void:
 	semester_index = next_index
 	reset_view()
 	_build_semester()
-	if animations_enabled:
+	if animations_enabled and not low_performance:
 		modulate.a = 0.72
 		create_tween().tween_property(self, "modulate:a", 1.0, 0.15)
 	semester_changed.emit(semester_index, semesters.size())
@@ -153,7 +161,6 @@ func _build_semester() -> void:
 		var item: Dictionary = prerequisites[index].duplicate(true)
 		item["source"] = true
 		item["pos"] = _grid_position(index, prerequisites.size(), true, area_height)
-		item["color"] = PALETTE[posmod(semester_index - 1, PALETTE.size())]
 		index_by_sigla[str(item.get("sigla", ""))] = visible_nodes.size()
 		visible_nodes.append(item)
 	for index in range(subjects.size()):
@@ -161,7 +168,6 @@ func _build_semester() -> void:
 		item["source"] = false
 		item["semester"] = int(item.get("semester", semester_index + 1))
 		item["pos"] = _grid_position(index, subjects.size(), false, area_height)
-		item["color"] = PALETTE[posmod(semester_index, PALETTE.size())]
 		var target_index := visible_nodes.size()
 		visible_nodes.append(item)
 		for requirement in item.get("prereq", []):
@@ -177,7 +183,7 @@ func _build_semester() -> void:
 				node["semester"] = int(carried.get("semester", 1))
 	_layout_nodes()
 	_auto_fit = true
-	fit_view.call_deferred(false)
+	fit_view.call_deferred()
 	queue_redraw()
 
 
@@ -210,74 +216,129 @@ func _draw() -> void:
 	draw_set_transform(view_offset, 0, Vector2.ONE * view_zoom)
 	for edge_index in range(edges.size()):
 		var points := edge_paths[edge_index]
-		Neon.path(self, points, Color(glow, 0.88), 2.1, low_performance)
+		var edge := edges[edge_index]
+		var edge_color := _node_color(edge.y)
+		var depth := minf(_node_depth(edge.x), _node_depth(edge.y))
+		Neon.path(self, points, Color(edge_color, lerpf(0.50, 0.88, depth)), 2.1, low_performance)
 		if points.size() >= 3:
 			var tip := points[points.size() - 1]
 			var tangent := (tip - points[points.size() - 3]).normalized()
 			var normal := Vector2(-tangent.y, tangent.x)
-			draw_colored_polygon(PackedVector2Array([tip, tip - tangent * 12 + normal * 5, tip - tangent * 12 - normal * 5]), graph_theme["core"])
+			draw_colored_polygon(PackedVector2Array([tip, tip - tangent * 12 + normal * 5, tip - tangent * 12 - normal * 5]), Color(edge_color.lerp(Color.WHITE, 0.55), lerpf(0.54, 1.0, depth)))
 			if animations_enabled and not low_performance:
 				var bead_index := int(fposmod(motion_time * 0.15 + float(edge_index) * 0.19, 1.0) * float(points.size() - 1))
-				draw_circle(points[bead_index], 2.4, graph_theme["core"])
+				draw_circle(points[bead_index], 2.4, Color(edge_color.lerp(Color.WHITE, 0.55), depth))
 	var order: Array[int] = []
 	for index in range(visible_nodes.size()):
 		order.append(index)
-	order.sort_custom(func(a: int, b: int) -> bool: return visible_nodes[a]["pos"].y < visible_nodes[b]["pos"].y)
+	order.sort_custom(func(a: int, b: int) -> bool: return _node_depth(a) < _node_depth(b))
 	for index in order:
 		_draw_sphere(index)
 	draw_set_transform(Vector2.ZERO)
-	if reference_layout:
-		Neon.text(self, Neon.PIXEL_FONT, Vector2(16, 25), "Vista por conexiones: las esferas repetidas representan la misma materia.", int(12 * font_scale), glow, low_performance, size.x - 32)
-	elif hovered >= 0 and hovered < visible_nodes.size() and _dragging < 0:
-		var item: Dictionary = visible_nodes[hovered]
-		Neon.text(self, Neon.PIXEL_FONT, Vector2(16, 25), "%s · %s" % [item.get("sigla", ""), item.get("name", "")], int(12 * font_scale), glow, low_performance, size.x - 32)
+	for index in order:
+		_draw_sphere_labels(index)
+	var focus_index := hovered if hovered >= 0 else selected
+	if focus_index >= 0 and focus_index < visible_nodes.size() and _dragging < 0:
+		var item: Dictionary = visible_nodes[focus_index]
+		var status := str(personal_states.get(item["sigla"], ""))
+		Neon.text(self, Neon.PIXEL_FONT, Vector2(14, 24), "%s · %s%s" % [item["sigla"], item["name"], " · " + status if not status.is_empty() else ""], int(12 * font_scale), _node_color(focus_index), low_performance, size.x - 28)
+	elif reference_layout:
+		Neon.text(self, Neon.PIXEL_FONT, Vector2(14, 24), "Las referencias repetidas identifican la misma materia.", int(12 * font_scale), glow, low_performance, size.x - 28)
+
+
+func _node_status(index: int) -> String:
+	return str(personal_states.get(visible_nodes[index]["sigla"], ""))
+
+
+func _node_depth(index: int) -> float:
+	if _node_status(index) != "Aprobada":
+		return 1.0
+	var code: String = visible_nodes[index]["sigla"]
+	if retiring.has(code) and animations_enabled and not low_performance:
+		return lerpf(1.0, 0.58, smoothstep(0.0, 1.15, motion_time))
+	return 0.58
+
+
+func _is_studying(status: String) -> bool:
+	return status.begins_with("Cursando") or status.begins_with("Recursando")
+
+
+func _arrival(index: int) -> float:
+	if retiring.is_empty() or not animations_enabled or low_performance or motion_time >= 1.15:
+		return 1.0
+	var status := _node_status(index)
+	if status in ["Habilitada", "Correlativa habilitada", "Inscrita"] or _is_studying(status):
+		for requirement in visible_nodes[index].get("prereq", []):
+			if retiring.has(requirement):
+				return smoothstep(0.15, 1.15, motion_time)
+	return 1.0
+
+
+func _node_color(index: int) -> Color:
+	var colors: Array = CAREER_COLORS.get(program_id, CAREER_COLORS["sistemas"])
+	var secondary: Color = colors[1]
+	var status := _node_status(index)
+	if _is_studying(status) or visible_nodes[index].get("retained", false):
+		return secondary.lerp(STUDY_ACCENT, _arrival(index))
+	if status in ["Aprobada", "Bloqueada"] or visible_nodes[index].get("source", false):
+		return secondary
+	return secondary.lerp(colors[0], _arrival(index))
 
 
 func _draw_sphere(index: int) -> void:
-	var item: Dictionary = visible_nodes[index]
 	var center := _animated_position(index)
 	var radius := _radius(index)
-	var glow: Color = graph_theme["neon"]
+	var status := _node_status(index)
+	var glow := _node_color(index)
+	var depth := _node_depth(index)
 	var active := index == hovered or index == selected
-	var shadow_center := center + Vector2(10, radius * 0.98)
+	var brightness := maxf(0.54, depth) if status != "Bloqueada" else 0.60
+	var body_radius := radius * lerpf(0.76, 1.0, minf(depth, _arrival(index)))
+	var shadow_center := center + Vector2(10, body_radius * 0.98)
 	var shadow := PackedVector2Array()
-	for part in range(33):
-		var angle := float(part) / 32.0 * TAU
-		shadow.append(shadow_center + Vector2(cos(angle) * radius * 0.94, sin(angle) * radius * 0.26))
-	draw_colored_polygon(shadow, Color(0, 0, 0, 0.45))
-	Neon.ring(self, center, radius + 0.6, Color(glow, 0.65), low_performance)
-	draw_texture_rect(_sphere["texture"], Rect2(center - Vector2.ONE * radius, Vector2.ONE * radius * 2), false)
-	# The bitmap contains its own stepped specular highlight.
+	for part in range(25):
+		var angle := float(part) / 24.0 * TAU
+		shadow.append(shadow_center + Vector2(cos(angle) * body_radius * 0.94, sin(angle) * body_radius * 0.26))
+	draw_colored_polygon(shadow, Color(0, 0, 0, 0.45 * depth))
+	# The faint outer ring retains the routed port when the sphere recedes.
+	Neon.ring(self, center, radius + 0.6, Color(glow, 0.62 * brightness), low_performance)
+	draw_texture_rect(_sphere_resource(glow)["texture"], Rect2(center - Vector2.ONE * body_radius, Vector2.ONE * body_radius * 2), false, Color(1, 1, 1, brightness))
 	if active:
 		Neon.ring(self, center, radius + 5, Color(graph_theme["core"], 0.95), low_performance)
+
+
+func _draw_sphere_labels(index: int) -> void:
+	var item: Dictionary = visible_nodes[index]
+	var center := (_animated_position(index) * view_zoom + view_offset).round()
+	var radius := _radius(index) * view_zoom
+	var status := _node_status(index)
+	var active := index == hovered or index == selected
+	var brightness := _node_depth(index)
+	var ink := Color(graph_theme["text"], 1.0 if active else maxf(0.76, brightness))
+	var code_size := roundi(maxf(11.0, 13.0 * view_zoom) * font_scale)
+	var name_size := roundi(maxf(10.0, 11.0 * view_zoom) * font_scale)
 	var code := str(item.get("sigla", ""))
-	var code_size := int(13 * font_scale)
-	var code_width := Neon.PIXEL_FONT.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size).x
-	var baseline := center + Vector2(-code_width * 0.5, 5)
-	draw_string_outline(Neon.PIXEL_FONT, baseline, code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size, 3, Color(0.01, 0.02, 0.04, 0.9))
-	draw_string(Neon.PIXEL_FONT, baseline, code, HORIZONTAL_ALIGNMENT_LEFT, -1, code_size, graph_theme["text"])
+	_draw_node_text(center + Vector2(0, code_size * 0.35), code, code_size, ink, 160.0)
 	var lines := _name_lines(str(item.get("name", "")), bool(item.get("admission", false)))
+	var width := clampf(184.0 * view_zoom + 28.0, 126.0 * font_scale, 224.0)
 	for line_index in range(lines.size()):
-		var name_position := center + Vector2(-92, radius + 20 + float(line_index) * 16 * font_scale)
-		draw_string_outline(Neon.PIXEL_FONT, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), 3, Color(0.01, 0.02, 0.04, 0.9))
-		draw_string(Neon.PIXEL_FONT, name_position, lines[line_index], HORIZONTAL_ALIGNMENT_CENTER, 184, int(11 * font_scale), graph_theme["text"])
-	var status := str(personal_states.get(item.get("sigla", ""), ""))
-	if not status.is_empty():
-		if item.get("retained", false):
-			Neon.ring(self, center, radius + 6, Color("#ffd36a"), low_performance)
-			var retained_label := "RECURSAR · S%d" % int(item.get("semester", 1))
-			draw_string_outline(Neon.PIXEL_FONT, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), 3, Color(0, 0, 0, 0.9))
-			draw_string(Neon.PIXEL_FONT, center + Vector2(-80, -radius - 13), retained_label, HORIZONTAL_ALIGNMENT_CENTER, 160, int(12 * font_scale), Color("#ffd36a"))
-		var indicator := glow
-		if status == "Aprobada":
-			indicator = Color("#61ffc4")
-		elif status.contains("Reprobada") or status.to_lower().contains("recurs"):
-			indicator = Color("#ffd36a")
-		elif status == "Bloqueada":
-			indicator = Color("#a0a7bb")
-		var badge := center + Vector2(radius * 0.78, radius * 0.62)
-		draw_circle(badge, 5.0, indicator)
-		Neon.ring(self, badge, 5.0, indicator, low_performance)
+		var name_position := center + Vector2(0, radius + 13.0 + line_index * (name_size + 2))
+		_draw_node_text(name_position, lines[line_index], name_size, ink, width)
+	var tag := ""
+	if _is_studying(status):
+		tag = status.get_slice("·", 1).strip_edges().get_slice(" ", 0)
+	elif item.get("retained", false):
+		tag = "RECURSAR · S%d" % int(item.get("semester", 1))
+	elif status == "Aprobada":
+		tag = "✓"
+	if not tag.is_empty():
+		_draw_node_text(center - Vector2(0, radius + 5), tag, name_size, _node_color(index), width)
+
+
+func _draw_node_text(center: Vector2, value: String, font_size: int, color: Color, width: float) -> void:
+	var baseline := (center - Vector2(width * 0.5, 0)).round()
+	draw_string_outline(Neon.PIXEL_FONT, baseline, value, HORIZONTAL_ALIGNMENT_CENTER, width, font_size, 2, Color.BLACK)
+	draw_string(Neon.PIXEL_FONT, baseline, value, HORIZONTAL_ALIGNMENT_CENTER, width, font_size, color)
 
 
 func _name_lines(value: String, admission: bool) -> Array[String]:
@@ -337,30 +398,49 @@ func _sphere_resource(color: Color) -> Dictionary:
 	return result
 
 
-func _short_name(value: String, admission: bool) -> String:
-	if admission:
-		return "modalidades FNI"
-	if value.length() <= 24:
-		return value
-	return value.substr(0, 22).strip_edges() + "…"
-
-
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
-		if event.keycode in [KEY_RIGHT, KEY_DOWN, KEY_LEFT, KEY_UP] and not visible_nodes.is_empty():
-			selected = posmod(selected + (-1 if event.keycode in [KEY_LEFT, KEY_UP] else 1), visible_nodes.size())
-			subject_selected.emit(str(visible_nodes[selected].get("sigla", "")), visible_nodes[selected].duplicate(true))
-			queue_redraw()
-			accept_event()
-		elif event.keycode in [KEY_ENTER, KEY_SPACE] and selected >= 0:
-			subject_selected.emit(str(visible_nodes[selected].get("sigla", "")), visible_nodes[selected].duplicate(true))
-			accept_event()
-		elif event.keycode in [KEY_PLUS, KEY_EQUAL, KEY_KP_ADD]:
-			zoom_at_center(1.15)
-			accept_event()
-		elif event.keycode in [KEY_MINUS, KEY_KP_SUBTRACT]:
-			zoom_at_center(0.85)
-			accept_event()
+		match event.keycode:
+			KEY_RIGHT, KEY_DOWN, KEY_LEFT, KEY_UP:
+				if not visible_nodes.is_empty():
+					var direction := -1 if event.keycode in [KEY_LEFT, KEY_UP] else 1
+					selected = posmod(selected + direction if selected >= 0 else (0 if direction > 0 else -1), visible_nodes.size())
+					var screen_point := _animated_position(selected) * view_zoom + view_offset
+					if not Rect2(Vector2(52, 46), size - Vector2(104, 112)).has_point(screen_point):
+						view_offset += size * 0.5 - screen_point
+						_auto_fit = false
+					queue_redraw()
+			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+				if selected >= 0 and not event.echo:
+					subject_selected.emit(str(visible_nodes[selected]["sigla"]), visible_nodes[selected].duplicate(true))
+			KEY_PLUS, KEY_EQUAL, KEY_KP_ADD:
+				zoom_at_center(1.15)
+			KEY_MINUS, KEY_KP_SUBTRACT:
+				zoom_at_center(0.85)
+			KEY_Q, KEY_E:
+				move_semester(-1 if event.keycode == KEY_Q else 1)
+			KEY_0, KEY_KP_0:
+				move_semester(home_semester - semester_index)
+				fit_view()
+			KEY_HOME:
+				fit_view()
+			KEY_A, KEY_D, KEY_W, KEY_S:
+				var pan: Vector2 = {KEY_A: Vector2.RIGHT, KEY_D: Vector2.LEFT, KEY_W: Vector2.DOWN, KEY_S: Vector2.UP}[event.keycode]
+				pan_view(pan)
+			KEY_B:
+				if not event.echo:
+					move_branch = not move_branch
+					queue_redraw()
+			KEY_T:
+				if not event.echo:
+					rotate_branch(PI / 6)
+			KEY_R:
+				if not event.echo:
+					reset_layout()
+					fit_view()
+			_:
+				return
+		accept_event()
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
@@ -635,7 +715,7 @@ func zoom_at_center(factor: float) -> void:
 func _set_zoom(value: float, anchor: Vector2) -> void:
 	var world := (anchor - view_offset) / view_zoom
 	_auto_fit = false
-	view_zoom = clampf(value, 0.35, 1.65)
+	view_zoom = clampf(value, 0.08, 1.65)
 	view_offset = anchor - world * view_zoom
 	queue_redraw()
 
@@ -774,92 +854,26 @@ func _remember_layout() -> void:
 	queue_redraw()
 
 
-func _toggle_branch(button: Button) -> void:
-	move_branch = not move_branch
-	button.text = "Mover: rama" if move_branch else "Mover: esfera"
-
-
-func set_display_height(value: float) -> void:
-	var height := clampf(value, 170, 600)
-	if not is_equal_approx(display_height, height):
-		display_height = height
-		custom_minimum_size.y = height
-		fit_view.call_deferred(false)
-
-
 func _fit_after_resize() -> void:
 	if _auto_fit:
-		fit_view.call_deferred(false)
+		fit_view.call_deferred()
 
 
-func fit_view(overview: bool = true) -> void:
-	if size.x < 10 or size.y < 10:
+func fit_view() -> void:
+	if size.x < 10 or size.y < 10 or visible_nodes.is_empty():
 		return
-	view_zoom = clampf(minf((size.x - 36) / maxf(graph_width, 1), (size.y - 46) / maxf(_graph_height, 1)), 0.35, 1.0)
-	view_offset = (size - Vector2(graph_width, _graph_height) * view_zoom) * 0.5
-	if not overview and view_zoom < 0.78:
-		view_zoom = 0.78
-		view_offset = Vector2((size.x - graph_width * view_zoom) * 0.5, 22)
-		for node in visible_nodes:
-			if node.get("retained", false):
-				view_offset.y = clampf(size.y * 0.5 - Vector2(node["pos"]).y * view_zoom, minf(22, size.y - _graph_height * view_zoom - 22), 22)
-				break
-	if overview and not visible_nodes.is_empty():
-		var bounds := Rect2(visible_nodes[0]["pos"], Vector2.ZERO)
-		for node in visible_nodes:
-			bounds = bounds.expand(node["pos"])
-		bounds = bounds.grow(100 * maxf(font_scale, 1))
-		view_zoom = clampf(minf((size.x - 30) / bounds.size.x, (size.y - 70) / bounds.size.y), 0.08, 1.0)
-		view_offset = size * 0.5 - bounds.get_center() * view_zoom + Vector2(0, 18)
+	var bounds := Rect2(visible_nodes[0]["pos"], Vector2.ZERO)
+	for index in range(visible_nodes.size()):
+		var radius := _radius(index)
+		var center := _animated_position(index)
+		bounds = bounds.expand(center - Vector2(maxf(96, radius + 7), radius + 29))
+		bounds = bounds.expand(center + Vector2(maxf(96, radius + 7), radius + 54))
+	view_zoom = clampf(minf((size.x - 64) / bounds.size.x, (size.y - 54) / bounds.size.y), 0.08, 1.2)
+	view_offset = (size * 0.5 + Vector2(0, 12)) - bounds.get_center() * view_zoom
 	_auto_fit = true
 	queue_redraw()
-
 
 func pan_view(direction: Vector2) -> void:
 	_auto_fit = false
 	view_offset += direction * 65
 	queue_redraw()
-
-
-func _add_view_buttons() -> void:
-	var tools := HFlowContainer.new()
-	tools.name = "GraphPanControls"
-	tools.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	tools.offset_left = -410
-	tools.offset_right = -8
-	tools.offset_top = 8
-	add_child(tools)
-	var mode := Button.new()
-	mode.text = "Mover: esfera"
-	mode.name = "GraphMoveMode"
-	mode.tooltip_text = "Cambia entre mover una esfera o toda su rama conectada"
-	mode.custom_minimum_size = Vector2(116, 34)
-	mode.pressed.connect(_toggle_branch.bind(mode))
-	tools.add_child(mode)
-	var rotate := Button.new()
-	rotate.text = "↻"
-	rotate.name = "GraphRotateBranch"
-	rotate.tooltip_text = "Girar 30° la rama seleccionada sin perder sus conexiones"
-	rotate.custom_minimum_size = Vector2(38, 34)
-	rotate.pressed.connect(rotate_branch.bind(PI / 6))
-	tools.add_child(rotate)
-	var commands := [["←", Vector2.RIGHT, "Ver el entorno de la izquierda"], ["→", Vector2.LEFT, "Ver el entorno de la derecha"], ["↑", Vector2.DOWN, "Ver el entorno superior"], ["↓", Vector2.UP, "Ver el entorno inferior"]]
-	for command in commands:
-		var button := Button.new()
-		button.text = command[0]
-		button.tooltip_text = command[2]
-		button.custom_minimum_size = Vector2(38, 34)
-		for state in ["normal", "hover"]:
-			var style := Neon.button(graph_theme, state == "hover", state, low_performance)
-			style.content_margin_left = 6
-			style.content_margin_right = 6
-			button.add_theme_stylebox_override(state, style)
-		button.pressed.connect(pan_view.bind(command[1]))
-		tools.add_child(button)
-	for button in [mode, rotate]:
-		button.add_theme_font_size_override("font_size", int(14 * font_scale))
-		for state in ["normal", "hover", "pressed", "focus"]:
-			var style := Neon.button(graph_theme, state != "normal", state, low_performance)
-			style.content_margin_left = 6
-			style.content_margin_right = 6
-			button.add_theme_stylebox_override(state, style)
