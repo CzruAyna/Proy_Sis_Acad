@@ -12,6 +12,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Estado actual](ESTADO_ACTUAL.md) | Funciones, persistencia y límites al corte del 9 de noviembre de 2026 (`4095c2e`). |
 | [Arquitectura](ARQUITECTURA.md) | Organización del repositorio, separación de componentes y responsabilidades principales del código. |
 | [Desarrollo local](DESARROLLO_LOCAL.md) | Requisitos, ejecución y exportación de Godot, API Django e interfaz Next.js. |
+| [Instaladores de la beta](INSTALADORES_BETA.md) | Paquetes por sistema, compilación, pruebas y pendientes. |
 | [Simulación individual](SIMULACION_ESTUDIANTE.md) | Reglas y estados del recorrido individual en Godot. |
 | [Diseño visual](DISENO_VISUAL_CAMPUS.md) | Identidad, grafos, navegación y comportamiento visual acordados. |
 | [Ruptura y emblema geométrico](DISENO_RUPTURA_Y_EMBLEMA.md) | Terminal interior, botones translúcidos, erosión progresiva, emblema animado y verificaciones. |

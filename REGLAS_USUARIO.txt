@@ -314,3 +314,10 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     pendientes de revisión los rótulos de ubicación que corregirá el usuario.
     Mostrar el objetivo académico siguiente en la exploración. Diseñar
     avisos de recompensas y documentar su concesión para motor/backend.
+
+34. PREPARACIÓN DE LA BETA, indicada el 09/11/2026.
+    Revisar las notas pendientes y retirar comprimidos y archivos que ya
+    no se necesiten. Preparar la instalación del juego según el sistema
+    operativo, con Windows y Linux como destinos solicitados y otros
+    cuando se puedan empaquetar. Entregar una versión local para que el
+    usuario la pruebe antes de la primera beta pública.

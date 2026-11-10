@@ -3,8 +3,10 @@ extends SceneTree
 
 
 func _initialize() -> void:
-	DirAccess.make_dir_recursive_absolute("res://build")
-	var file := FileAccess.open("res://build/GODOT-NOTICES.txt", FileAccess.WRITE)
+	var arguments := OS.get_cmdline_user_args()
+	var output := "res://build/GODOT-NOTICES.txt" if arguments.is_empty() else arguments[0]
+	DirAccess.make_dir_recursive_absolute(output.get_base_dir())
+	var file := FileAccess.open(output, FileAccess.WRITE)
 	if file == null:
 		push_error("No se pudieron escribir los avisos del motor")
 		quit(1)

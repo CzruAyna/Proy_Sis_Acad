@@ -38,6 +38,9 @@ El resultado consta de `SIS-INF.exe` y `SIS-INF.pck` dentro de
 `game/build/`. Mantener ambos archivos juntos. La carpeta de exportación está
 ignorada por Git y no sustituye al código fuente del proyecto.
 
+Para obtener el instalador, los paquetes de Linux y macOS y las sumas SHA-256
+de la beta, consulta [Instaladores de la beta](INSTALADORES_BETA.md).
+
 ### Partidas y preferencias
 
 El juego guarda las partidas, preferencias y logros en el directorio local de

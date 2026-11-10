@@ -1,5 +1,26 @@
 # Registro de verificaciones
 
+## Candidato 0.1.0-beta.1 · 10 de noviembre de 2026
+
+- Windows x64. Dos instalaciones consecutivas en una carpeta de prueba.
+  Se comprobó el acceso de Inicio, el registro de desinstalación y el
+  arranque headless del juego instalado. Con el ejecutable bloqueado, el
+  desinstalador conservó los archivos y el registro. Al liberar el archivo,
+  retiró la instalación y el acceso directo y conservó el perfil de prueba.
+- Linux x86_64. Se comprobaron la arquitectura ELF, el PCK y los permisos
+  de ejecución. Se ensayó el instalador en un entorno simulado con una
+  ruta que contiene espacios, incluida la reinstalación, la desinstalación
+  y el rechazo de una arquitectura distinta. Falta el arranque en Linux.
+- macOS Universal. Se comprobaron las dos arquitecturas del binario, los
+  permisos de ejecución, el PCK y los recursos de firma. Quedan pendientes
+  una prueba en macOS y la notarización.
+- Pasaron seis suites de navegación, malla, vida del campus y partida
+  con 6.743 aserciones. Se retiraron cinco comprimidos redundantes u
+  obsoletos, por un total de 46.478.262 bytes.
+
+Los archivos de prueba y el procedimiento para reproducir el empaquetado
+se describen en [Instaladores de SIS-INF](INSTALADORES_BETA.md).
+
 ## Ejecución del 9 de noviembre de 2026 · ramas, terreno y misiones
 
 Cambios locales sobre `4cd9fdc`. Godot 4.7.2 en Windows, con perfiles
