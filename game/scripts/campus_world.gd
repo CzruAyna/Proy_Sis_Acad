@@ -32,11 +32,6 @@ const MINUTES_PER_DAY := 1440
 const LIGHTING_RATE := 4.0
 const MORNING := 540.0
 const PROVISIONAL_DESK := "admin_sis"
-const SPRITE := [
-	"....hhhh....", "...hhhhhh...", "...hssssh...", "...hssssh...", "....ssss....",
-	"...bbbbbb...", "..sbbbbbbs..", "..sbbppbbs..", "..sbbppbbs..", "...bbbbbb...",
-	"...dddddd...", "...dd.ddd...", "...dd.ddd...", "...kk.kkk..."
-]
 
 var player := Map.SPAWN
 var camera := Map.SPAWN
@@ -51,7 +46,7 @@ var moving := false
 var zoom := 2.0
 var paused := false
 var _held: Dictionary = {}
-var _textures: Dictionary = {}
+var player_program := ""
 var _last_context := ""
 var _outside := Map.SPAWN
 var _exterior_facing := Vector2.UP
@@ -195,6 +190,8 @@ func _process(delta: float) -> void:
 			queue_redraw()
 		if _ambient_tick > 0.2:
 			_ambient_tick = 0
+			if Terrain.lawn_near(camera):
+				queue_redraw()
 			for fountain in Land.fountains():
 				if player.distance_to(fountain["point"]) < 420:
 					queue_redraw()
@@ -582,7 +579,7 @@ func _draw_campus(view: Rect2) -> void:
 			continue
 		if view.grow(44).has_point(item["point"]):
 			var dog := ambient_cast.is_dog(item)
-			var extent := Scale.DOG_SIZE if dog else Scale.OUTDOOR_SIZE
+			var extent := Scale.DOG_SIZE if dog else Scale.NPC_SIZE
 			var destination := Rect2(item["point"] - Vector2(extent.x * 0.5, extent.y - 2), extent)
 			var direction: Vector2 = item.get("facing", Vector2.DOWN)
 			if direction.x < -0.4:
@@ -699,27 +696,11 @@ func _sign(point: Vector2, text: String, font_size: int) -> void:
 
 
 func _draw_player() -> void:
-	var variant := "back" if facing.y < -0.4 else ("side" if absf(facing.x) > absf(facing.y) else "front")
-	var frame := posmod(int(stride), 2) if moving else 0
-	var key := variant + str(frame)
-	if not _textures.has(key):
-		var picture := Image.create(12, 16, false, Image.FORMAT_RGBA8)
-		var palette := {"h": Color("#273447"), "s": Color("#d3a67d"), "b": Color("#4189a8"), "p": Color("#e4ad61"), "d": Color("#31465e"), "k": Color("#172d3d")}
-		for y in range(SPRITE.size()):
-			for x in range(SPRITE[y].length()):
-				var symbol: String = SPRITE[y][x]
-				if palette.has(symbol):
-					var color: Color = palette[symbol]
-					if variant == "back" and y in [2, 3]:
-						color = palette["h"]
-					picture.set_pixel(x, y + (frame if y > 10 and x < 6 else 0), color)
-		if variant == "front":
-			picture.set_pixel(4, 3, Color("#263445"))
-			picture.set_pixel(7, 3, Color("#263445"))
-		_textures[key] = ImageTexture.create_from_image(picture)
-	var shadow := Vector2(12, 3) if room_id.is_empty() else Vector2(24, 6)
-	draw_rect(Rect2(player.round() - shadow / 2, shadow), Color("#304a46"))
-	draw_texture_rect(_textures[key], player_sprite_rect(), false)
+	var pose := "side" if absf(facing.x) > absf(facing.y) else ("back" if facing.y < -0.4 else "front")
+	var frame := posmod(int(stride * 0.45), 4) if moving and animations_enabled else 0
+	var shadow := Vector2(15, 4) if room_id.is_empty() else Vector2(22, 5)
+	draw_rect(Rect2(player.round() - shadow / 2, shadow), Color(0.08, 0.13, 0.14, 0.52))
+	draw_texture_rect(Cast.player_texture(player_program, pose, frame), player_sprite_rect(), false)
 
 
 func player_sprite_rect() -> Rect2:

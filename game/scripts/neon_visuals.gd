@@ -16,11 +16,13 @@ static func career(program_id: String, mention_id: String = "") -> Dictionary:
 	var red := program_id == "informatica"
 	return {
 		"bg": Color("#100303") if red else Color("#020813"),
-		"panel": Color("#240909", 0.95) if red else Color("#07172e", 0.95),
-		"accent": Color("#ff2934") if red else Color("#338aff"),
-		"neon": Color("#ff393d") if red else Color("#39bcff"),
+		"panel": Color("#28121e", 0.95) if red else Color("#0a1d2c", 0.95),
+		"accent": Color("#fa4d65") if red else Color("#338aff"),
+		"neon": Color("#ff576b") if red else Color("#39bcff"),
+		"highlight": Color("#ffbd90") if red else Color("#83edbe"),
+		"secondary": Color("#de91be") if red else Color("#6bcbd2"),
 		"core": Color("#fff0ec") if red else Color("#e4f6ff"),
-		"fill": Color("#8f141a") if red else Color("#124a9a"),
+		"fill": Color("#85283d") if red else Color("#154b83"),
 		"text": Color("#fff3f1") if red else Color("#edf8ff"),
 		"sub": Color("#eebdb8") if red else Color("#b3cde6"),
 		"grid": Color("#702322") if red else Color("#1b4975"),

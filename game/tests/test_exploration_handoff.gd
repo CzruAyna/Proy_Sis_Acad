@@ -2,6 +2,7 @@ extends "res://tests/test_compact_navigation.gd"
 
 const Map = preload("res://scripts/campus_map.gd")
 const World = preload("res://scripts/campus_world.gd")
+const Scale = preload("res://scripts/campus_scale.gd")
 
 
 func _open_station(station: Dictionary, code: int) -> void:
@@ -11,17 +12,15 @@ func _open_station(station: Dictionary, code: int) -> void:
 	world.player = station["approach"]
 	await _settle()
 	if code == 0:
-		for control in game.find_children("*", "Button", true, false):
-			if control.text == "Interactuar [E]":
-				var click := InputEventMouseButton.new()
-				click.position = control.get_global_rect().get_center()
-				click.global_position = click.position
-				click.button_index = MOUSE_BUTTON_LEFT
-				click.pressed = true
-				viewport.push_input(click, true)
-				click.pressed = false
-				viewport.push_input(click, true)
-				break
+		var control: LinkButton = game.find_child("ExplorationInteractHint", true, false)
+		var click := InputEventMouseButton.new()
+		click.position = control.get_global_rect().get_center()
+		click.global_position = click.position
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = true
+		viewport.push_input(click, true)
+		click.pressed = false
+		viewport.push_input(click, true)
 	else:
 		var key := InputEventKey.new()
 		key.physical_keycode = code
@@ -41,8 +40,9 @@ func _run() -> void:
 	for direction in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
 		sprite.facing = direction
 		var rect: Rect2 = sprite.player_sprite_rect()
-		_check(rect.position == Vector2(234, 165), "Mirar en cualquier dirección conserva el anclaje exterior")
-		_check(absf(rect.size.x) == 12 and rect.size.y == 16, "Reflejar conserva la escala exterior")
+		var extent := Scale.OUTDOOR_SIZE
+		_check(rect.position == sprite.player - Vector2(extent.x / 2, extent.y - extent.y / 16), "Mirar en cualquier dirección conserva el anclaje exterior")
+		_check(rect.size.abs() == extent, "Reflejar conserva la escala exterior")
 	sprite.free()
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(1152, 720)

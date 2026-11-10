@@ -300,3 +300,17 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     el fondo y conservar la referencia a niveles anteriores, sin ocultar
     reprobaciones ni alterar conexiones. La ficha de una materia se muestra
     como ruptura pixel art sobre el grafo y se recoge al hacer clic fuera.
+
+33. RAMAS ACUMULATIVAS, TERRENO Y MISIONES, indicada el 09/11/2026.
+    Permitir el zoom con la rueda del ratón en mapa y malla. Retirar los
+    botones visibles de zoom y conservar el teclado como alternativa. Esta
+    excepción expresa no introduce desplazamiento de menús con rueda ni
+    deslizadores. Revelar las correlativas con clic derecho, conservar las
+    ramas abiertas y permitir saltar entre ramas y encuadrar con teclado.
+    Mostrar el contenido breve de la materia en la ficha compacta de ruptura
+    pixel art, con una ilustración demostrativa y contraste por carrera.
+    Añadir relieve, pasto y animación ambiental, y distinguir al protagonista
+    de los NPC con siluetas mayores y detalles como las mochilas. Mantener
+    pendientes de revisión los rótulos de ubicación que corregirá el usuario.
+    Mostrar el objetivo académico siguiente en la exploración. Diseñar
+    avisos de recompensas y documentar su concesión para motor/backend.

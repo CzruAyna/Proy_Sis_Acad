@@ -15,7 +15,7 @@ var approach := "constancia"
 var report: Dictionary = {}
 var chapter := 0
 var graph_semester := 0
-var graph_layouts: Dictionary = {}
+var graph_revealed: Dictionary = {}
 
 
 func _init(controller: Control) -> void:
@@ -108,7 +108,7 @@ func create_story(seed_value: int = -1) -> void:
 	report = generated
 	chapter = 0
 	graph_semester = 0
-	graph_layouts.clear()
+	graph_revealed.clear()
 	show_chapter()
 
 
@@ -187,13 +187,14 @@ func show_graph() -> void:
 	_text(page, "%s · %s" % [report["player_name"], Catalog.mention_by_id(str(report["program_id"]), str(report["mention_id"]))["name"]], 14).name = "StoryIdentity"
 	var counter := _text(page, "", 15)
 	var graph := Graph.new()
+	graph.branch_view = true
+	graph.revealed = graph_revealed.duplicate()
 	graph.name = "StoryCurriculumGraph"
 	graph.font_scale = float(ui.settings["font_scale"])
 	graph.animations_enabled = bool(ui.settings["animations"])
 	graph.low_performance = bool(ui.settings.get("low_performance", false))
 	graph.display_height = 220
 	graph.personal_states = item["states"].duplicate(true)
-	graph.manual_positions = graph_layouts.duplicate(true)
 	graph.setup(str(report["program_id"]), str(report["mention_id"]), 800)
 	graph.semester_index = clampi(graph_semester, 0, graph.semesters.size() - 1)
 	for subject in Catalog.all_subjects(str(report["program_id"]), str(report["mention_id"])):
@@ -207,12 +208,13 @@ func show_graph() -> void:
 	page.add_child(frame)
 	frame.add_child(graph)
 	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_text(page, Graph.KEY_GUIDE, 13)
+	_text(page, Graph.BRANCH_GUIDE, 13)
 	var update := func(_index: int = 0, _count: int = 0) -> void:
 		graph_semester = graph.semester_index
 		counter.text = "Semestre curricular %d de %d · Historia hasta el periodo %d" % [graph_semester + 1, graph.semesters.size(), int(item["term"])]
 	graph.semester_changed.connect(update)
-	graph.layout_changed.connect(func() -> void: graph_layouts = graph.manual_positions.duplicate(true))
+	graph.branches_changed.connect(func() -> void: graph_revealed = graph.revealed.duplicate())
+	graph_revealed = graph.revealed.duplicate()
 	graph.subject_selected.connect(func(code: String, data: Dictionary) -> void:
 		if ui.find_child("GraphSubjectPopup", false, false) != null:
 			return

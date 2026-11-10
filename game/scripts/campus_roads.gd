@@ -41,20 +41,44 @@ static func _round_corners(raw: PackedVector2Array) -> PackedVector2Array:
 	return result
 
 
-static func draw(canvas: CanvasItem, view: Rect2) -> void:
+static func draw(canvas: CanvasItem, view: Rect2, detail: bool = true) -> void:
 	if _entries.is_empty():
 		for path in walkways():
 			_entries.append({"path": path, "area": Geo.bounds(path).grow(12), "width": WALK_WIDTH, "fill": Color("#857d6b")})
 		for path in paths():
 			_entries.append({"path": path, "area": Geo.bounds(path).grow(30), "width": ROAD_WIDTH, "fill": SURFACE})
-	# Paint shoulders first, then surfaces. Asphalt covers joined footpaths.
-	for shoulder in [true, false]:
+	# Cover the whole network in each pass so bevels never stripe the junctions.
+	for layer in range(3):
 		for entry in _entries:
 			if not Rect2(entry["area"]).intersects(view):
 				continue
 			var path: PackedVector2Array = entry["path"]
-			var width: float = entry["width"] + (8 if shoulder else 0)
-			var color := Color("#c0b296") if shoulder else Color(entry["fill"])
+			var width: float = entry["width"] + [8, 2, -3][layer]
+			var color: Color = [Color("#c3b394"), Color(entry["fill"]).darkened(0.32), Color(entry["fill"])][layer]
 			canvas.draw_polyline(path, color, width, false)
 			for endpoint in [path[0], path[-1]]:
 				canvas.draw_circle(endpoint, width / 2, color, true, -1, false)
+	if not detail:
+		return
+	for entry in _entries:
+		if not Rect2(entry["area"]).intersects(view):
+			continue
+		var path: PackedVector2Array = entry["path"]
+		var paved: bool = entry["width"] == ROAD_WIDTH
+		for index in range(path.size() - 1):
+			var a := path[index]
+			var b := path[index + 1]
+			if not Geo.bounds(PackedVector2Array([a, b])).grow(8).intersects(view):
+				continue
+			var side := a.direction_to(b).orthogonal()
+			var length := a.distance_to(b)
+			var pitch := 19 if paved else 9
+			for distance in range(pitch / 2, floori(length), pitch):
+				var grain := a.lerp(b, float(distance) / length).round()
+				if not view.has_point(grain):
+					continue
+				if paved:
+					var spot := grain + side * (posmod(int(grain.x + grain.y), 21) - 10)
+					canvas.draw_rect(Rect2(spot.round(), Vector2(3, 2)), Color("#58605d"))
+				else:
+					canvas.draw_line(grain - side * 4, grain + side * 4, Color("#686252"), 1)

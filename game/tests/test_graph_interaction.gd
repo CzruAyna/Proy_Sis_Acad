@@ -2,6 +2,7 @@ extends SceneTree
 
 const Graph = preload("res://scripts/curriculum_graph.gd")
 const Catalog = preload("res://scripts/catalog.gd")
+const Routing = preload("res://scripts/graph_routing.gd")
 
 var assertions := 0
 var failures: Array[String] = []
@@ -96,8 +97,49 @@ func _run() -> void:
 	_check(Vector2(graph.visible_nodes[1]["pos"]).is_equal_approx(original), "Restablecer también recupera una rama girada")
 	_check(graph.clip_contents and not graph.is_processing(), "El zoom no desborda y la reducción de movimiento se respeta")
 	graph.queue_free()
+	_test_branches()
 	await process_frame
 	for failure in failures:
 		push_error(failure)
 	print("GRAPH_INTERACTION_TESTS: %d assertions, %d failures" % [assertions, failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+
+func _test_branches() -> void:
+	var graph := Graph.new()
+	graph.branch_view = true
+	graph.animations_enabled = false
+	root.add_child(graph)
+	graph.size = Vector2(1090, 460)
+	for program in Catalog.PROGRAMS:
+		for mention in Catalog.mentions_for_program(program["id"]):
+			graph.revealed.clear()
+			graph.setup(program["id"], mention["id"], 1090)
+			var first := graph.revealed.duplicate()
+			var source := -1
+			for index in range(graph.visible_nodes.size()):
+				if graph.visible_nodes[index]["sigla"] == "SIS 1110":
+					source = index
+					break
+			_check(source >= 0, "Metodología I queda disponible en el origen")
+			if source >= 0:
+				graph.fit_view()
+				var click := InputEventMouseButton.new()
+				click.button_index = MOUSE_BUTTON_RIGHT
+				click.pressed = true
+				click.position = Vector2(graph.visible_nodes[source]["pos"]) * graph.view_zoom + graph.view_offset
+				graph._gui_input(click)
+				_check(graph.revealed.has("SIS 2210") and first.keys().all(func(code: String) -> bool: return graph.revealed.has(code)), "El clic derecho agrega Metodología II y conserva el origen")
+				var kept := graph.revealed.duplicate()
+				graph._next_branch()
+				_check(graph.revealed == kept, "Cambiar de rama no elimina nodos")
+				_check(Routing.valid(graph.visible_nodes, graph.edges, graph.edge_paths, graph._radii()), "El trazado acumulado conserva separación")
+			graph._show_full_plan()
+			graph.fit_view()
+			var expected := 0
+			for course in Catalog.all_subjects(program["id"], mention["id"]):
+				expected += course.get("prereq", []).size()
+			_check(graph.revealed.size() == graph._course_by_code.size() and graph.edges.size() == expected, "Plan completo conserva todas las correlativas")
+			_check(Routing.valid(graph.visible_nodes, graph.edges, graph.edge_paths, graph._radii()), "Plan completo con rutas sin contacto")
+			_check(graph.visible_nodes.all(func(node: Dictionary) -> bool: return Rect2(Vector2.ZERO, graph.size).has_point(Vector2(node["pos"]) * graph.view_zoom + graph.view_offset)), "Inicio encuadra toda la red acumulada")
+	graph.queue_free()

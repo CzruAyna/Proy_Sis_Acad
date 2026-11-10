@@ -156,7 +156,8 @@ func _run() -> void:
 	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
 	wheel.pressed = true
 	graph._gui_input(wheel)
-	_check(graph.view_zoom == zoom and graph.view_offset == offset, "La rueda no controla el grafo")
+	_check(graph.view_zoom < zoom, "La rueda aleja el grafo sin cambiar la selección")
+	graph.fit_view()
 	graph.pan_view(Vector2.LEFT)
 	_check(graph.view_offset != offset, "Se puede explorar el entorno con botones")
 	graph.zoom_at_center(1.15)

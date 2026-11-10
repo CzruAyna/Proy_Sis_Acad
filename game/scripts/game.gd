@@ -116,6 +116,7 @@ var active_slot := 0
 var selected_faculty := ""
 var draft_player_name := ""
 var current_question: Dictionary = {}
+var _study_return := Callable()
 var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false, "low_performance": false}
 var formula_font: Font
 var random := RandomNumberGenerator.new()
@@ -1405,7 +1406,7 @@ func _show_play() -> void:
 	if recent > 0:
 		var saved := _read_save(recent, "solo")
 		menu.add_child(_label("Última partida · " + str(saved.get("player_name", "Estudiante")).left(38), 13, _current_theme["sub"], true))
-		var resume := _add_menu_button(menu, "Continuar", _open_slot.bind(recent, "solo"), true, 46)
+		var resume := _add_menu_button(menu, "Continuar", _open_slot.bind(recent, "solo", true), true, 46)
 		resume.tooltip_text = "Última partida · " + str(saved.get("player_name", "Estudiante"))
 		primary_action = resume
 	else:
@@ -1636,7 +1637,7 @@ func _show_slots(mode: String) -> void:
 		if save.is_empty():
 			_add_menu_button(row, "Nueva", _begin_new_game.bind(slot), true, 42)
 		else:
-			_add_menu_button(row, "Continuar", _open_slot.bind(slot, "solo"), true, 42)
+			_add_menu_button(row, "Continuar", _open_slot.bind(slot, "solo", true), true, 42)
 			_add_button(row, "Borrar", _delete_slot.bind(slot, "solo"), false, 42)
 
 
@@ -1653,7 +1654,7 @@ func _begin_new_game(slot: int) -> void:
 	_show_new_solo()
 
 
-func _open_slot(slot: int, mode: String) -> void:
+func _open_slot(slot: int, mode: String, into_world: bool = false) -> void:
 	if mode != "solo":
 		return
 	_save_profile()
@@ -1675,7 +1676,10 @@ func _open_slot(slot: int, mode: String) -> void:
 	simulation = Simulation.new(current_profile)
 	campus_ui = null
 	_save_profile()
-	_show_solo_hub()
+	if into_world:
+		_show_exploration()
+	else:
+		_show_solo_hub()
 
 
 func _delete_slot(slot: int, mode: String) -> void:
@@ -1827,11 +1831,11 @@ func _show_mentions(program_id: String) -> void:
 		actions.add_theme_constant_override("h_separation", 8)
 		actions.alignment = FlowContainer.ALIGNMENT_CENTER
 		card.add_child(actions)
-		_add_button(actions, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"])), true, 42).custom_minimum_size.x = 240
+		_add_button(actions, "Empezar carrera", _create_solo_save.bind(program_id, str(mention["id"]), true), true, 42).custom_minimum_size.x = 240
 		_add_button(actions, "Plan y simulación", Callable(self, "_show_curriculum").bind(program_id, str(mention["id"])), false, 42).custom_minimum_size.x = 240
 
 
-func _create_solo_save(program_id: String, mention_id: String) -> void:
+func _create_solo_save(program_id: String, mention_id: String, into_world: bool = false) -> void:
 	if not _require_player_name():
 		return
 	var mention := Catalog.mention_by_id(program_id, mention_id)
@@ -1845,7 +1849,10 @@ func _create_solo_save(program_id: String, mention_id: String) -> void:
 	simulation = Simulation.new(current_profile)
 	campus_ui = null
 	_save_profile()
-	_show_solo_hub()
+	if into_world:
+		_show_exploration()
+	else:
+		_show_solo_hub()
 
 
 func _show_solo_hub() -> void:
@@ -1857,13 +1864,14 @@ func _show_solo_hub() -> void:
 	_show_campus_section("resumen")
 
 
-func _start_subject(key: String) -> void:
+func _start_subject(key: String, back: Callable = Callable()) -> void:
+	_study_return = back if back.is_valid() else _show_solo_hub
 	if simulation == null or simulation.state["phase"] != "CURSANDO" or not simulation.state["enrollments"].has(key):
-		_show_solo_hub()
+		_study_return.call()
 		return
 	var entry: Dictionary = simulation.state["enrollments"][key]
 	if entry["score"] != null:
-		_show_solo_hub()
+		_study_return.call()
 		return
 	current_profile["current_subject"] = key
 	_campus_section = "materias"
@@ -1890,7 +1898,7 @@ func _show_exam() -> void:
 	var theme := NeonVisuals.career(str(current_profile["program_id"]), str(current_profile["mention_id"]))
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
-	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, course["name"], subject["sigla"]], "Semestre cursado %d · Tres parciales determinan la nota final" % int(simulation.state["term"]), Callable(self, "_show_solo_hub"))
+	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, course["name"], subject["sigla"]], "Semestre cursado %d · Tres parciales determinan la nota final" % int(simulation.state["term"]), _study_return if _study_return.is_valid() else _show_solo_hub, false, false)
 	var columns := _adaptive_grid(content, 470.0, 2)
 	var lesson := _card(columns, true)
 	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1948,7 +1956,7 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 		var subject: Dictionary = simulation.course_data(key)
 		explanation += " Nota final %.2f. El resultado se consolida al cerrar el semestre." % float(result["score"])
 		_save_profile()
-		_show_result("Materia aprobada" if result["passed"] else "Materia reprobada", explanation, bool(result["passed"]), _show_solo_hub)
+		_show_result("Materia aprobada" if result["passed"] else "Materia reprobada", explanation, bool(result["passed"]), _study_return if _study_return.is_valid() else _show_solo_hub)
 	else:
 		_save_profile()
 		_show_result("Parcial registrado", explanation + " La nota final se calcula con los tres parciales.", correct, _show_exam)

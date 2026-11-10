@@ -181,3 +181,11 @@ actual. Para separar Caja, Kardex, Cómputo y otras oficinas hacen falta una
 ubicación comprobada por oficina, su punto de atención y horarios vigentes.
 El ciclo actual de iluminación es visual. El motor debe decidir el contrato
 de reloj persistente y cuándo habilitar interacciones o emitir avisos.
+
+MISIONES Y RÓTULOS DEL CAMPUS, 09/11/2026
+Ver docs/RAMAS_TERRENO_Y_MISIONES.md. Las misiones de pantalla reflejan la
+matrícula, inscripción y resultados del motor actual. Los créditos y el
+aprendizaje están previstos en el diseño. Backend debe confirmar tipos,
+concesión, persistencia y duplicados antes de mostrarlos como entregados.
+El usuario indicará las correcciones de nombres y posiciones del mapa.
+Registrar rótulo actual, nombre correcto, referencia espacial y fuente.

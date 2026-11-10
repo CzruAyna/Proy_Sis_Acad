@@ -4,6 +4,7 @@ const Catalog = preload("res://scripts/catalog.gd")
 const Procedures = preload("res://scripts/simulation_procedures.gd")
 const Graph = preload("res://scripts/curriculum_graph.gd")
 const SubjectPopup = preload("res://scripts/graph_subject_popup.gd")
+const Glimpse = preload("res://scripts/course_glimpse.gd")
 const Demo = preload("res://scripts/study_demo.gd")
 const Choice = preload("res://scripts/choice_picker.gd")
 const DOCUMENT_NAMES := {"ci": "Identidad", "matricula": "Matrícula vigente", "carnet": "Carnet universitario", "historial": "Historial académico", "formulario": "Formulario de solicitud", "conclusion": "Conclusión de estudios", "solvencia": "Solvencia", "perfil": "Perfil y propuesta de tutor", "borrador": "Borrador del trabajo", "plan_aux": "Plan de trabajo", "plan_firmado": "Plan firmado", "permiso_aula": "Permiso de aula", "informe_aux": "Informe docente", "acta_defensa": "Acta de defensa", "diploma": "Diploma académico", "titulo": "Título"}
@@ -22,7 +23,7 @@ var form_course := ""
 var form_reason := ""
 var graph_semester := 0
 var graph_term_seen := 0
-var graph_layouts: Dictionary = {}
+var _branches_by_plan: Dictionary = {}
 var _recent_approvals: Dictionary = {}
 var _office_back := Callable()
 var show_request_form := false
@@ -74,7 +75,7 @@ func _friendly(message: String) -> String:
 	return message.replace("/tramites", "Trámites")
 
 
-func perform(method: String, arguments: Array = [], destination: String = "", inspect_request: bool = false) -> Dictionary:
+func perform(method: String, arguments: Array = [], destination: String = "", inspect_request: bool = false, back: Callable = Callable()) -> Dictionary:
 	var model := _model()
 	var previous: Array = _ui().current_profile.get("passed_subjects", []).duplicate() if method == "close_term" else []
 	var result: Dictionary = model.callv(method, arguments)
@@ -98,7 +99,10 @@ func perform(method: String, arguments: Array = [], destination: String = "", in
 		selected_request = str(result["request_id"])
 		show_request_form = false
 		section = "tramites"
-	_ui()._show_campus_section(section)
+	if back.is_valid():
+		back.call()
+	else:
+		_ui()._show_campus_section(section)
 	return result
 
 
@@ -173,7 +177,26 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 			_button(stats, "Continuar estudiando", _go.bind("materias"), true, true)
 
 
-func _confirm_close() -> void:
+func exploration_objective(back: Callable) -> Dictionary:
+	var snapshot: Dictionary = _model().snapshot()
+	if snapshot["graduated"]:
+		return {"id": "graduated", "title": "Recorrido completo", "hint": "Tu título está emitido."}
+	if snapshot["studies_complete"]:
+		return {"id": "degree", "title": "Graduación disponible", "hint": "Consulta las modalidades en la ventanilla de Administración de Sistemas."}
+	if snapshot["phase"] == "INSCRIPCION":
+		if not _document_present("matricula", "", snapshot):
+			return {"id": "matricula", "title": "Completa la matrícula", "hint": "Administración de Sistemas · entra y pulsa E al fondo de la oficina."}
+		if snapshot["subjects"].any(func(subject: Dictionary) -> bool: return not subject["enrollment"].is_empty()):
+			return {"id": "start", "title": "Inicia el semestre", "hint": "Matrícula vigente · abre los parciales de tus materias.", "label": "Iniciar", "action": perform.bind("start_term", [], "resumen", false, back)}
+		return {"id": "plan", "title": "Elige tus materias", "hint": "Inscríbelas antes de iniciar el semestre.", "label": "Materias", "action": _go.bind("materias")}
+	for subject in snapshot["subjects"]:
+		var entry: Dictionary = subject["enrollment"]
+		if not entry.is_empty() and entry["score"] == null:
+			return {"id": "study", "title": str(subject["name"]), "hint": "Parcial %d de 3 · continúa desde aquí." % (entry["answers"].size() + 1), "label": "Rendir", "action": _ui()._start_subject.bind(str(subject["id"]), back)}
+	return {"id": "close", "title": "Cierra el semestre", "hint": "Ya tienes un resultado en todas tus materias.", "label": "Cerrar", "action": _confirm_close.bind(back)}
+
+
+func _confirm_close(back: Callable = Callable()) -> void:
 	var snapshot: Dictionary = _model().snapshot()
 	var lines: Array[String] = ["Se guardará cada resultado en el historial y comenzará la planificación del siguiente semestre."]
 	for subject in snapshot["subjects"]:
@@ -181,7 +204,7 @@ func _confirm_close() -> void:
 		if not entry.is_empty():
 			lines.append("%s · %s" % [subject["sigla"], "%.2f" % float(entry["score"]) if entry["score"] != null else "sin resultado"])
 	lines.append("Los permisos y actividades del periodo actual vencerán. Revisa tus trámites y trabajo de auxiliatura antes de cerrar.")
-	_confirm("Cerrar el semestre", "\n".join(lines), perform.bind("close_term", [], "resumen"))
+	_confirm("Cerrar el semestre", "\n".join(lines), perform.bind("close_term", [], "resumen", false, back))
 
 
 func _confirm(title: String, body: String, callback: Callable) -> void:
@@ -673,12 +696,14 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	var archive := _text(page, "", 13, true)
 	archive.name = "GraphApprovedArchive"
 	var graph := Graph.new()
+	var plan_key := "%s/%s/%s" % [program_id, mention_id, personal]
+	graph.branch_view = true
+	graph.revealed = _branches_by_plan.get(plan_key, {}).duplicate()
 	graph.name = "ExpandedCurriculumGraph"
 	graph.font_scale = float(ui.settings["font_scale"])
 	graph.animations_enabled = bool(ui.settings["animations"])
 	graph.low_performance = bool(ui.settings.get("low_performance", false))
 	graph.display_height = 220.0
-	graph.manual_positions = graph_layouts.duplicate(true)
 	graph.retiring = _recent_approvals.duplicate()
 	var snapshot: Dictionary = _model().snapshot() if personal else {}
 	var approved: Array[Dictionary] = []
@@ -706,12 +731,11 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 	page.add_child(frame)
 	frame.add_child(graph)
 	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_text(page, Graph.KEY_GUIDE, 13, true)
-	_text(page, "0: mi nivel · B: esfera o rama · T: girar · R: restaurar", 12, true)
+	_text(page, Graph.BRANCH_GUIDE, 13, true)
 	var update := func(_index: int = 0, _count: int = 0) -> void:
 		if personal:
 			graph_semester = graph.semester_index
-		headline.text = "Semestre curricular %d de %d%s" % [graph.semester_index + 1, graph.semesters.size(), " · Ámbar: en curso o por recursar" if personal else ""]
+		headline.text = "%d materias abiertas%s" % [graph.revealed.size() - 1, " · Ámbar: en curso o por recursar" if personal else ""]
 		var earlier := PackedStringArray()
 		for subject in approved:
 			if int(subject["semester"]) < graph.semester_index + 1:
@@ -722,7 +746,11 @@ func show_graph(program_id: String, personal: bool, mention_id: String) -> void:
 			archive.text += "  ·  %d más" % (earlier.size() - 5)
 	graph.subject_selected.connect(func(_sigla: String, data: Dictionary) -> void: _show_subject_sheet(data, graph, snapshot))
 	graph.semester_changed.connect(update)
-	graph.layout_changed.connect(func() -> void: graph_layouts = graph.manual_positions.duplicate(true))
+	var save_branches := func() -> void:
+		_branches_by_plan[plan_key] = graph.revealed.duplicate()
+		update.call()
+	graph.branches_changed.connect(save_branches)
+	save_branches.call()
 	update.call()
 	ui._focus_control.call_deferred(weakref(graph))
 	_recent_approvals.clear()
@@ -750,11 +778,15 @@ func _show_subject_sheet(data: Dictionary, return_focus: Control, snapshot: Dict
 	var details := popup.open(ui, return_focus)
 	_text(details, str(data.get("sigla", "")), 14, true)
 	_text(details, str(data.get("name", "Ingreso")), 22)
-	_text(details, str(data.get("desc", "")), 16)
+	var description := str(data.get("desc", ""))
+	_text(details, description if data.get("admission", false) else description.get_slice(". ", 0).left(220).trim_suffix(".") + ".", 16)
 	if data.get("admission", false):
 		for mode in data.get("admission_modes", []):
 			_text(details, "• " + str(mode), 14, true)
 		return
+	var glimpse := Glimpse.new()
+	glimpse.configure(str(data["sigla"]), ui._current_theme, ui.settings["animations"] and not ui.settings["low_performance"])
+	details.add_child(glimpse)
 	var requirements: Array = data.get("prereq", [])
 	_text(details, "Requisitos · " + (", ".join(requirements) if not requirements.is_empty() else "Sin correlativas"), 14, true)
 	for subject in snapshot.get("subjects", []):
@@ -782,5 +814,4 @@ func _show_subject_sheet(data: Dictionary, return_focus: Control, snapshot: Dict
 			_button(details, "Inscribir", _enroll.bind(key), true, true)
 		elif snapshot["planning_available"] and not entry.is_empty() and not subject["approved"]:
 			_button(details, "Retirar del semestre", perform.bind("withdraw", [key], "materias"))
-		_button(details, "Repasar" if subject["approved"] else "Explorar contenido", ui._show_course_preview.bind(key))
 		return

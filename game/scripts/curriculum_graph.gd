@@ -4,6 +4,7 @@ extends Control
 signal subject_selected(sigla: String, data: Dictionary)
 signal semester_changed(index: int, count: int)
 signal layout_changed
+signal branches_changed
 
 const NODE_RADIUS := 44.0
 const Neon = preload("res://scripts/neon_visuals.gd")
@@ -14,6 +15,7 @@ const CAREER_COLORS := {
 	"informatica": [Color("#f15163"), Color("#d18bab")]
 }
 const STUDY_ACCENT := Color("#ffd36a")
+const BRANCH_GUIDE := "Clic der. o Espacio: desplegar · N: otra rama · Enter: ficha · Rueda o +/−: zoom · Inicio: encuadrar · F: plan completo"
 const KEY_GUIDE := "Flechas: elegir · Enter: abrir · Q/E: semestre · WASD o arrastre: vista · +/−: zoom · Inicio: encuadrar"
 
 var font_scale := 1.0
@@ -49,6 +51,11 @@ var edge_paths: Array[PackedVector2Array] = []
 var reference_layout := false
 var _default_positions: Array[Vector2] = []
 var home_semester := 0
+var branch_view := false
+var revealed: Dictionary = {}
+var _course_by_code: Dictionary = {}
+var _successors: Dictionary = {}
+var _branch_references := 0
 var retiring: Dictionary = {}
 static var _sphere_cache: Dictionary = {}
 
@@ -59,7 +66,7 @@ func _ready() -> void:
 	clip_contents = true
 	set_process(animations_enabled and not low_performance)
 	accessibility_name = "Grafo de materias"
-	accessibility_description = KEY_GUIDE + " · 0: nivel inicial · B: mover rama · T: girar · R: restablecer"
+	accessibility_description = BRANCH_GUIDE if branch_view else KEY_GUIDE + " · 0: nivel inicial · B: mover rama · T: girar · R: restablecer"
 	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
 	resized.connect(_fit_after_resize)
@@ -80,6 +87,8 @@ func setup(pid: String, selected_mention: String = "", available_width: float = 
 	graph_theme = Neon.career(pid, selected_mention)
 	semesters = UniCatalog.semesters_for(program_id, mention_id)
 	semester_index = 0
+	if branch_view:
+		_catalog_branches()
 	_build_semester()
 
 
@@ -97,6 +106,15 @@ func move_semester(step: int) -> void:
 
 
 func _build_semester() -> void:
+	if branch_view:
+		if semesters.is_empty():
+			return
+		for subject in semesters[semester_index].get("subjects", []):
+			_reveal_with_requirements(str(subject["sigla"]))
+		for carried in carry_subjects:
+			_reveal_with_requirements(str(carried["sigla"]))
+		_build_branches()
+		return
 	visible_nodes.clear()
 	edges.clear()
 	edge_paths.clear()
@@ -138,23 +156,8 @@ func _build_semester() -> void:
 	custom_minimum_size = Vector2(0, display_height)
 	var index_by_sigla := {}
 	if needs_admission:
-		var root := {
-			"sigla": "INGRESO",
-			"name": "Vía de ingreso",
-			"source": true,
-			"admission": true,
-			"pos": Vector2(graph_width * 0.22, area_height * 0.5),
-			"color": Color("#d0ae74"),
-			"desc": "Antes del primer semestre, la FNI habilita modalidades de admisión. La convocatoria define cuáles se abren para cada periodo y carrera.",
-			"admission_modes": [
-				"Examen de admisión o Prueba de Suficiencia Académica.",
-				"Curso propedéutico o preuniversitario, con preparación y evaluación.",
-				"Excelencia académica, según condiciones de la convocatoria.",
-				"Traspaso desde otra universidad pública, sujeto a revisión.",
-				"Beca deportiva u otras modalidades especiales cuando sean convocadas."
-			],
-			"notice": "Revisa la convocatoria vigente de la FNI para requisitos, fechas, materias, cupos y modalidades disponibles."
-		}
+		var root := _admission()
+		root["pos"] = Vector2(graph_width * 0.22, area_height * 0.5)
 		index_by_sigla["INGRESO"] = 0
 		visible_nodes.append(root)
 	for index in range(prerequisites.size()):
@@ -185,6 +188,208 @@ func _build_semester() -> void:
 	_auto_fit = true
 	fit_view.call_deferred()
 	queue_redraw()
+
+
+func _catalog_branches() -> void:
+	_course_by_code = {"INGRESO": _admission()}
+	_successors.clear()
+	for semester in semesters:
+		for course in semester.get("subjects", []):
+			var code: String = course["sigla"]
+			_course_by_code[code] = course
+			for requirement in course.get("prereq", []):
+				if not _successors.has(requirement):
+					_successors[requirement] = []
+				_successors[requirement].append(code)
+	revealed["INGRESO"] = true
+
+
+func _reveal_with_requirements(code: String) -> void:
+	if revealed.has(code) or not _course_by_code.has(code):
+		return
+	revealed[code] = true
+	for requirement in _course_by_code[code].get("prereq", []):
+		_reveal_with_requirements(requirement)
+
+
+func _build_branches() -> void:
+	var focus_code := str(visible_nodes[selected]["sigla"]) if selected >= 0 and selected < visible_nodes.size() else ""
+	var carried := {}
+	for subject in carry_subjects:
+		carried[subject["sigla"]] = subject["semester"]
+	visible_nodes.clear()
+	edges.clear()
+	edge_paths.clear()
+	reference_layout = false
+	_branch_references = 0
+	var indices := {}
+	for code in _course_by_code:
+		if not revealed.has(code):
+			continue
+		var node: Dictionary = _course_by_code[code].duplicate(true)
+		if carried.has(code):
+			node["retained"] = true
+			node["semester"] = carried[code]
+		indices[code] = visible_nodes.size()
+		visible_nodes.append(node)
+	for code in indices:
+		var target: int = indices[code]
+		var primary_found := false
+		for requirement in _course_by_code[code].get("prereq", []):
+			if not indices.has(requirement):
+				continue
+			var source: int = indices[requirement]
+			if not primary_found and source < target:
+				edges.append(Vector2i(source, target))
+				primary_found = true
+			else:
+				var reference := visible_nodes[target].duplicate(true)
+				reference["reference"] = true
+				edges.append(Vector2i(source, visible_nodes.size()))
+				visible_nodes.append(reference)
+				_branch_references += 1
+	if not _layout_branch_forest(1.0) and not _layout_branch_forest(1.75):
+		_connection_references()
+		_group_layout(_groups())
+		if not _route_edges():
+			# The reference layout gives each connection its own cell.
+			push_error("No se encontró una disposición segura para las correlativas.")
+			edges.clear()
+			edge_paths.clear()
+	hovered = -1
+	selected = int(indices.get(focus_code, -1)) if not reference_layout else -1
+	_auto_fit = true
+	fit_view.call_deferred()
+	branches_changed.emit()
+	queue_redraw()
+
+
+func _layout_branch_forest(spacing: float) -> bool:
+	var branches := {}
+	var parents := {}
+	for edge in edges:
+		if not branches.has(edge.x):
+			branches[edge.x] = []
+		branches[edge.x].append(edge.y)
+		parents[edge.y] = edge.x
+	var max_radius := 0.0
+	var course_radius := 0.0
+	for index in range(visible_nodes.size()):
+		var radius := _radius(index)
+		max_radius = maxf(max_radius, radius)
+		if not visible_nodes[index].get("admission", false):
+			course_radius = maxf(course_radius, radius)
+	var levels := {}
+	var y := max_radius + 85.0
+	var pitch := (2 * course_radius + 92.0) * spacing
+	for index in range(visible_nodes.size()):
+		if not parents.has(index):
+			y = _place_branch(index, 0, y, pitch, branches, levels)
+	var layer_count := 1
+	var gaps := {}
+	for edge in edges:
+		var layer: int = levels[edge.x]
+		var span := absf(Vector2(visible_nodes[edge.x]["pos"]).y - Vector2(visible_nodes[edge.y]["pos"]).y)
+		gaps[layer] = maxf(float(gaps.get(layer, 0.0)), span)
+		layer_count = maxi(layer_count, layer + 2)
+	var columns: Array[float] = [max_radius + 100.0]
+	var stem := max_radius + 34.0
+	for layer in range(layer_count - 1):
+		columns.append(columns[-1] + 2 * stem + maxf(132.0, (float(gaps.get(layer, 0.0)) + max_radius) * 1.7 * spacing))
+	for index in range(visible_nodes.size()):
+		visible_nodes[index]["pos"].x = columns[levels[index]]
+	graph_width = columns[-1] + max_radius + 100.0
+	_set_height(y)
+	var paths: Array[PackedVector2Array] = []
+	for edge in edges:
+		var source: Vector2 = visible_nodes[edge.x]["pos"]
+		var target: Vector2 = visible_nodes[edge.y]["pos"]
+		var siblings: Array = branches[edge.x]
+		var port := lerpf(-0.88, 0.88, float(siblings.find(edge.y)) / float(siblings.size() - 1)) if siblings.size() > 1 else 0.0
+		var start := source + Vector2(sqrt(1 - port * port), port) * (_radius(edge.x) + 4.0)
+		var finish := target - Vector2(_radius(edge.y) + 5.0, 0)
+		paths.append(PackedVector2Array([start, Vector2(source.x + stem, start.y), Vector2(target.x - stem, target.y), finish]))
+	if not Routing.valid(visible_nodes, edges, paths, _radii()):
+		return false
+	edge_paths = paths
+	return true
+
+
+func _place_branch(index: int, layer: int, y: float, pitch: float, branches: Dictionary, levels: Dictionary) -> float:
+	levels[index] = layer
+	var children: Array = branches.get(index, [])
+	if children.is_empty():
+		visible_nodes[index]["pos"] = Vector2(0, y)
+		return y + pitch
+	var cursor := y
+	for child in children:
+		cursor = _place_branch(child, layer + 1, cursor, pitch, branches, levels)
+	var first: Vector2 = visible_nodes[children[0]]["pos"]
+	var last: Vector2 = visible_nodes[children[-1]]["pos"]
+	visible_nodes[index]["pos"] = (first + last) * 0.5
+	return cursor
+
+
+func _expand_from(index: int) -> void:
+	selected = index
+	var code: String = visible_nodes[index]["sigla"]
+	var previous := revealed.size()
+	for successor in _successors.get(code, []):
+		_reveal_with_requirements(successor)
+	if revealed.size() > previous:
+		_build_branches()
+	else:
+		queue_redraw()
+
+
+func _next_branch() -> void:
+	if visible_nodes.is_empty():
+		return
+	var parents := {}
+	var roots: Array[int] = []
+	for edge in edges:
+		parents[edge.y] = edge.x
+		if visible_nodes[edge.x]["sigla"] == "INGRESO":
+			roots.append(edge.y)
+	for index in range(visible_nodes.size()):
+		if not parents.has(index) and visible_nodes[index]["sigla"] != "INGRESO":
+			roots.append(index)
+	if roots.is_empty():
+		return
+	var current := selected
+	while parents.has(current) and not roots.has(current):
+		current = parents[current]
+	selected = roots[(roots.find(current) + 1) % roots.size()]
+	var point := _animated_position(selected) * view_zoom + view_offset
+	if not Rect2(Vector2(50, 40), size - Vector2(100, 80)).has_point(point):
+		view_offset += size * 0.5 - point
+		_auto_fit = false
+	queue_redraw()
+
+
+func _show_full_plan() -> void:
+	for code in _course_by_code:
+		revealed[code] = true
+	_build_branches()
+
+
+func _admission() -> Dictionary:
+	return {
+		"sigla": "INGRESO",
+		"name": "Vía de ingreso",
+		"source": true,
+		"admission": true,
+		"color": Color("#d0ae74"),
+		"desc": "Antes del primer semestre, la FNI habilita modalidades de admisión. La convocatoria define cuáles se abren para cada periodo y carrera.",
+		"admission_modes": [
+			"Examen de admisión o Prueba de Suficiencia Académica.",
+			"Curso propedéutico o preuniversitario, con preparación y evaluación.",
+			"Excelencia académica, según condiciones de la convocatoria.",
+			"Traspaso desde otra universidad pública, sujeto a revisión.",
+			"Beca deportiva u otras modalidades especiales cuando sean convocadas."
+		],
+		"notice": "Revisa la convocatoria vigente de la FNI para requisitos, fechas, materias, cupos y modalidades disponibles."
+	}
 
 
 func _grid_position(index: int, count: int, source: bool, area_height: float) -> Vector2:
@@ -242,7 +447,7 @@ func _draw() -> void:
 		var item: Dictionary = visible_nodes[focus_index]
 		var status := str(personal_states.get(item["sigla"], ""))
 		Neon.text(self, Neon.PIXEL_FONT, Vector2(14, 24), "%s · %s%s" % [item["sigla"], item["name"], " · " + status if not status.is_empty() else ""], int(12 * font_scale), _node_color(focus_index), low_performance, size.x - 28)
-	elif reference_layout:
+	elif reference_layout or _branch_references > 0:
 		Neon.text(self, Neon.PIXEL_FONT, Vector2(14, 24), "Las referencias repetidas identifican la misma materia.", int(12 * font_scale), glow, low_performance, size.x - 28)
 
 
@@ -316,9 +521,11 @@ func _draw_sphere_labels(index: int) -> void:
 	var brightness := _node_depth(index)
 	var ink := Color(graph_theme["text"], 1.0 if active else maxf(0.76, brightness))
 	var code_size := roundi(maxf(11.0, 13.0 * view_zoom) * font_scale)
+	if branch_view and view_zoom < 0.23 and not active:
+		return
 	var name_size := roundi(maxf(10.0, 11.0 * view_zoom) * font_scale)
 	var code := str(item.get("sigla", ""))
-	_draw_node_text(center + Vector2(0, code_size * 0.35), code, code_size, ink, 160.0)
+	_draw_node_text(center + Vector2(0, code_size * 0.35), code + (" *" if item.get("reference", false) else ""), code_size, ink, 160.0)
 	var lines := _name_lines(str(item.get("name", "")), bool(item.get("admission", false)))
 	var width := clampf(184.0 * view_zoom + 28.0, 126.0 * font_scale, 224.0)
 	for line_index in range(lines.size()):
@@ -359,6 +566,11 @@ func _name_lines(value: String, admission: bool) -> Array[String]:
 
 func _radius(index: int) -> float:
 	var source := bool(visible_nodes[index].get("source", false))
+	if branch_view and not reference_layout:
+		var branches := 0
+		for edge in edges:
+			branches += int(edge.x == index)
+		return maxf(NODE_RADIUS * minf(font_scale, 1.12), float(branches - 1) * 21.0 + 9.0)
 	var depth := 0.94 + 0.10 * float(visible_nodes[index]["pos"].y) / maxf(_graph_height, 1)
 	var degree := 0
 	depth = clampf(depth, 0.94, 1.04)
@@ -399,6 +611,18 @@ func _sphere_resource(color: Color) -> Dictionary:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+			_set_zoom(view_zoom * (1.16 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.16), event.position)
+			accept_event()
+			return
+		if branch_view and event.button_index == MOUSE_BUTTON_RIGHT:
+			grab_focus()
+			var hit := _node_at(event.position)
+			if hit >= 0:
+				_expand_from(hit)
+			accept_event()
+			return
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			KEY_RIGHT, KEY_DOWN, KEY_LEFT, KEY_UP:
@@ -410,7 +634,19 @@ func _gui_input(event: InputEvent) -> void:
 						view_offset += size * 0.5 - screen_point
 						_auto_fit = false
 					queue_redraw()
-			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+			KEY_SPACE:
+				if selected >= 0 and not event.echo:
+					if branch_view:
+						_expand_from(selected)
+					else:
+						subject_selected.emit(str(visible_nodes[selected]["sigla"]), visible_nodes[selected].duplicate(true))
+			KEY_N:
+				if branch_view and not event.echo:
+					_next_branch()
+			KEY_F:
+				if branch_view and not event.echo:
+					_show_full_plan()
+			KEY_ENTER, KEY_KP_ENTER:
 				if selected >= 0 and not event.echo:
 					subject_selected.emit(str(visible_nodes[selected]["sigla"]), visible_nodes[selected].duplicate(true))
 			KEY_PLUS, KEY_EQUAL, KEY_KP_ADD:
@@ -428,14 +664,14 @@ func _gui_input(event: InputEvent) -> void:
 				var pan: Vector2 = {KEY_A: Vector2.RIGHT, KEY_D: Vector2.LEFT, KEY_W: Vector2.DOWN, KEY_S: Vector2.UP}[event.keycode]
 				pan_view(pan)
 			KEY_B:
-				if not event.echo:
+				if not branch_view and not event.echo:
 					move_branch = not move_branch
 					queue_redraw()
 			KEY_T:
-				if not event.echo:
+				if not branch_view and not event.echo:
 					rotate_branch(PI / 6)
 			KEY_R:
-				if not event.echo:
+				if not branch_view and not event.echo:
 					reset_layout()
 					fit_view()
 			_:
@@ -463,7 +699,10 @@ func _gui_input(event: InputEvent) -> void:
 		if _dragging >= 0:
 			_drag_moved = _drag_moved or event.position.distance_to(_drag_start) > 4
 			var destination: Vector2 = (event.position - view_offset) / view_zoom - _drag_offset
-			if move_branch:
+			if branch_view:
+				if _drag_moved:
+					pan_view(event.relative / 65.0)
+			elif move_branch:
 				_move_branch(_dragging, destination)
 			else:
 				_move_node(_dragging, destination)
@@ -489,7 +728,7 @@ func _node_at(point: Vector2) -> int:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_RESIZED and size.x > 10 and not semesters.is_empty():
+	if what == NOTIFICATION_RESIZED and not branch_view and size.x > 10 and not semesters.is_empty():
 		var available_width := maxf(size.x, 360.0)
 		if not is_equal_approx(graph_width, available_width):
 			var remembered := str(visible_nodes[selected].get("sigla", "")) if selected >= 0 and selected < visible_nodes.size() else ""
@@ -715,7 +954,7 @@ func zoom_at_center(factor: float) -> void:
 func _set_zoom(value: float, anchor: Vector2) -> void:
 	var world := (anchor - view_offset) / view_zoom
 	_auto_fit = false
-	view_zoom = clampf(value, 0.08, 1.65)
+	view_zoom = clampf(value, 0.002 if branch_view else 0.08, 1.65)
 	view_offset = anchor - world * view_zoom
 	queue_redraw()
 
@@ -868,7 +1107,7 @@ func fit_view() -> void:
 		var center := _animated_position(index)
 		bounds = bounds.expand(center - Vector2(maxf(96, radius + 7), radius + 29))
 		bounds = bounds.expand(center + Vector2(maxf(96, radius + 7), radius + 54))
-	view_zoom = clampf(minf((size.x - 64) / bounds.size.x, (size.y - 54) / bounds.size.y), 0.08, 1.2)
+	view_zoom = clampf(minf((size.x - 64) / bounds.size.x, (size.y - 54) / bounds.size.y), 0.002 if branch_view else 0.08, 1.2)
 	view_offset = (size * 0.5 + Vector2(0, 12)) - bounds.get_center() * view_zoom
 	_auto_fit = true
 	queue_redraw()

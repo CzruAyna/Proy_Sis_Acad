@@ -15,6 +15,7 @@ var saved: Dictionary = {}
 var session_key := ""
 var guest_name := ""
 var _lighting_minutes := World.MORNING
+var _last_objective := ""
 var minigames: RefCounted
 
 
@@ -50,6 +51,7 @@ func _session() -> void:
 	if key != session_key:
 		session_key = key
 		_lighting_minutes = World.MORNING
+		_last_objective = ""
 		saved = profile.get("campus_exploration", {}).duplicate(true) if profile.get("campus_exploration", {}) is Dictionary else {}
 
 
@@ -139,6 +141,7 @@ func show_world() -> void:
 	location.name = "ExplorerIdentity"
 	var world := World.new()
 	world.name = "CampusWorld"
+	world.player_program = str(_ui().current_profile.get("program_id", ""))
 	world.custom_minimum_size.y = 180
 	world.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	world.animations_enabled = bool(_ui().settings["animations"]) and not bool(_ui().settings.get("low_performance", false))
@@ -150,12 +153,21 @@ func show_world() -> void:
 	clock.autowrap_mode = TextServer.AUTOWRAP_OFF
 	clock.size_flags_horizontal = Control.SIZE_SHRINK_END
 	world.clock_changed.connect(func(value: String) -> void: clock.text = value)
+	if _ui().simulation != null and not _ui().current_profile.is_empty():
+		_add_objective(workspace)
 	workspace.add_child(world)
 	var status := HBoxContainer.new()
 	status.add_theme_constant_override("separation", 10)
 	workspace.add_child(status)
 	var hint := _text(status, world.interaction_text(), 14)
 	hint.name = "ExplorationContext"
+	var interact := LinkButton.new()
+	interact.name = "ExplorationInteractHint"
+	interact.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	interact.add_theme_font_size_override("font_size", roundi(14 * float(_ui().settings["font_scale"])))
+	interact.add_theme_color_override("font_color", _ui()._current_theme["highlight"])
+	interact.pressed.connect(world.interact)
+	status.add_child(interact)
 	for item in [["Mapa [M]", show_map], ["Pausa [P]", show_progress]]:
 		var button: Button = _ui()._add_button(status, item[0], item[1], false, 36)
 		button.custom_minimum_size.x = 112
@@ -163,6 +175,10 @@ func show_world() -> void:
 		button.autowrap_mode = TextServer.AUTOWRAP_OFF
 	var update_location := func(value: String) -> void:
 		hint.text = value
+		interact.text = value.left(51) + "…" if value.length() > 54 else value
+		interact.tooltip_text = value
+		interact.visible = value.begins_with("E ·")
+		hint.visible = not interact.visible
 		var place := world.room_name if not world.room_name.is_empty() else str(Map.building(world.room_id).get("name", "")) + " · pasillo"
 		location.text = prefix + (place if not world.room_id.is_empty() else "Ciudad universitaria FNI")
 	world.context_changed.connect(update_location)
@@ -176,6 +192,52 @@ func show_world() -> void:
 	world.landmark_requested.connect(show_monument, CONNECT_DEFERRED)
 	world.actor_requested.connect(show_actor, CONNECT_DEFERRED)
 	world.stairs_requested.connect(show_floors, CONNECT_DEFERRED)
+
+
+func _add_objective(parent: Control) -> void:
+	var objective: Dictionary = _ui()._campus().exploration_objective(show_world)
+	var colors: Dictionary = _ui()._current_theme
+	var accent: Color = colors["highlight"]
+	var panel := PanelContainer.new()
+	panel.name = "CampusObjective"
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#101824").lerp(colors["panel"], 0.40)
+	style.bg_color.a = 1.0
+	style.border_color = accent
+	style.border_width_left = 4
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 5
+	style.content_margin_bottom = 6
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	panel.add_child(row)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.add_theme_constant_override("separation", 1)
+	row.add_child(copy)
+	copy.add_child(_ui()._label("MISIÓN · " + str(objective["title"]), 16, accent))
+	_text(copy, str(objective["hint"]), 13)
+	if objective.has("action"):
+		var action: Button = _ui()._add_button(row, str(objective["label"]) + " [J]", objective["action"], true, 36)
+		action.name = "CampusObjectiveAction"
+		var key := InputEventKey.new()
+		key.keycode = KEY_J
+		action.shortcut = Shortcut.new()
+		action.shortcut.events = [key]
+	var completed := ""
+	if _last_objective == "matricula" and objective["id"] == "start":
+		completed = "Matrícula completada"
+	elif _last_objective == "close" and objective["id"] != "close":
+		completed = "Semestre cerrado"
+	if not completed.is_empty():
+		var toast: Label = _ui()._label("✓ %s · recompensa prevista: créditos virtuales y aprendizaje" % completed, 13, accent)
+		toast.name = "CampusRewardPreview"
+		copy.add_child(toast)
+		toast.get_tree().create_timer(5.0).timeout.connect(toast.queue_free)
+	_last_objective = str(objective["id"])
 
 
 func _save() -> void:
@@ -233,28 +295,15 @@ func show_map() -> void:
 	frame.add_child(map)
 	map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	map.closed.connect(show_world, CONNECT_DEFERRED)
-	var controls := _actions(page)
-	controls.alignment = FlowContainer.ALIGNMENT_CENTER
-	var minus: Button = _ui()._add_button(controls, "−", map.change_zoom.bind(-1), false, 40)
-	var reset: Button = _ui()._add_button(controls, "Vista general", map.reset_view, false, 40)
-	var plus: Button = _ui()._add_button(controls, "+", map.change_zoom.bind(1), false, 40)
-	minus.name = "CampusZoomOut"
-	plus.name = "CampusZoomIn"
-	minus.tooltip_text = "Alejar · tecla menos"
-	plus.tooltip_text = "Acercar · tecla más"
-	minus.accessibility_name = "Alejar mapa"
-	plus.accessibility_name = "Acercar mapa"
-	for action in [minus, plus]:
-		action.custom_minimum_size.x = 48
-	reset.name = "CampusZoomReset"
-	map.view_changed.connect(func() -> void:
-		minus.disabled = not map.can_zoom(-1)
-		plus.disabled = not map.can_zoom(1))
-	minus.disabled = true
-	var credit: Button = _ui()._add_button(controls, "Créditos del mapa", func() -> void: OS.shell_open(Geo.COPYRIGHT_URL), false, 40)
-	credit.tooltip_text = "OpenStreetMap · ODbL"
-	var hint := _text(page, "Arrastra o usa las flechas para mover el mapa. + / − para el zoom · M o Esc para volver.", 13)
+	var controls := HBoxContainer.new()
+	page.add_child(controls)
+	var hint := _text(controls, "Rueda o + / −: zoom · Arrastre o flechas: mover · Inicio: vista general", 13)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var credit := LinkButton.new()
+	credit.text = "Licencia del mapa"
+	credit.uri = Geo.COPYRIGHT_URL
+	credit.add_theme_font_size_override("font_size", roundi(12 * float(_ui().settings["font_scale"])))
+	controls.add_child(credit)
 	_ui()._focus_control.call_deferred(weakref(map))
 
 

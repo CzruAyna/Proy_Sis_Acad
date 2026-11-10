@@ -22,7 +22,7 @@ func _run() -> void:
 	world._life_saved = {"version": 1, "seed": "20261104", "rare": false}
 	root.add_child(world)
 	world.set_process(false)
-	_check(Scale.OUTDOOR_SIZE.y / Scale.UNITS_PER_METRE == 2.0 and Scale.OUTDOOR_RADIUS < World.PLAYER_RADIUS, "La silueta y la huella exteriores comparten la escala del campus")
+	_check(Scale.OUTDOOR_SIZE.y > Scale.NPC_SIZE.y and Scale.NPC_SIZE.y > 16 and Scale.OUTDOOR_RADIUS < World.PLAYER_RADIUS, "La silueta del jugador se distingue de los NPC y conserva la huella de paso")
 	var start := world.player
 	world.move_player(Vector2.RIGHT, 0.1)
 	_check(absf(world.player.distance_to(start) - Scale.WALK_SPEED * 0.1) < 0.01, "Paseo exterior aplica el ritmo calibrado")

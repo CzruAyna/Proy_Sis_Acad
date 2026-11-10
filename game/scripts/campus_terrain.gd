@@ -4,17 +4,27 @@ const Geo = preload("res://scripts/campus_cartography.gd")
 const Roads = preload("res://scripts/campus_roads.gd")
 const Perimeter = preload("res://scripts/campus_perimeter.gd")
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
+const GRASS_ACCENTS := [
+	[Vector2(3752, 3496), Vector2(3970, 3516), Vector2(3948, 3618), Vector2(3778, 3618)],
+	[Vector2(3428, 3410), Vector2(3548, 3372), Vector2(3583, 3430), Vector2(3528, 3497), Vector2(3432, 3480)],
+	[Vector2(4027, 1576), Vector2(4087, 1632), Vector2(4080, 1804), Vector2(4044, 1752)],
+	[Vector2(3018, 1160), Vector2(3099, 1157), Vector2(3130, 1280), Vector2(3064, 1294)]
+]
+const TILE := 128
 static var _lawns: Array[PackedVector2Array] = []
 static var _lawn_bounds: Array[Rect2] = []
 static var _parking: Array[PackedVector2Array] = []
 static var _forest := PackedVector2Array()
 static var _pond := PackedVector2Array()
+static var _details: Dictionary = {}
 
 
 static func prepare() -> void:
 	if not _lawns.is_empty():
 		return
 	_lawns = Geo.shapes("gardens")
+	for patch in GRASS_ACCENTS:
+		_lawns.append(PackedVector2Array(patch))
 	for shape in _lawns:
 		_lawn_bounds.append(_bounds(shape))
 	_parking = Geo.shapes("parking")
@@ -22,23 +32,23 @@ static func prepare() -> void:
 	_pond = Land.polygon(Land.POND)
 
 
-static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool = true) -> void:
+static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool = true, map_grain: bool = false) -> void:
 	prepare()
 	canvas.draw_rect(view, Color("#ad9b7c"))
 	for index in range(_lawns.size()):
 		if _lawn_bounds[index].intersects(view):
-			canvas.draw_colored_polygon(_lawns[index], Color("#6b8656"))
+			canvas.draw_colored_polygon(_lawns[index], Color("#708d53").lerp(Color("#557443"), float(index % 5) * 0.15))
 	if _bounds(_forest).intersects(view):
 		canvas.draw_colored_polygon(_forest, Color("#3e654c"))
 	if detail:
-		for y in range(floori(view.position.y / 48) * 48, ceili(view.end.y), 48):
-			for x in range(floori(view.position.x / 48) * 48, ceili(view.end.x), 48):
-				var point := Vector2(x, y)
-				var green := in_garden(point)
-				var seed := posmod(x * 13 + y * 7, 31)
-				canvas.draw_rect(Rect2(point + Vector2(seed, seed % 13), Vector2(4, 2)), Color("#91a569") if green else Color("#c8b692"))
-				if not green and seed % 3 == 0:
-					canvas.draw_rect(Rect2(point + Vector2(12, 28), Vector2(2, 2)), Color("#8e8069"))
+		_draw_details(canvas, view, phase)
+	elif map_grain:
+		for y in range(floori(view.position.y / 38) * 38, ceili(view.end.y), 38):
+			for x in range(floori(view.position.x / 38) * 38, ceili(view.end.x), 38):
+				var seed := posmod(x * 7 + y * 11, 25)
+				var point := Vector2(x + seed, y + seed % 13)
+				if in_garden(point):
+					canvas.draw_rect(Rect2(point, Vector2(7, 3)), Color("#a0b46f"))
 	for points in _parking:
 		if not _bounds(points).intersects(view):
 			continue
@@ -51,7 +61,7 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool
 					canvas.draw_rect(Rect2(p, Vector2(46, 2)), Color("#d5d3b9"))
 					if posmod(x + y, 5) == 0:
 						canvas.draw_rect(Rect2(p + Vector2(10, 7), Vector2(24, 34)), Color("#3e5b6b"))
-	Roads.draw(canvas, view)
+	Roads.draw(canvas, view, detail)
 	Perimeter.draw_road(canvas, view, detail)
 	if _bounds(_pond).grow(24).intersects(view):
 		canvas.draw_colored_polygon(_pond, Color("#a7805e"))
@@ -79,6 +89,52 @@ static func draw(canvas: CanvasItem, view: Rect2, phase: float = 0, detail: bool
 			canvas.draw_rect(Rect2(entrance + Vector2(index * 8, -4), Vector2(4, 16)), Color("#d8d1b4"))
 		canvas.draw_string(FONT, entrance + Vector2(-50, -24), "INGRESO FNI", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ede6ca"))
 	Perimeter.draw_boundary(canvas, view, detail)
+
+
+static func _draw_details(canvas: CanvasItem, view: Rect2, phase: float) -> void:
+	for y in range(floori(view.position.y / TILE), ceili(view.end.y / TILE)):
+		for x in range(floori(view.position.x / TILE), ceili(view.end.x / TILE)):
+			for item in _detail_tile(Vector2i(x, y)):
+				var point := Vector2(item.x, item.y)
+				if not view.grow(4).has_point(point):
+					continue
+				if item.z == 0:
+					canvas.draw_rect(Rect2(point, Vector2(5, 2)), Color("#b3a17e"))
+					canvas.draw_rect(Rect2(point + Vector2(1, 2), Vector2(3, 1)), Color("#958064"))
+					continue
+				var sway := roundf(sin(phase * 3.0 + (point.x + point.y) * 0.043))
+				canvas.draw_rect(Rect2(point + Vector2(-3, 1), Vector2(7, 2)), Color("#49673d"))
+				canvas.draw_line(point + Vector2(-2, 1), point + Vector2(-4 + sway, -3), Color("#91ab5e"), 1)
+				canvas.draw_line(point, point + Vector2(sway, -6), Color("#afbd73"), 1)
+				canvas.draw_line(point + Vector2(2, 1), point + Vector2(4 + sway, -2), Color("#75944d"), 1)
+				if int(item.z) % 11 == 0:
+					canvas.draw_rect(Rect2(point + Vector2(sway, -6), Vector2(2, 2)), Color("#e5c989"))
+
+
+static func _detail_tile(cell: Vector2i) -> PackedVector3Array:
+	if _details.has(cell):
+		return _details[cell]
+	if _details.size() >= 96:
+		_details.erase(_details.keys()[0])
+	var points := PackedVector3Array()
+	var origin := cell * TILE
+	for y in range(origin.y, origin.y + TILE, 13):
+		for x in range(origin.x, origin.x + TILE, 13):
+			var seed := posmod(x * 13 + y * 7, 53) + 1
+			var point := Vector2(x + seed % 10, y + seed % 9)
+			if in_garden(point):
+				points.append(Vector3(point.x, point.y, seed))
+			elif seed % 5 == 0:
+				points.append(Vector3(point.x, point.y, 0))
+	_details[cell] = points
+	return points
+
+
+static func lawn_near(point: Vector2) -> bool:
+	for bounds in _lawn_bounds:
+		if bounds.grow(120).has_point(point):
+			return true
+	return false
 
 
 static func _bounds(points: PackedVector2Array) -> Rect2:

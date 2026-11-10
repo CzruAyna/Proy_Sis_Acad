@@ -33,7 +33,7 @@ var _visited := {}
 func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
 	accessibility_name = "Mapa de Ciudad Universitaria"
-	accessibility_description = "Flechas para desplazar. Más y menos para el zoom."
+	accessibility_description = "Flechas para desplazar. Rueda o más y menos para el zoom. Inicio para ver todo."
 	mouse_default_cursor_shape = Control.CURSOR_DRAG
 	var point: Variant = state.get("position", [])
 	if point is Array and point.size() == 2:
@@ -52,12 +52,18 @@ func can_zoom(direction: int) -> bool:
 	return zoom_index + direction >= 0 and zoom_index + direction < ZOOM_LEVELS.size()
 
 
-func change_zoom(direction: int) -> void:
+func change_zoom(direction: int, anchor := Vector2.INF) -> void:
 	if not can_zoom(direction):
 		return
-	if _follow_player:
+	var point := Vector2.ZERO
+	if anchor.is_finite():
+		point = map_center + (anchor - size * 0.5) / _map_scale()
+		_follow_player = false
+	elif _follow_player:
 		map_center = _player
 	zoom_index += direction
+	if anchor.is_finite():
+		map_center = point - (anchor - size * 0.5) / _map_scale()
 	_clamp_view()
 	view_changed.emit()
 
@@ -80,7 +86,10 @@ func _clamp_view() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		change_zoom(1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1, event.position)
+		accept_event()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		grab_focus()
 		_dragging = event.pressed
 		mouse_default_cursor_shape = Control.CURSOR_MOVE if _dragging else Control.CURSOR_DRAG
@@ -110,6 +119,8 @@ func _shortcut_input(event: InputEvent) -> void:
 			change_zoom(1)
 		KEY_MINUS, KEY_KP_SUBTRACT:
 			change_zoom(-1)
+		KEY_HOME:
+			reset_view()
 		KEY_M:
 			closed.emit()
 		_:
@@ -123,7 +134,7 @@ func _draw() -> void:
 	var offset := size * 0.5 - map_center * scale
 	var view := Rect2(-offset / scale, size / scale).intersection(Rect2(Vector2.ZERO, Map.SIZE))
 	draw_set_transform(offset, 0, Vector2.ONE * scale)
-	Terrain.draw(self, view, 0, false)
+	Terrain.draw(self, view, 0, false, zoom_index >= 2)
 	for row in Map.COURTS:
 		var rect := Map.court_rect(row)
 		if not view.intersects(rect):

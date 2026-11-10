@@ -1,7 +1,8 @@
 extends RefCounted
 ## Frontend: keep feet, collision clearance and interaction reach in sync.
-const PLAYER_SIZE := Vector2(24, 32)
-const OUTDOOR_SIZE := Vector2(12, 16)
+const PLAYER_SIZE := Vector2(28, 36)
+const OUTDOOR_SIZE := Vector2(21, 27)
+const NPC_SIZE := Vector2(17, 23)
 const DOG_SIZE := Vector2(10, 12)
 const FOOT_RADIUS := 12.0
 const OUTDOOR_RADIUS := 6.0

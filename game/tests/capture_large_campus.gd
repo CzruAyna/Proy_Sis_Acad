@@ -72,7 +72,7 @@ func _run() -> void:
 		await _capture(room[2])
 	ui.show_map()
 	await _capture("19-mapa-campus")
-	game.find_child("CampusZoomIn", true, false).pressed.emit()
+	game.find_child("CampusOverview", true, false).change_zoom(1)
 	await _capture("20-mapa-ampliado")
 	game.queue_free()
 	await process_frame

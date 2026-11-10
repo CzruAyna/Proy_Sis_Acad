@@ -45,6 +45,60 @@ static func texture(id: String, frame: int = 0, back: bool = false) -> Texture2D
 	return _textures[key]
 
 
+static func player_texture(program: String, pose: String, frame: int) -> Texture2D:
+	var key := "player/%s/%s/%d" % [program, pose, frame]
+	if _textures.has(key):
+		return _textures[key]
+	var p := Painter.new(28, 36)
+	var ink := Color("#192434")
+	var cloth := Color("#ca526c") if program == "informatica" else Color("#318fb4")
+	var shine := Color("#f399a4") if program == "informatica" else Color("#6cdace")
+	var leather := Color("#d8a161")
+	var skin := Color("#dba97d")
+	var back := pose == "back"
+	var side := pose == "side"
+	var step: int = [0, -2, 0, 2][frame % 4]
+	p.rect(8, 22, 13, 8, ink)
+	p.rect(8, 27 + step, 5, 7, Color("#435774"))
+	p.rect(15, 27 - step, 5, 7, Color("#526887"))
+	p.rect(7, 33 + mini(step, 0), 7, 3, ink)
+	p.rect(14, 33 + mini(-step, 0), 8, 3, ink)
+	p.rect(8, 34 + mini(step, 0), 5, 1, shine.darkened(0.24))
+	p.rect(16, 34 + mini(-step, 0), 5, 1, shine.darkened(0.24))
+	p.rect(6, 14, 16, 13, ink)
+	p.rect(7, 15, 14, 10, cloth)
+	p.rect(9, 15, 9, 2, shine)
+	p.rect(8, 23, 13, 2, cloth.darkened(0.28))
+	p.rect(5, 16 - step, 3, 9, cloth.darkened(0.20))
+	p.rect(20, 16 + step, 3, 9, cloth.darkened(0.16))
+	p.rect(5, 23 - step, 3, 3, skin)
+	p.rect(20, 23 + step, 3, 3, skin)
+	p.rect(7, 4, 14, 10, ink)
+	p.rect(9, 3, 11, 4, Color("#35485a"))
+	p.rect(10, 4, 7, 1, Color("#536b73"))
+	if not back:
+		p.rect(9, 7, 10 if not side else 12, 6, skin)
+		p.rect(9, 7, 2, 5, ink)
+		p.dot(13 if not side else 18, 9, ink)
+		if not side:
+			p.dot(17, 9, ink)
+		p.rect(12, 12, 5, 1, Color("#aa7159"))
+	p.rect(10, 13, 9, 2, leather)
+	if back or side:
+		var x := 9 if back else 4
+		p.rect(x, 16, 11 if back else 7, 11, ink)
+		p.rect(x + 1, 17, 9 if back else 5, 8, leather)
+		p.rect(x + 2, 18, 7 if back else 3, 2, Color("#f0c280"))
+		p.rect(x + 2, 22, 7 if back else 3, 1, Color("#885b48"))
+	else:
+		p.rect(8, 15, 2, 8, ink)
+		p.rect(18, 15, 2, 8, ink)
+		p.rect(12, 18, 4, 4, Color("#fcdf9b"))
+		p.dot(13, 19, cloth)
+	_textures[key] = p.texture()
+	return _textures[key]
+
+
 static func _person(p: RefCounted, id: String, frame: int, back: bool) -> void:
 	var index := int(id.get_slice("_", 1)) if id.begins_with("estudiante_") else posmod(id.hash(), 24)
 	var skin: Color = [Color("#d9ae85"), Color("#b78662"), Color("#8e624b"), Color("#e6c39c")][index % 4]
@@ -67,7 +121,11 @@ static func _person(p: RefCounted, id: String, frame: int, back: bool) -> void:
 	if not back:
 		p.dot(10, 9, Color("#22333d"))
 		p.dot(14, 9, Color("#22333d"))
+	var bag := Color("#c5a078").lerp(cloth, 0.38)
+	p.rect(6, 13, 12, 11, Color("#26323e"))
 	p.rect(7, 14, 10, 9, cloth)
+	p.rect(8, 14, 8, 1, cloth.lightened(0.38))
+	p.rect(8, 21, 8, 1, cloth.darkened(0.34))
 	p.rect(5, 15, 2, 9, cloth.darkened(0.18))
 	p.rect(17, 15, 2, 9, cloth.darkened(0.18))
 	p.rect(5, 22, 2, 3, skin)
@@ -77,7 +135,10 @@ static func _person(p: RefCounted, id: String, frame: int, back: bool) -> void:
 	p.rect(7, 29 + frame % 2, 5, 2, Color("#20303b"))
 	p.rect(13, 30 - frame % 2, 5, 2, Color("#20303b"))
 	if back:
-		p.rect(9, 15, 7, 8, cloth.darkened(0.35))
+		p.rect(8, 14, 9, 10, Color("#26323e"))
+		p.rect(9, 15, 7, 7, bag)
+		p.rect(10, 16, 5, 1, bag.lightened(0.30))
+		p.rect(10, 20, 5, 1, bag.darkened(0.36))
 	elif accessory in ["helmet", "plan", "electric", "visor"]:
 		p.rect(7, 3, 10, 4, cloth.lightened(0.35))
 		p.rect(6, 6, 12, 2, cloth.lightened(0.2))
@@ -123,6 +184,11 @@ static func _person(p: RefCounted, id: String, frame: int, back: bool) -> void:
 	if accessory == "student" and index % 3 == 1:
 		p.rect(8, 8, 3, 3, Color("#344956"))
 		p.rect(13, 8, 3, 3, Color("#344956"))
+	if not back and accessory == "student":
+		p.rect(7, 15, 2, 7, bag.darkened(0.28))
+		p.rect(15, 15, 2, 7, bag.darkened(0.28))
+		p.dot(8, 17, bag.lightened(0.24))
+		p.dot(16, 17, bag.lightened(0.24))
 
 
 static func _dog(p: RefCounted, id: String, frame: int) -> void:

@@ -1,5 +1,26 @@
 # Registro de verificaciones
 
+## Ejecución del 9 de noviembre de 2026 · ramas, terreno y misiones
+
+Cambios locales sobre `4cd9fdc`. Godot 4.7.2 en Windows, con perfiles
+aislados. Se completaron **15 suites con 95.165 aserciones y cero fallos**.
+El total incluye 74.725 aserciones de la historia demostrativa.
+
+- `graph_interaction` verificó en los cinco planes el enlace acumulado de
+  `SIS 1110` a `SIS 2210`, el cambio de rama, el encuadre y que el plan
+  completo conserve todas las correlativas. `graph_clearance` y la misma
+  suite comprobaron separación de aristas y esferas.
+- `exploration_navigation`, `exploration_handoff` y `frontend_campus`
+  verificaron el zoom con rueda y teclado, el acceso con clic y E, el paso
+  de matrícula a inicio y parcial, y el regreso al recorrido. Se comprobó
+  el anclaje del sprite y la navegación con el texto aumentado.
+- Se revisaron cinco capturas de la misión, el terreno, el mapa, el grafo
+  inicial, la rama ampliada y la ficha. El ejecutable de Windows arrancó
+  en headless con código 0. Godot avisó sobre el almacén de certificados
+  del entorno de prueba. Queda pendiente una partida completa en ese
+  ejecutable y las confirmaciones descritas en
+  [Ramas, terreno y misiones](RAMAS_TERRENO_Y_MISIONES.md).
+
 ## Ejecución del 9 de noviembre de 2026 · exploración contextual y malla
 
 Cambios locales sobre `286f86a`. Godot 4.7.2 en Windows con perfiles aislados.

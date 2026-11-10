@@ -1,5 +1,9 @@
 # Exploración contextual y malla
 
+Los controles y fichas vigentes de la malla y del mapa se describen en
+[Ramas, terreno y misiones](RAMAS_TERRENO_Y_MISIONES.md). Las teclas de la
+tabla histórica inferior corresponden al diseño anterior de la malla.
+
 Avance del 9 de noviembre de 2026 sobre `286f86a`.
 
 ## Diseño disponible

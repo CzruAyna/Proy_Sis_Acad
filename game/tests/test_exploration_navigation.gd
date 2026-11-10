@@ -44,29 +44,30 @@ func _run() -> void:
 			var map = game.find_child("CampusOverview", true, false)
 			_check(map._heading == Vector2.UP, "La flecha señala la última orientación exterior al abrir el mapa desde un aula")
 			var overview: Vector2 = map.map_center
-			var plus: Button = game.find_child("CampusZoomIn", true, false)
-			plus.pressed.emit()
-			plus.pressed.emit()
+			map.change_zoom(1)
+			map.change_zoom(1)
 			_check(map.zoom_index == 2 and map.map_center != overview, "Acercar centra el zoom en el personaje")
 			var marker: Vector2 = map.size * 0.5 + (map._player - map.map_center) * map._map_scale()
 			_check(Rect2(Vector2.ZERO, map.size - Vector2(0, 25)).has_point(marker), "La flecha queda visible tras acercar dos veces")
-			var position_before: Vector2 = map.map_center
 			var wheel := InputEventMouseButton.new()
 			wheel.button_index = MOUSE_BUTTON_WHEEL_UP
 			wheel.pressed = true
+			wheel.position = map.size * 0.5
 			map._gui_input(wheel)
-			_check(map.zoom_index == 2 and map.map_center == position_before, "El mapa no depende de la rueda")
+			_check(map.zoom_index == 3, "La rueda acerca el mapa")
+			var position_before: Vector2 = map.map_center
 			var arrow := InputEventKey.new()
 			arrow.keycode = KEY_LEFT
 			arrow.pressed = true
 			map._gui_input(arrow)
 			_check(map.map_center.x < position_before.x, "Flechas desplazan la vista ampliada")
-			game.find_child("CampusZoomReset", true, false).pressed.emit()
+			arrow.keycode = KEY_HOME
+			map._shortcut_input(arrow)
 			_check(map.zoom_index == 0 and map.map_center == overview, "Vista general restaura el encuadre")
 			var map_keys: Array[String] = []
 			for button in game.find_children("*", "Button", true, false):
 				map_keys.append(button.text)
-			_check(map_keys == ["−", "Vista general", "+", "Créditos del mapa", "← Atrás"], "Mapa sin lista de destinos ni cuadrícula")
+			_check(map_keys == ["← Atrás"], "Mapa sin botonera de zoom, destinos ni cuadrícula")
 			_check(game.current_profile.is_empty() and game.simulation == null, "Visita libre sin crear expediente académico")
 	game.draft_player_name = "Prueba compacta"
 	game.active_slot = 1
@@ -90,6 +91,23 @@ func _run() -> void:
 	game._show_campus_section("exploracion")
 	world = game.find_child("CampusWorld", true, false)
 	_check(world != null and world.clock_text().begins_with("Día 2"), "Volver al personaje conserva el reloj visual de la sesión")
+	_check(game.find_child("CampusObjective", true, false) != null, "La matrícula aparece como misión visible en exploración")
+	var model: RefCounted = game.simulation
+	var request: Dictionary = model.snapshot()["procedures"][0]
+	model.pay("matricula")
+	for office in ["Caja", "Kardex", "Cómputo"]:
+		model.advance_procedure(str(request["id"]), office)
+	ui.show_world()
+	var action: Button = game.find_child("CampusObjectiveAction", true, false)
+	_check(action != null and action.text == "Iniciar [J]" and game.find_child("CampusRewardPreview", true, false) != null, "El siguiente paso y la recompensa prevista aparecen al terminar la matrícula")
+	if action != null:
+		action.pressed.emit()
+		action = game.find_child("CampusObjectiveAction", true, false)
+		_check(action != null and action.text == "Rendir [J]", "El parcial se abre desde el objetivo")
+		if action != null:
+			action.pressed.emit()
+			game._active_back.call()
+			_check(game.find_child("CampusWorld", true, false) != null, "Salir del parcial devuelve al campus jugable")
 	game.queue_free()
 	await process_frame
 	viewport.queue_free()
