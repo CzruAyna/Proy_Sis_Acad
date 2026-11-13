@@ -1,8 +1,8 @@
 # Instaladores de SIS-INF
 
-Candidato local `0.1.0-beta.1`. El juego de escritorio funciona de forma
-independiente de Django, Next.js y PostgreSQL. Cada descarga corresponde a
-un sistema y una arquitectura.
+La beta pública `0.1.0-beta.1` incluye el motor Godot en los paquetes de
+escritorio. Cada descarga corresponde a un sistema y una arquitectura.
+[Archivos de la beta](https://github.com/CzruAyna/Proy_Sis_Acad/releases/tag/v0.1.0-beta.1)
 
 | Sistema | Archivo | Uso |
 |---|---|---|
@@ -37,7 +37,7 @@ Los paquetes incluyen los avisos de Godot, la GPL y el JSON derivado de
 OpenStreetMap con su atribución y enlace a la ODbL. El instalador de Windows
 incluye el aviso de NSIS.
 
-## Prueba del candidato
+## Comprobar la instalación
 
 1. Instala en la plataforma correspondiente y abre SIS-INF desde su acceso.
 2. Crea una partida, entra al campus, abre mapa y malla y prueba una mesa

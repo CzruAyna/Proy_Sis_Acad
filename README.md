@@ -14,7 +14,18 @@ Este repositorio también conserva una API académica en Django y una interfaz
 web en Next.js. Son componentes separados del juego Godot: la partida de
 escritorio no necesita PostgreSQL ni se conecta a la API.
 
-## Inicio rápido
+## Descargar y probar la beta
+
+La beta pública incluye paquetes para Windows x64, Linux x86_64 y macOS
+(Intel y Apple Silicon). Descarga el de tu equipo y compara su hash SHA-256
+con el del archivo `SIS-INF-0.1.0-beta.1-SHA256SUMS.txt` antes de instalar.
+[Descargas de SIS-INF 0.1.0-beta.1](https://github.com/CzruAyna/Proy_Sis_Acad/releases/tag/v0.1.0-beta.1)
+
+Después de instalar, abre SIS-INF, crea una partida y entra al campus.
+Abre el mapa, guarda la partida, cierra el juego y comprueba que puedes
+continuarla desde **Jugar**. [Guía de instalación y prueba](docs/INSTALADORES_BETA.md)
+
+## Ejecutar desde el código fuente
 
 Para ejecutar el juego desde el proyecto se necesita Godot 4.7.2:
 
