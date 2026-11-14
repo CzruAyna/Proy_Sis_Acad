@@ -42,7 +42,6 @@ Las posiciones manuales son presentación; no cambian requisitos ni estados acad
 | Media | La explicación de aprendizaje proviene de temas orientativos del catálogo. | Reemplazar generalidades por objetivos, ejemplos y ejercicios revisados y trazables. Aprobar en una historia no acredita dominio real. |
 | Media | Los parámetros probabilísticos son deliberadamente ficticios. | Ajustarlos mediante pruebas de diversión y duración; permitir comparar historias con las mismas condiciones. No publicarlos como tasas reales. |
 
-Django y Next.js son componentes separados y no se modifican. Este análisis prioriza el producto Godot solicitado; no constituye una auditoría nueva de seguridad o rendimiento de la API.
 
 ## Verificación
 

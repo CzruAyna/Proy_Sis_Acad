@@ -9,9 +9,10 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 
 | Documento | Contenido |
 |---|---|
-| [Estado actual](ESTADO_ACTUAL.md) | Funciones, persistencia y límites al corte del 9 de noviembre de 2026 (`4095c2e`). |
+| [Estado actual](ESTADO_ACTUAL.md) | Funciones, persistencia y límites al corte `2868d19`. |
 | [Arquitectura](ARQUITECTURA.md) | Organización del repositorio, separación de componentes y responsabilidades principales del código. |
-| [Desarrollo local](DESARROLLO_LOCAL.md) | Requisitos, ejecución y exportación de Godot, API Django e interfaz Next.js. |
+| [Desarrollo local](DESARROLLO_LOCAL.md) | Requisitos, ejecución, exportación y pruebas de Godot. |
+| [Automatización](AUTOMATIZACION.md) | Suites, empaquetado por plataforma y comprobación de los archivos. |
 | [Instaladores de la beta](INSTALADORES_BETA.md) | Paquetes por sistema, compilación, pruebas y pendientes. |
 | [Simulación individual](SIMULACION_ESTUDIANTE.md) | Reglas y estados del recorrido individual en Godot. |
 | [Diseño visual](DISENO_VISUAL_CAMPUS.md) | Identidad, grafos, navegación y comportamiento visual acordados. |
@@ -36,18 +37,15 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 
 | Documento | Contenido |
 |---|---|
-| [Historial de pushes](HISTORIAL_PUSHES.md) | 39 envíos registrados en la referencia local de `origin/main`, ordenados por hora. |
-| [Historial técnico por commit](HISTORIAL_COMMITS.md) | 41 commits, con título original, cambio y archivos de referencia. |
-| [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | 20 jornadas con los avances y las decisiones confirmadas. |
+| [Historial de pushes](HISTORIAL_PUSHES.md) | Envíos de la etapa Godot registrados en `origin/main`. |
+| [Historial técnico por commit](HISTORIAL_COMMITS.md) | Cambios del juego por commit, con títulos originales y archivos de referencia. |
+| [Bitácora de desarrollo](BITACORA_DESARROLLO.md) | Avances y decisiones de la etapa Godot, por jornada. |
 | [Verificaciones](VERIFICACIONES.md) | Ejecuciones registradas por versión y alcance de la revisión documental. |
 
 ## Especificación y coordinación
 
 | Documento | Contenido |
 |---|---|
-| [Especificación funcional](ESPECIFICACION_FUNCIONAL.md) | Alcance funcional del sistema académico y sus etapas. |
-| [Reglas de negocio del sistema académico](REGLAS_NEGOCIO.md) | Reglas identificadas para la API; no sustituye las reglas del juego Godot. |
-| [Modelo de datos](MODELO_DATOS.md) | Entidades y endpoints descritos para Django. |
 | [Auditoría del frontend del juego](AUDITORIA_FRONTEND_CAMPUS.md) | Diagnóstico fechado; sus hallazgos deben contrastarse con el código actual. |
 | [Pendientes de frontend y simulación](PENDIENTES_FRONTEND_SIMULACION.md) | Coordinación y asuntos pendientes para el responsable de interfaz y motor. |
 | [Datos y fuentes para backend](PARA_BACKEND_DATOS_Y_FUENTES.txt) | Fuentes originales que faltan y aspectos institucionales por verificar. |

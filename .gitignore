@@ -1,26 +1,14 @@
-.env
-.env.*
-!.env.example
+/.vscode/
+/.local-run/
+/graphify-out/
+/.env
+/.env.*
+/backend/
+/frontend/
 
 __pycache__/
 *.py[cod]
-*.egg-info/
 .venv/
-venv/
-
-*.sqlite3
-backend/staticfiles/
-backend/media/
-backend/.postgres-runtime/
-backend/.postgres-data/
-backend/.postgresql-binaries.zip
-.local-run/
-
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/release/
-frontend/next-env.d.ts
 
 game/.godot/
 game/.tools/
@@ -30,11 +18,3 @@ game/.test-artifacts/
 *.log
 .DS_Store
 Thumbs.db
-
-latex-build/
-*.aux
-*.fdb_latexmk
-*.fls
-*.synctex.gz
-*.toc
-*.out

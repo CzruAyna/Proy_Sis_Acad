@@ -6,7 +6,7 @@ Actualización del 25 de octubre: se implementó la integración gráfica del mo
 
 ## Alcance y evidencia
 
-El producto principal confirmado por el usuario es el juego de escritorio Godot, `game/`. Se revisaron sus pantallas, navegación, presentación del progreso, malla, estudio, opciones y estados de guardado. Se inspeccionó también el frontend Next.js para distinguir las dos experiencias existentes, sin tratarlo como destino principal del rediseño.
+El producto principal confirmado por el usuario es el juego de escritorio Godot, `game/`. Se revisaron sus pantallas, navegación, presentación del progreso, malla, estudio, opciones y estados de guardado.
 
 Esta es una auditoría y propuesta de experiencia. No cambia pantallas, reglas de simulación, archivos de partidas ni código del backend. Las referencias de línea corresponden al código existente durante la revisión; pueden moverse con cambios posteriores.
 
@@ -185,7 +185,7 @@ La base de escritorio debe adaptar cantidad de columnas y paneles al espacio dis
 
 ## Coordinación con motor/backend
 
-El juego actual es local y no consume la API Django. La separación requerida puede hacerse con un adaptador local; esta revisión no propone introducir HTTP ni convertir el juego en una web.
+La separación entre interfaz y motor se puede resolver con un adaptador local.
 
 `game.gd` mezcla presentación, navegación, guardado y reglas. Las zonas con mayor riesgo de edición simultánea son: partidas `1562–1601`; hub `1729–1847`; estudio `1850–1937`; resultados `1958–2031`; guardado `2460–2494`.
 
@@ -215,18 +215,8 @@ Para notas temporales de integración, usar una marca reconocible como `FRONTEND
 5. Variar actividades de estudio y conectar las demostraciones con parámetros que expliquen consecuencias.
 6. Completar adaptación a ventanas, texto aumentado, teclado y reducción de movimiento; revisar visualmente los recorridos completos.
 
-## Referencia secundaria: frontend web
-
-Next.js contiene dos rutas: `/` carga un simulador en `juego-academico.tsx`, mientras `/sistema` apila catálogo, oferta, inscripciones y actas. No son la interfaz del ejecutable CAMPUS EN JUEGO.
-
-La versión web del juego conserva seis carreras, cuatro capítulos lineales, roles superiores y guardado en `localStorage`; está menos alineada con el nuevo enfoque. El sistema académico web tiene datos de API y formularios, pero navegación larga por anclas, tipografías pequeñas y poca comparación previa a inscribirse. Se detectaron además riesgos de borradores de notas y oferta antigua tras cambiar de periodo.
-
-Estos hallazgos quedan como referencia del inventario. No se recomienda trasladar automáticamente los flujos web a Godot ni ampliar su desarrollo mientras el destino confirmado siga siendo el juego de escritorio.
-
 ## Verificación y pendientes
 
-- Inspección estática de todas las familias de pantallas Godot y del frontend web realizada.
-- `npm run build` completado: compilación, tipos y exportación estática de `/` y `/sistema` correctos; advertencias de caché de webpack durante el proceso. Esto verifica la base web secundaria, no la jugabilidad Godot.
 - Godot `--headless --editor --quit` terminó con código 0 sin errores de parseo reportados. El entorno emitió errores al consultar certificados y al intentar guardar preferencias del editor fuera del espacio permitido; esto limita considerar el arranque del editor completamente limpio.
 - Captura visual del ejecutable bloqueada por errores del servicio de captura; no se validaron mediante capturas los posibles recortes, el contraste ni el recorrido de teclado.
 - No se ejecutaron operaciones sobre partidas reales ni trámites ni cambios académicos.

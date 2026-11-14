@@ -1,0 +1,45 @@
+name: Pruebas de SIS-INF
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  godot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-godot
+
+      - name: Importar recursos y ejecutar las suites
+        shell: bash
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/sis-inf-tests
+        run: |
+          mkdir -p "$XDG_DATA_HOME"
+          log="$RUNNER_TEMP/sis-inf-test.log"
+          run_godot() {
+            timeout 120 "$GODOT_BIN" --headless --path game "$@" 2>&1 | tee "$log"
+            if grep -q 'SCRIPT ERROR:' "$log"; then
+              return 1
+            fi
+          }
+          run_godot --import
+          shopt -s nullglob
+          tests=(game/tests/test_*.gd)
+          (( ${#tests[@]} > 0 ))
+          for test in "${tests[@]}"; do
+            printf '\n%s\n' "$test"
+            run_godot --script "res://${test#game/}"
+          done

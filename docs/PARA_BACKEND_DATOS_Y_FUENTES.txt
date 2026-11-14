@@ -24,7 +24,7 @@ no debe confundirse con un sistema institucional ni con normativa vigente.
 Frontend no ha sustituido reglas del motor por supuestas normas reales.
 
 ESTADO QUE YA CONOCEMOS EN EL REPOSITORIO
-- Godot es la experiencia principal. Django/Next.js son componentes separados.
+- SIS-INF ejecuta la simulación académica en Godot.
 - game/scripts/uto_curricula.gd contiene las cinco mallas y descripciones.
   El propio producto identifica planes publicados en 2011. Confirmar cuál
   corresponde a cada cohorte y si existen modificaciones posteriores.
@@ -34,8 +34,7 @@ ESTADO QUE YA CONOCEMOS EN EL REPOSITORIO
   auxiliatura NO se deben promover a información institucional verificada.
 - docs/SIMULACION_ESTUDIANTE.md contiene referencias anteriores a K-02, K-03,
   auxiliatura y defensa. Sus enlaces no prueban vigencia actual por sí solos.
-- docs/MODELO_DATOS.md describe recursos de la API. El juego usa el snapshot
-  local; no se ha añadido una integración nueva con Django en esta entrega.
+- El juego conserva el estado de la simulación en archivos locales.
 
 REVISIÓN SOLICITADA AL RESPONSABLE DE BACKEND
 1. Revisar los grupos siguientes y devolver una lista concreta para el usuario:

@@ -84,7 +84,7 @@ físico de retirar el taco; el indicador de fuerza es sólo texto.
 | minigame_preview.gd | Arte compartido y catálogo; se conserva porque lo usa la sala física. |
 
 Los motores son RefCounted, independientes del árbol de interfaz y de
-student_simulation.gd. No se añadieron servicios Django ni dependencias.
+student_simulation.gd.
 
 La física usa un número fijo de cuerpos y paso de 1/120 s, acumula tiempo y
 limita saltos largos. La búsqueda evita generar todas las respuestas legales

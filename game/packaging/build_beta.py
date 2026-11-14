@@ -52,10 +52,11 @@ def notices(godot, stage, version):
     return ["LICENSE", "GODOT-NOTICES.txt", "LEEME.md", "fni_osm.json"]
 
 
-def windows_package(stage, stem, version, nsis):
-    license_file = next((folder / "COPYING" for folder in [nsis.parent, nsis.parent.parent]
-                         if (folder / "COPYING").is_file()), None)
+def windows_package(stage, stem, version, nsis, license_file):
     if license_file is None:
+        license_file = next((folder / "COPYING" for folder in [nsis.parent, nsis.parent.parent]
+                             if (folder / "COPYING").is_file()), None)
+    if license_file is None or not license_file.is_file():
         raise ValueError("Falta el archivo COPYING junto al compilador NSIS.")
     shutil.copyfile(license_file, stage / "NSIS-NOTICE.txt")
     output = stage / f"{stem}-Windows-x64-Setup.exe"
@@ -94,11 +95,11 @@ def macos_package(stage, stem, app_archive, names):
 
 
 def source_package(stage, stem):
-    files = [ROOT / name for name in ("AGENTS.md", "LICENSE", "REGLAS_USUARIO.txt",
+    files = [ROOT / name for name in ("README.md", "AGENTS.md", "LICENSE", "REGLAS_USUARIO.txt",
                                      ".gitattributes", ".gitignore")]
     files.extend(GAME / name for name in ("project.godot", "export_presets.cfg", "README.md"))
     directories = [GAME / name for name in ("assets", "packaging", "scenes", "scripts", "tests", "tools")]
-    directories.append(ROOT / "docs")
+    directories.extend(ROOT / name for name in ("docs", ".github/actions", ".github/workflows"))
     for directory in directories:
         for path in directory.rglob("*"):
             if not any(part.startswith(".") or part == "__pycache__"
@@ -153,7 +154,7 @@ def build(args):
             run(godot, "--headless", "--path", GAME, "--log-file", stage / f"{current}.log",
                 "--export-release", preset, exported)
             if current == "windows":
-                output = windows_package(stage, stem, args.version, nsis)
+                output = windows_package(stage, stem, args.version, nsis, args.nsis_license)
             elif current == "linux":
                 output = linux_package(stage, stem, names)
             else:
@@ -177,6 +178,7 @@ def main():
     parser.add_argument("--target", default="auto", choices=["auto", "all", *TARGETS])
     parser.add_argument("--godot", default="godot")
     parser.add_argument("--nsis", default="makensis")
+    parser.add_argument("--nsis-license", type=Path, help="Archivo de licencia de la instalación de NSIS.")
     args = parser.parse_args()
     try:
         build(args)

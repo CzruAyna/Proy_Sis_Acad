@@ -42,8 +42,7 @@ Los visitantes sin partida mantienen su recorrido en memoria durante la sesión.
   Las reglas de los minijuegos conservan su propio paso físico.
 
 Movimiento reducido no congela las rutinas funcionales. Abrir una ficha o pausar
-la exploración sí detiene el mundo. No se modificaron Django, Next.js, notas,
-matrícula, trámites ni condiciones de excelencia.
+la exploración detiene el mundo.
 
 ## Medición y comprobaciones
 

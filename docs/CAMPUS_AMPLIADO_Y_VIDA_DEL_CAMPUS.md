@@ -89,8 +89,7 @@ terminar el despacho de entrada antes de abrir una superficie:
 
 El mundo se pausa y libera las teclas al emitir estas intenciones. La ficha
 restaura la acción Volver anterior y el foco al cerrarse. Los textos y el arte
-están separados del estado académico. No se modificaron motores académicos,
-servicios Django, Next.js ni reglas de los minijuegos del bloque E.
+están separados del estado académico y de las reglas de los minijuegos del bloque E.
 
 ### IDs del catálogo
 

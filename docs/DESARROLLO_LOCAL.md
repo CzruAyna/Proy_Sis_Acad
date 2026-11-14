@@ -1,9 +1,5 @@
 # Desarrollo y compilación local
 
-Los pasos son para desarrollo en Windows y PowerShell. El repositorio no
-requiere Docker. La experiencia Godot se puede ejecutar sin el backend, el
-frontend web ni PostgreSQL.
-
 ## Juego de escritorio Godot
 
 ### Requisitos
@@ -44,74 +40,17 @@ de la beta, consulta [Instaladores de la beta](INSTALADORES_BETA.md).
 ### Partidas y preferencias
 
 El juego guarda las partidas, preferencias y logros en el directorio local de
-usuario de Godot (`user://`). No almacena estos datos en PostgreSQL. Las
+usuario de Godot (`user://`). Las
 partidas personales no están dentro del repositorio.
 
 El nombre visible actual es SIS-INF. En Windows se mantiene la ruta de datos
 anterior mediante la configuración explícita del proyecto, para conservar
 partidas y preferencias. Detalle en [Exploración FNI](EXPLORACION_FNI.md).
 
-## API Django y PostgreSQL
-
-Este componente es independiente del juego. Requiere Python, PostgreSQL y las
-dependencias indicadas en `backend/requirements.txt`.
-
-Desde la raíz del repositorio, preparar el entorno en PowerShell:
-
-```powershell
-Set-Location backend
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-if (-not (Test-Path ..\.env)) { Copy-Item ..\.env.example ..\.env }
-```
-
-Si ya existe `.env`, conservarlo y editar solo los valores que correspondan.
-El archivo de ejemplo contiene valores de desarrollo. Iniciar PostgreSQL con
-una base y usuario que coincidan con el archivo antes de continuar.
-
-Desde `backend/`, ejecutar las migraciones y arrancar el servidor:
-
-```powershell
-python manage.py migrate
-python manage.py runserver
-```
-
-El servidor local queda en `http://localhost:8000/`; el estado de salud está
-en `/api/health/`. Para administrar usuarios localmente, se puede crear un
-superusuario con `python manage.py createsuperuser`.
-
-No copiar ni publicar el `.env`; `.gitignore` excluye ese archivo. Los valores
-de desarrollo no son configuración de producción.
-
-## Interfaz Next.js
-
-Este componente consume la API local y puede ejecutarse por separado. Requiere
-Node.js y npm compatibles con la versión fijada en `frontend/package.json`.
-Desde una terminal nueva situada en la raíz del repositorio:
-
-```powershell
-Set-Location frontend
-npm ci
-npm run dev
-```
-
-La página se sirve por defecto en `http://localhost:3000`. La API usada por
-`frontend/src/lib/api.ts` puede cambiarse con `NEXT_PUBLIC_API_URL`; si no se
-define, usa `http://localhost:8000`.
-
-Para crear la compilación web de producción, ejecutar `npm run build` desde
-`frontend/`:
-
-```powershell
-npm run build
-```
-
 ## Pruebas y diagnósticos
 
-El inventario actual contiene 21 scripts `test_*.gd`. Los resultados históricos
-y las ejecuciones acotadas de esta revisión se separan en
-[Verificaciones](VERIFICACIONES.md).
+Los resultados de cada revisión están en [Verificaciones](VERIFICACIONES.md).
+GitHub Actions ejecuta todos los scripts de prueba. [Automatización](AUTOMATIZACION.md)
 
 Las pruebas de Godot son scripts independientes dentro de `game/tests/` y se
 ejecutan con el mismo motor:

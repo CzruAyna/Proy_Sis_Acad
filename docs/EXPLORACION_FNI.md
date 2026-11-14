@@ -150,8 +150,7 @@ en otros sistemas operativos.
 | Conversor histórico `prepare_brand_assets.gd` | Retirado el 04/11/2026: las referencias originales ya no se copian a los recursos del juego. |
 
 Los dibujos de terreno, árboles, edificios, mobiliario y personaje son código
-original del proyecto, con píxeles y escala entera. No se incorporaron paquetes
-gráficos externos ni se modificaron Django, Next.js o las reglas académicas.
+original del proyecto, con píxeles y escala entera.
 
 ## Recordatorios de ambientación
 

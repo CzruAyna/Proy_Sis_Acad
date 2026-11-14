@@ -39,7 +39,7 @@ func _inspect(screen: String) -> void:
 			if control is Button or control is Label:
 				_check(panel.get_global_rect().encloses(control.get_global_rect()), "Inicio: acción o texto visible completo: " + str(control.get("text")))
 		return
-	if screen in ["opciones", "jugar", "exploración-mapa", "mapa interactivo", "malla", "malla con materia arrastrada", "exploración-mundo", "mundo-ampliado", "exploración-aula", "exploración-ayuda", "exploración-progreso", "exploración-progreso-partida"]:
+	if screen in ["opciones", "jugar", "exploración-mapa", "mapa interactivo", "malla", "malla con materia arrastrada", "historia-grafo", "exploración-mundo", "mundo-ampliado", "exploración-aula", "exploración-ayuda", "exploración-progreso", "exploración-progreso-partida"]:
 		_check(pager == null, screen + ": vista directa sin paginador")
 		for control in game.find_children("*", "Control", true, false):
 			if control.is_visible_in_tree() and (control is Button or control is Label):

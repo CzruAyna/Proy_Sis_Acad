@@ -1,0 +1,50 @@
+name: Instalar Godot
+description: Prepara la versión estable que usa SIS-INF en Linux y macOS.
+inputs:
+  templates:
+    description: Instala también las plantillas de exportación.
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        INSTALL_TEMPLATES: ${{ inputs.templates }}
+      run: |
+        version=4.7.2
+        base="https://github.com/godotengine/godot-builds/releases/download/${version}-stable"
+        tools_dir="$(mktemp -d "$RUNNER_TEMP/sis-inf-godot.XXXXXX")"
+        download() {
+          curl --fail --location --retry 3 --silent --show-error "$base/$1" --output "$tools_dir/$1"
+          printf '%s  %s\n' "$2" "$tools_dir/$1" | shasum -a 256 -c -
+        }
+
+        case "$RUNNER_OS" in
+          Linux)
+            archive="Godot_v${version}-stable_linux.x86_64.zip"
+            download "$archive" cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+            unzip -q "$tools_dir/$archive" -d "$tools_dir"
+            godot="$tools_dir/${archive%.zip}"
+            data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/godot"
+            ;;
+          macOS)
+            archive="Godot_v${version}-stable_macos.universal.zip"
+            download "$archive" c58a24e31d720be9d62f60cb5627c4e695fb72f21b0cfe1bc9ccaa9a3b3ba63e
+            ditto -x -k "$tools_dir/$archive" "$tools_dir"
+            godot="$tools_dir/Godot.app/Contents/MacOS/Godot"
+            data_dir="$HOME/Library/Application Support/Godot"
+            ;;
+          *) exit 1 ;;
+        esac
+
+        chmod +x "$godot"
+        "$godot" --version
+        printf 'GODOT_BIN=%s\n' "$godot" >> "$GITHUB_ENV"
+
+        if [[ "$INSTALL_TEMPLATES" == true ]]; then
+          archive="Godot_v${version}-stable_export_templates.tpz"
+          download "$archive" f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011
+          unzip -q "$tools_dir/$archive" -d "$tools_dir"
+          mkdir -p "$data_dir/export_templates"
+          mv "$tools_dir/templates" "$data_dir/export_templates/${version}.stable"
+        fi

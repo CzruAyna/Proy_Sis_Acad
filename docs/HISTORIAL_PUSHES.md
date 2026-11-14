@@ -1,30 +1,15 @@
 # Historial de pushes de SIS-INF
 
-Corte del 9 de noviembre de 2026 en `4095c2e`. El registro local de
-`origin/main` conserva **39 pushes**, del 15 de octubre al 9 de noviembre.
-Las horas de la tabla son las que registró esa referencia local (UTC−04:00).
-El [historial por commit](HISTORIAL_COMMITS.md) conserva los mensajes originales,
-las horas de autor, los archivos y el detalle de los cambios.
-
-El primer registro local apunta a `8302683`. El commit inicial [`242e755`](HISTORIAL_COMMITS.md#242e755-inicio-del-repositorio)
-ya está en su ascendencia, pero el registro empieza sin un valor anterior
-de `origin/main`. Queda sin confirmar si GitHub recibió el commit inicial
-en un envío anterior. La consulta pública de actividad devolvió HTTP 404,
-así que la cobertura de envíos se limita al registro local disponible.
+El registro de la etapa Godot empieza con el envío 9, correspondiente a
+`3dc9d7d`. La numeración conserva la posición en el reflog local de
+`origin/main`. Las horas se muestran en UTC−04:00.
+El [historial por commit](HISTORIAL_COMMITS.md) conserva los títulos y cambios.
 
 ## Octubre de 2026
 
 | Nº | Fecha y hora local | Commit al cierre o commits agrupados | Qué quedó en el envío |
 |---:|---|---|---|
-| 1 | 2026-10-15 22:11:27 | [`8302683`](HISTORIAL_COMMITS.md#8302683-base-de-django-y-nextjs) | Dejé preparada la estructura de Django y Next.js, con los atributos de Git en el historial inicial. |
-| 2 | 2026-10-18 19:32:41 | [`8162267`](HISTORIAL_COMMITS.md#8162267-primera-composición-de-la-web) | Reorganicé la portada y los estilos de la web. |
-| 3 | 2026-10-18 20:03:46 | [`6f5ced9`](HISTORIAL_COMMITS.md#6f5ced9-catálogo-académico-conectado) | Añadí el catálogo de carreras, planes y materias con consultas desde la web. |
-| 4 | 2026-10-18 21:12:07 | [`f97e336`](HISTORIAL_COMMITS.md#f97e336-oferta-por-paralelos) | Conecté la oferta de paralelos, aulas, docentes y horarios. |
-| 5 | 2026-10-19 09:23:56 | [`bace499`](HISTORIAL_COMMITS.md#bace499-inscripción-con-control-de-cupos) | Incorporé la inscripción autenticada con control de cupos. |
-| 6 | 2026-10-19 09:39:07 | [`c9ecbed`](HISTORIAL_COMMITS.md#c9ecbed-panel-del-estudiante) | Añadí el panel de inscripción del estudiante. |
-| 7 | 2026-10-19 21:34:59 | [`cca8f0e`](HISTORIAL_COMMITS.md#cca8f0e-actas-notas-y-correcciones) | Implementé actas, registro de notas y correcciones. |
-| 8 | 2026-10-20 09:35:52 | [`122d1d3`](HISTORIAL_COMMITS.md#122d1d3-elegibilidad-y-carga-académica) | Añadí validación de requisitos y límites de carga al inscribir. |
-| 9 | 2026-10-21 13:39:26 | [`3dc9d7d`](HISTORIAL_COMMITS.md#3dc9d7d-paso-hacia-el-juego) | Incorporé la base jugable de escritorio y separé el sistema web. |
+| 9 | 2026-10-21 13:39:26 | [`3dc9d7d`](HISTORIAL_COMMITS.md#3dc9d7d-paso-hacia-el-juego) | Incorporé la primera base jugable de escritorio en Godot. |
 | 10 | 2026-10-22 12:42:23 | [`5ee374a`](HISTORIAL_COMMITS.md#5ee374a-enfoques-de-carrera-provisionales) | Amplié la selección de enfoques de carrera con datos provisionales. |
 | 11 | 2026-10-23 18:59:30 | [`fde9e82`](HISTORIAL_COMMITS.md#fde9e82-flujos-de-partida-y-presentación) | Ajusté los flujos de partida y la presentación del juego. |
 | 12 | 2026-10-23 20:49:51 | [`a8af2b5`](HISTORIAL_COMMITS.md#a8af2b5-ventana-y-catálogo) | Corregí el comportamiento de la ventana y amplié el catálogo. |
@@ -60,6 +45,11 @@ así que la cobertura de envíos se limita al registro local disponible.
 | 37 | 2026-11-08 15:29:05 | [`f79e107`](HISTORIAL_COMMITS.md#f79e107-cartografía-v3-y-recorrido-exterior-más-corto) | Calibré el mapa con OpenStreetMap y acorté el recorrido jugable. |
 | 38 | 2026-11-08 15:59:27 | [`72b6443`](HISTORIAL_COMMITS.md#72b6443-menús-centrados-mapa-con-zoom-y-perímetro) | Centré los menús y añadí zoom, flecha, sectores y cerco al campus. |
 | 39 | 2026-11-09 16:58:42 | [`4095c2e`](HISTORIAL_COMMITS.md#4095c2e-recuperación-de-guardados-y-colisiones-interiores) | Corregí la restauración y el regreso al pasillo, y reduje consultas de colisión. |
+| 40 | 2026-11-09 17:10:14 | [`286f86a`](HISTORIAL_COMMITS.md#286f86a-historial-de-envíos) | Añadí el historial de envíos y actualicé las guías. |
+| 41 | 2026-11-09 22:49:46 | [`4cd9fdc`](HISTORIAL_COMMITS.md#4cd9fdc-exploración-contextual-y-malla-por-teclado) | Añadí interacciones contextuales y navegación de la malla con el teclado. |
+| 42 | 2026-11-09 23:11:53 | [`3ff6046`](HISTORIAL_COMMITS.md#3ff6046-ramas-acumulativas-y-misiones) | Amplié la malla, el terreno y los objetivos del campus. |
+| 43 | 2026-11-10 19:59:37 | [`42f10b7`](HISTORIAL_COMMITS.md#42f10b7-paquetes-de-la-primera-beta) | Preparé los paquetes y sumas de la primera beta. |
+| 44 | 2026-11-12 23:26:14 | [`2868d19`](HISTORIAL_COMMITS.md#2868d19-descarga-y-comprobación-de-la-beta) | Añadí la descarga y una prueba rápida al README. |
 
 El push 36 avanzó `origin/main` de `c0bd256` a `113037c`. Por eso reúne
 `e206909` y `113037c` en una sola fila. La fecha y hora de cada commit se

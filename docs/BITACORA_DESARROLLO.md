@@ -1,38 +1,14 @@
 # Bitácora de desarrollo de SIS-INF
 
-Revisión del 9 de noviembre de 2026. Corte `4095c2e`.
+Revisión del 14 de noviembre de 2026. Corte `2868d19`.
 
 La bitácora sigue las fechas de los commits en UTC−04:00. El [historial de pushes](HISTORIAL_PUSHES.md) registra los envíos y el [historial técnico](HISTORIAL_COMMITS.md) conserva sus mensajes y archivos. Las horas de Git son marcas del registro. Las notas personales entre comillas proceden de los mensajes originales.
-
-## 15 de octubre de 2026: Arranque del sistema académico
-
-**Commits:** `242e755`, `8302683`.
-
-Empecé por ordenar el proyecto: backend, frontend y documentos de reglas. Django me resultaba más fácil de seguir por Python; la parte difícil era pasar lo que conocía de la facultad a condiciones concretas: quién puede hacer algo, qué datos necesita y cuándo corresponde hacerlo. Dejé la base preparada para el catálogo, todavía sin presentar los directorios vacíos como módulos terminados.
-
-## 18 de octubre de 2026: La web empieza a consultar datos
-
-**Commits:** `8162267`, `6f5ced9`, `f97e336`.
-
-Primero trabajé en la portada. Después conecté carreras, planes y materias con la API, y añadí aulas, docentes, paralelos y sesiones. Ya podía recorrer la oferta desde la interfaz en lugar de mantenerla como datos de muestra. La malla necesitaba relaciones válidas: incorporé comprobaciones de duplicados, autorreferencias y ciclos.
-
-## 19 de octubre de 2026: Inscripción, acceso y notas
-
-**Commits:** `bace499`, `c9ecbed`, `cca8f0e`.
-
-Añadí la inscripción con control de cupos y el panel del estudiante. Si el paralelo elegido se llena, el servicio intenta los siguientes de la misma materia y periodo. Luego conecté el panel docente con actas y notas: el cierre exige registros completos y una corrección posterior deja auditoría. La inscripción y la calificación empezaban a formar un recorrido más completo.
-
-## 20 de octubre de 2026: No bastaba con tener cupo
-
-**Commits:** `122d1d3`.
-
-Amplié la inscripción para comprobar requisitos y carga académica. Añadí la evaluación de seis o siete materias y una respuesta de elegibilidad con motivos de rechazo. También mejoré el horario del panel. El commit quedó como «horarios», aunque la mayor parte del trabajo fue validar qué podía inscribir el estudiante; el generador automático de horarios seguía pendiente.
 
 ## 21 de octubre de 2026: Cambio de rumbo: el juego
 
 **Commits:** `3dc9d7d`.
 
-La idea se fue apartando de una réplica del sistema. Había visto varios proyectos parecidos y quería algo que pudiera mostrar en ferias y EXPOTECO. Incorporé el juego web y la primera versión de escritorio con Godot, y conservé la gestión en /sistema. El código registra el cambio aquí; la decisión venía de revisar para qué quería utilizar el proyecto.
+La idea se fue apartando de una réplica del sistema. Había visto varios proyectos parecidos y quería algo que pudiera mostrar en ferias y EXPOTECO. Incorporé la primera versión de escritorio con Godot. El código registra el cambio aquí; la decisión venía de revisar para qué quería utilizar el proyecto.
 
 ## 22 de octubre de 2026: Un avance pequeño en la selección
 
@@ -130,8 +106,22 @@ Después centré Inicio y Jugar, agrupé las opciones por categoría y marqué m
 
 ## 9 de noviembre de 2026 · volver al piso correcto
 
-**Commit:** `4095c2e`.
+**Commits:** `4095c2e`, `286f86a`, `4cd9fdc`, `3ff6046`.
 
 Hice que volver de un aula actualice una sola vez el pasillo de su planta. Revisé la recuperación de datos malformados y reutilicé las colisiones interiores mientras no cambie el recinto. Quité el prototipo de paseos cuando el controlador de vida asumió su población. En el mensaje quedó «por el momento un cafecito sera».
 
 Las 29 suites y el arranque aislado de la exportación están registrados en [Verificaciones](VERIFICACIONES.md). La medición de colisiones corresponde a una escena y una máquina.
+
+Ese día también ordené los pushes, ajusté las interacciones del campus y amplié la malla para recorrer sus ramas con teclado y ratón. [Malla y misiones](RAMAS_TERRENO_Y_MISIONES.md)
+
+## 10 de noviembre de 2026 · primera beta
+
+**Commit:** `42f10b7`.
+
+Preparé los paquetes de Windows, Linux y macOS, junto con las fuentes y el manifiesto SHA-256. [Instaladores](INSTALADORES_BETA.md)
+
+## 12 de noviembre de 2026 · probar la descarga
+
+**Commit:** `2868d19`.
+
+Enlacé la beta desde el README y dejé una comprobación breve para abrir el campus, guardar y retomar una partida.

@@ -104,7 +104,6 @@ el nombre anterior son históricas. Para navegación vigente se aplica
 - Los indicadores de documentos son presentación; la autorización para avanzar sigue en `advance_procedure`. Las respuestas de examen y defensa se envían mediante los métodos existentes.
 - La interfaz muestra errores de guardado y conserva la partida abierta si falla al guardar y salir o al cambiar de partida.
 
-La API Django y el frontend Next.js siguen separados y no se modificaron en esta integración.
 
 ## Recorridos disponibles sin comandos
 

@@ -1,0 +1,126 @@
+name: Publicación de SIS-INF
+
+on:
+  push:
+    tags: ['v[0-9]*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      number: ${{ steps.tag.outputs.number }}
+    steps:
+      - id: tag
+        run: |
+          if ! [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+            echo "Etiqueta no admitida: $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          printf 'number=%s\n' "${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+  tests:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    needs: [version, tests]
+    strategy:
+      matrix:
+        include:
+          - target: windows
+            runner: ubuntu-24.04
+          - target: linux
+            runner: ubuntu-24.04
+          - target: macos
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      VERSION: ${{ needs.version.outputs.number }}
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-godot
+        with:
+          templates: 'true'
+
+      - name: Instalar NSIS para el instalador de Windows
+        if: matrix.target == 'windows'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y nsis
+
+      - name: Exportar y comprobar los archivos
+        shell: bash
+        run: |
+          "$GODOT_BIN" --headless --path game --import
+          nsis_args=()
+          if [[ "$TARGET" == windows ]]; then
+            nsis_args+=(--nsis-license /usr/share/doc/nsis/copyright)
+          fi
+          python3 game/packaging/build_beta.py --godot "$GODOT_BIN" --target "$TARGET" \
+            --version "$VERSION" "${nsis_args[@]}"
+
+          bundle="SIS-INF-$VERSION"
+          cd game/build/beta
+          shasum -a 256 -c "$bundle-SHA256SUMS.txt"
+          mkdir release-assets
+          case "$TARGET" in
+            windows) mv "$bundle-Windows-x64-Setup.exe" release-assets/ ;;
+            linux)
+              mv "$bundle-Linux-x86_64.tar.gz" "$bundle-Fuentes.zip" release-assets/
+              ;;
+            macos) mv "$bundle-macOS-Universal.zip" release-assets/ ;;
+          esac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sis-inf-${{ matrix.target }}
+          path: game/build/beta/release-assets/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  release:
+    needs: [version, package]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.version.outputs.number }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sis-inf-*
+          merge-multiple: true
+          path: release-assets
+
+      - name: Crear la publicación con los archivos verificados
+        working-directory: release-assets
+        shell: bash
+        run: |
+          bundle="SIS-INF-$VERSION"
+          assets=("$bundle-Windows-x64-Setup.exe" "$bundle-Linux-x86_64.tar.gz"
+            "$bundle-macOS-Universal.zip" "$bundle-Fuentes.zip")
+          sha256sum "${assets[@]}" > "$bundle-SHA256SUMS.txt"
+          sha256sum -c "$bundle-SHA256SUMS.txt"
+
+          flags=()
+          if [[ "$VERSION" == *-beta.* ]]; then
+            flags+=(--prerelease --latest=false)
+          fi
+          guide="$GITHUB_SERVER_URL/$GH_REPO/blob/$GITHUB_SHA/docs/INSTALADORES_BETA.md"
+          notes="Descarga el paquete de tu sistema y verifica su SHA-256 antes de instalar. [Instalación y prueba]($guide)"
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" "$bundle-SHA256SUMS.txt" \
+            --verify-tag --title "SIS-INF $VERSION" --notes "$notes" --generate-notes "${flags[@]}"

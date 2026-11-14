@@ -6,8 +6,6 @@ materias. No altera partidas. Ver [contrato y pendientes de animación](../docs/
 
 Juego de escritorio para Windows hecho con Godot 4.7.2 (GDScript). Simula el recorrido individual de un estudiante por la carrera: materias, trámites, auxiliatura y graduación.
 
-El sistema académico Django/Next.js de este repositorio queda separado y no se modifica por este juego.
-
 ## Ejecutar
 
 Desde la raíz del repositorio:
@@ -104,12 +102,6 @@ game/
   assets/fonts/
   build/           (ejecutable/exportado)
 ```
-
-## Base de datos
-
-**No es necesaria para este juego.** Usa archivos JSON en `user://partidas/`. El PostgreSQL/Django solo aplica al sistema académico (`backend/`), que se mantiene intacto.
-
-Las reglas están en `docs/SIMULACION_ESTUDIANTE.md`. La integración gráfica y sus verificaciones se documentan en `docs/PENDIENTES_FRONTEND_SIMULACION.md`.
 
 ## Verificar la interfaz
 

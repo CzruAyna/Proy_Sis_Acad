@@ -1,5 +1,23 @@
 # Registro de verificaciones
 
+## Limpieza y automatización · 14 de noviembre de 2026
+
+En Windows, con Godot 4.7.2 y un perfil aislado, pasaron las 29 suites
+de `game/tests/test_*.gd`. Los registros finales suman 113.396 aserciones
+sin fallos. Se corrigieron las pruebas de pixel art y navegación de la
+historia para comprobar la malla vigente. Godot informó que no pudo leer el
+almacén de certificados durante las pruebas en el entorno aislado.
+
+`actionlint` 1.7.12 validó ambos workflows. Se generaron un instalador de
+Windows x64 y un paquete Linux x86_64 con versiones locales de prueba.
+Sus SHA-256 coincidieron con los manifiestos y se verificó el contenido de
+los ZIP de fuentes. Los registros de prueba quedaron en
+`game/.test-artifacts/cleanup-ci/`.
+
+Quedan pendientes la primera ejecución en GitHub Actions, la validación del
+paquete Linux en su sistema y la exportación automatizada y prueba en macOS.
+[Automatización](AUTOMATIZACION.md)
+
 ## Candidato 0.1.0-beta.1 · 10 de noviembre de 2026
 
 - Windows x64. Dos instalaciones consecutivas en una carpeta de prueba.
@@ -268,8 +286,7 @@ del equipo no impidieron estas operaciones locales. No se verificó red.
 Las fotografías de RTvU–UTO se observaron en el navegador y no se copiaron al
 proyecto. Siguen pendientes dimensiones y plantas reales, asignación de cada
 foto a un aula, interacción con equipos, ocupación interior por NPC y
-rendimiento en otros equipos. No se modificaron reglas académicas, Django,
-Next.js ni partidas personales. [Contrato y fuentes](CAMINOS_MENU_Y_AMBIENTES.md).
+rendimiento en otros equipos. [Contrato y fuentes](CAMINOS_MENU_Y_AMBIENTES.md).
 
 ## Matriz 8×8, retirada de originales y personajes: 04/11/2026
 
@@ -324,7 +341,7 @@ la imagen no quedó confirmada. Falta validar fachadas, plantas, escala en
 metros y rendimiento en otros equipos. Los paseos son ambientales y no prueban
 horarios, asistencia a clases, caricias, rareza ni logros. Fuentes y contratos en
 [Matriz 8×8 y personajes](MAPA_8X8_Y_PERSONAJES.md). No se modificaron partidas
-personales ni se ejecutaron servicios Django o Next.js.
+personales.
 
 ## Campus ampliado: ejecución del 03/11/2026
 
@@ -370,7 +387,7 @@ Pendientes de esta ampliación: verificación de plantas y datos institucionales
 fuentes originales de Piedritas y su organización, recorridos y horarios de
 NPC, caricias/logros, rareza y cambio de planta del motor. Los contratos están
 en [Campus ampliado](CAMPUS_AMPLIADO_Y_VIDA_DEL_CAMPUS.md). No se ejecutaron
-Django ni Next.js ni se modificaron partidas personales.
+servicios externos ni se modificaron partidas personales.
 
 ## Ampliación de tableros del 3 de noviembre de 2026
 
@@ -519,7 +536,7 @@ El mensaje no se oculta ni se toma como comprobación de funciones de red.
 
 Los registros quedan en `tmp/revision_2026_11_02/tests/` de la carpeta externa
 de documentación, uno por suite. No se ejecutaron las otras 18 suites,
-las capturas del juego ni pruebas de backend o frontend web en esta revisión.
+las capturas del juego en esta revisión.
 Esto verifica un alcance concreto, no todas las funciones del producto.
 
 ## Resultados registrados hasta el 2 de noviembre
@@ -558,4 +575,3 @@ es una medición de FPS ni una garantía de rendimiento general.
 - Rendimiento comparado, otros equipos, GPU y sistemas operativos.
 - Reproducción de todos los resultados históricos desde sus versiones.
 - Validación institucional de mallas, espacios y trámites.
-- Compilación y pruebas de Django y Next.js en esta revisión documental.

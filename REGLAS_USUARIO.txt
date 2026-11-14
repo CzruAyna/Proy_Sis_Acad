@@ -321,3 +321,11 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     operativo, con Windows y Linux como destinos solicitados y otros
     cuando se puedan empaquetar. Entregar una versión local para que el
     usuario la pruebe antes de la primera beta pública.
+
+35. ALCANCE DEL REPOSITORIO Y AUTOMATIZACIÓN, indicada el 14/11/2026.
+    Conservar en la versión vigente el juego Godot, sus pruebas, documentación,
+    herramientas y automatización de empaquetado. Mantener fuera los archivos
+    personales del editor y la implementación y documentación de la antigua
+    web. Conservar los commits publicados y la etiqueta de la primera beta.
+    GitHub Actions comprueba el juego y empaqueta las versiones etiquetadas.
+    Guardar los grafos generados fuera de los cambios del repositorio.

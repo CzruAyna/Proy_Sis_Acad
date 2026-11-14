@@ -4,12 +4,6 @@ Actualizada el 9 de noviembre de 2026.
 
 ## Para qué se mantiene esta documentación
 
-El proyecto comenzó como un sistema académico web y evolucionó hacia una
-simulación de escritorio. Conviven Godot, Django y Next.js, con modelos y formas
-de persistencia diferentes. La documentación permite identificar qué componente
-debe revisarse y evita cambiar el backend para corregir una pantalla o tratar
-los datos del juego como información institucional verificada.
-
 El historial de Git muestra versiones y archivos, pero un mensaje de commit
 breve no explica por sí solo una decisión. La bitácora relaciona ese registro
 con el propósito y el resultado de cada avance. Las guías vigentes explican
@@ -130,12 +124,6 @@ necesario y criterio de cierre:
 Los datos institucionales se coordinan mediante
 `PARA_BACKEND_DATOS_Y_FUENTES.txt`. Las revisiones de licencias y distribución
 están registradas en `LICENCIA_CODIGO_LIBRE.md`.
-
-### Pendiente identificado en esta revisión
-
-| Área responsable | Evidencia | Revisión necesaria | Criterio de cierre |
-|---|---|---|---|
-| Backend y documentación de API | `122d1d3` incorpora requisitos y carga en el servicio de inscripción. | El roadmap ya reconoce esa implementación; falta ejecutar los casos límite y contrastar el resto de la fase. | Casos de periodos, cupos y carga verificados sobre PostgreSQL y pendientes restantes delimitados. |
 
 ## Cierre de una entrega
 

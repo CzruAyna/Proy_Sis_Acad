@@ -1,6 +1,6 @@
 # Estado actual de SIS-INF
 
-Revisión del 9 de noviembre de 2026. Código de referencia `4095c2e`.
+Revisión del 14 de noviembre de 2026. Código de referencia `2868d19`.
 
 La [bitácora](BITACORA_DESARROLLO.md) conserva la evolución por jornada. El
 [historial de pushes](HISTORIAL_PUSHES.md) indica qué cambió en cada envío.
@@ -8,21 +8,18 @@ La [bitácora](BITACORA_DESARROLLO.md) conserva la evolución por jornada. El
 ## Qué se puede utilizar
 
 SIS-INF es el juego de escritorio Godot. Conserva la simulación del estudiante,
-la historia demostrativa y la exploración de un campus recreado. La API Django
-y la web Next.js permanecen en el repositorio, pero no son necesarias para
-ejecutar la partida local.
+la historia demostrativa y la exploración de un campus recreado.
 
 | Área | Implementación en el código | Guía de detalle |
 |---|---|---|
 | Recorrido académico | Inscripción, cursado, intentos, cambios de plan, trámites, auxiliatura y titulación. | [Simulación](SIMULACION_ESTUDIANTE.md) |
 | Presentación | Pixel art, identidad azul/roja, ambientes por mención y navegación con botones. | [Diseño visual](DISENO_VISUAL_CAMPUS.md) |
-| Malla | Selección, movimiento de nodos y ramas, giro, zoom por botones y validación geométrica. | [Diseño visual](DISENO_VISUAL_CAMPUS.md) |
+| Malla | Ramas acumulativas, fichas de materia y zoom con teclado o rueda. | [Ramas y misiones](RAMAS_TERRENO_Y_MISIONES.md) |
 | Inicio | Jugar, Simular, Opciones y Salir en un panel centrado. Opciones tiene categorías. | [Menús y mapa](MENUS_MAPA_Y_PERIMETRO.md) |
 | Simular | Historia con semilla y terminal automática en bucle para ambas carreras y sus menciones. | [Historia](MODULO_HISTORIA_CARRERA.md) · [Demostración](MODO_DEMOSTRATIVO.md) |
-| Exploración | Mapa `fni_ciudad_v3`, con flecha, zoom y rótulos. Pasillos, aulas, pisos transitables y enlaces al expediente. | [Exploración](EXPLORACION_FNI.md) · [Cartografía](CARTOGRAFIA_FNI_Y_ESCALA.md) |
+| Exploración | Mapa `fni_ciudad_v3`, aulas y pisos transitables. Objetivos académicos e interacciones según el lugar y la partida. | [Cartografía](CARTOGRAFIA_FNI_Y_ESCALA.md) · [Ramas y misiones](RAMAS_TERRENO_Y_MISIONES.md) |
 | Vida del campus | NPC con rutinas ficticias, perros acariciables, logros globales y encuentro raro de Piedritas con sorteo de 1/100 por recorrido. | [Vida y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md) |
 | Sala E | Ajedrez, billar de ocho bolas, ping-pong y Ruta del campus contra rivales locales, con pausa y recuperación. | [Sala de juegos](JUEGOS_BLOQUE_E.md) |
-| API y web | Catálogo, oferta, inscripción autenticada y actas; recorrido separado del juego. | [Arquitectura](ARQUITECTURA.md) |
 
 El perímetro y el tránsito exterior forman parte de la recreación. Las 64
 láminas del atlas se usan para revisar la geometría fuera del mapa jugable.
@@ -80,8 +77,7 @@ Los resultados por entrega y sus límites están en [Verificaciones](VERIFICACIO
 | Frontend | Ilustraciones laterales y arte del personaje al pausar la demostración. | Integrar el arte y verificar una sesión prolongada con movimiento reducido. |
 | Motor y jugadores | Dificultad, duración y sesiones prolongadas de los minijuegos. | Partidas humanas con observaciones y ajustes medidos. |
 | Motor recreativo | Posiciones muertas complejas, reloj y protocolo arbitral de ajedrez. | Alcance y casos de referencia acordados; no se declara cobertura arbitral completa. |
-| Backend | Validaciones y casos límite de la inscripción web. | Pruebas de periodos, carga y concurrencia sobre PostgreSQL. |
-| Empaquetado | Distribución descargable, otras plataformas y otros equipos. | Paquetes y ejecuciones verificables; un preset local no acredita disponibilidad pública. |
+| Empaquetado | Validación de la beta en Linux y macOS, y primera ejecución de Actions. | Ejecuciones verificadas en los sistemas de destino y resultados del workflow asociados a su versión. [Automatización](AUTOMATIZACION.md) |
 | Autor y empaquetado | Recursos ajenos y dependencias del paquete. | Procedencia y condiciones de uso registradas en [Licencia](LICENCIA_CODIGO_LIBRE.md). |
 
 La apariencia de edificios y los pagos/documentos del recorrido siguen siendo

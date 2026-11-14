@@ -57,10 +57,12 @@ func _run() -> void:
 			_check(JSON.stringify(game.simulation.snapshot()) == initial, "La presentación no cambia reglas ni resultados")
 	_check(images.size() == 5, "Cinco sprites distintos")
 	game._show_campus_section("malla")
-	var graph = game.find_child("ExpandedCurriculumGraph", true, false)
-	var sphere: Image = graph._sphere["image"]
-	_check(sphere.get_pixel(64, 56) == sphere.get_pixel(71, 63), "La esfera contiene bloques de color, sin interpolación")
-	_check(sphere.get_pixel(64, 56).get_luminance() > sphere.get_pixel(140, 145).get_luminance() * 2, "El pixel art conserva luz y profundidad")
+	var graph := game.find_child("ExpandedCurriculumGraph", true, false) as CurriculumGraph
+	_check(graph != null, "La malla contiene el grafo curricular")
+	if graph != null:
+		var sphere: Image = graph._sphere_resource(graph._node_color(0))["image"]
+		_check(sphere.get_pixel(64, 56) == sphere.get_pixel(71, 63), "La esfera contiene bloques de color, sin interpolación")
+		_check(sphere.get_pixel(64, 56).get_luminance() > sphere.get_pixel(140, 145).get_luminance() * 2, "El pixel art conserva luz y profundidad")
 	game.settings["animations"] = true
 	game._show_options()
 	_check(not game._ambient.visible and not game._ambient.is_processing(), "Opciones conserva fondo quieto con animaciones activas")

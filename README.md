@@ -10,10 +10,6 @@ sus aulas, pisos transitables y cuatro minijuegos locales en el bloque E.
 **Simular** reúne la historia de una carrera y una terminal automática que
 presenta las dos carreras y sus cinco menciones.
 
-Este repositorio también conserva una API académica en Django y una interfaz
-web en Next.js. Son componentes separados del juego Godot: la partida de
-escritorio no necesita PostgreSQL ni se conecta a la API.
-
 ## Descargar y probar la beta
 
 La beta pública incluye paquetes para Windows x64, Linux x86_64 y macOS
@@ -44,7 +40,7 @@ La exportación crea el ejecutable y su archivo `.pck`. Ambos deben permanecer
 juntos para iniciar el juego. `game/build/` es una carpeta local ignorada por
 Git, por lo que los binarios generados no forman parte del código fuente.
 
-Los requisitos detallados para el juego, Django y Next.js están en
+Los requisitos detallados de desarrollo están en
 [`docs/DESARROLLO_LOCAL.md`](docs/DESARROLLO_LOCAL.md).
 
 ## Estructura del repositorio
@@ -52,15 +48,10 @@ Los requisitos detallados para el juego, Django y Next.js están en
 ```text
 AGENTS.md             Instrucciones permanentes para agentes del proyecto
 REGLAS_USUARIO.txt    Reglas acumuladas expresadas por el usuario
-backend/              API académica Django y PostgreSQL
-frontend/             Interfaz web Next.js
 game/                 Juego de escritorio Godot, sus datos y pruebas
 docs/                 Arquitectura, reglas, diseño y coordinación
-.env.example          Plantilla local de configuración
+.github/              Pruebas y empaquetado automatizados
 ```
-
-El código de Godot es el producto principal. La API y el sitio web mantienen
-sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 
 ## Documentación
 
@@ -68,6 +59,7 @@ sus propios modelos y flujos; no se deben tratar como dependencias del juego.
 - [Índice de documentación](docs/README.md)
 - [Arquitectura y componentes](docs/ARQUITECTURA.md)
 - [Desarrollo y compilación local](docs/DESARROLLO_LOCAL.md)
+- [Pruebas y publicación automatizadas](docs/AUTOMATIZACION.md)
 - [Reglas de la simulación individual](docs/SIMULACION_ESTUDIANTE.md)
 - [Identidad visual y navegación](docs/DISENO_VISUAL_CAMPUS.md)
 - [Exploración FNI: personaje, mapa y aulas](docs/EXPLORACION_FNI.md)

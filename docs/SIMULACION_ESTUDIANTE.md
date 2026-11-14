@@ -1,6 +1,6 @@
 # Simulación individual de la carrera
 
-Este documento describe las reglas del juego de escritorio acordadas con el usuario el 25 de octubre de 2026. El motor está en `game/scripts/student_simulation.gd`. Django y el juego web siguen siendo componentes separados; estas reglas no sustituyen automáticamente la normativa ni los modelos del sistema académico real.
+Este documento describe las reglas del juego de escritorio acordadas con el usuario el 25 de octubre de 2026. El motor está en `game/scripts/student_simulation.gd`. Estas reglas describen el recorrido simulado. La normativa oficial se contrasta con las fuentes institucionales.
 
 ## Recorrido académico
 

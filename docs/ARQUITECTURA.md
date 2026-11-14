@@ -5,18 +5,9 @@ La evolución de los módulos se recoge en el [historial técnico](HISTORIAL_COM
 
 ## Alcance
 
-El repositorio contiene tres componentes relacionados con la vida académica,
-pero independientes en ejecución:
-
-1. `game/`: juego de escritorio Godot y experiencia principal del proyecto.
-2. `backend/`: API Django con almacenamiento PostgreSQL para el sistema
-   académico.
-3. `frontend/`: interfaz Next.js que consume endpoints de la API y contiene
-   además una demostración web independiente.
-
-Godot usa su propio modelo y partidas JSON en `user://`. No hace peticiones al
-backend ni necesita ejecutar el frontend web. No cambiar reglas de API o datos
-institucionales para resolver un cambio de presentación del juego.
+SIS-INF es un juego de escritorio desarrollado con Godot. El motor académico,
+la exploración y los minijuegos funcionan localmente. Las partidas y preferencias
+se guardan en archivos JSON en `user://`.
 
 ## Raíz del repositorio
 
@@ -25,10 +16,7 @@ institucionales para resolver un cambio de presentación del juego.
 | `AGENTS.md` | Instrucciones de trabajo obligatorias para agentes. |
 | `REGLAS_USUARIO.txt` | Registro acumulativo que prevalece sobre documentación de análisis anterior. |
 | `game/` | Proyecto Godot, recursos, escenas, scripts y pruebas del juego. |
-| `backend/` | Configuración Django y aplicaciones del sistema académico. |
-| `frontend/` | Aplicación Next.js y componentes de interfaz web. |
 | `docs/` | Guías, especificaciones y documentos de coordinación. |
-| `.env.example` | Valores de ejemplo para el desarrollo local; no contiene configuración de producción. |
 
 Los archivos `.env`, cachés, dependencias descargadas y exportaciones locales
 están excluidos del control de versiones mediante `.gitignore`.
@@ -105,35 +93,6 @@ actualiza física o rival. `serialize()` y `restore()` controlan la recuperació
 incluido el estado aleatorio de 64 bits como texto. La interfaz guarda en
 cambios discretos y suspende sesiones al salir. Véase
 [Sala de juegos](JUEGOS_BLOQUE_E.md).
-
-## API Django
-
-`backend/config/` contiene configuración, URLs y puntos de entrada ASGI/WSGI.
-`backend/apps/` separa las áreas del dominio:
-
-| Aplicación | Responsabilidad principal |
-|---|---|
-| `usuarios` | Usuario y roles institucionales. |
-| `academico` | Carreras, planes, materias, prerrequisitos y periodos. |
-| `oferta` | Aulas, docentes habilitados, paralelos y sesiones. |
-| `inscripciones` | Inscripciones y reglas transaccionales de cupo y prerrequisitos. |
-| `notas` | Actas, notas, cierre y correcciones auditadas. |
-
-`backend/config/urls.py` conecta estos recursos bajo `/api/`; el detalle de
-entidades y endpoints está en [`MODELO_DATOS.md`](MODELO_DATOS.md). La
-configuración de desarrollo carga variables del `.env` de la raíz. El backend
-usa PostgreSQL; no se asume una base SQLite ni una instancia compartida con el
-juego.
-
-## Interfaz web
-
-`frontend/src/app/` contiene las rutas de Next.js. La ruta `/sistema` combina
-catálogo, oferta, inscripciones y actas. `frontend/src/components/` contiene
-esas pantallas y la demostración de juego web. `frontend/src/lib/api.ts`
-centraliza solicitudes HTTP (por defecto a `http://localhost:8000`) y
-`frontend/src/lib/juego-data.ts` mantiene datos de muestra de la demostración
-web. Este contenido no es el catálogo Godot ni reemplaza las fuentes
-institucionales.
 
 ## Datos institucionales
 

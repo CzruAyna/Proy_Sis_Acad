@@ -1,90 +1,10 @@
 # Historial técnico por commit
 
-Revisión del 9 de noviembre de 2026. Corte `4095c2e`.
+Revisión del 14 de noviembre de 2026. Corte `2868d19`.
 
-Revisé los 41 commits de `main` con sus mensajes, archivos y diferencias. Los títulos originales se conservan tal como fueron escritos. Las notas personales entre comillas proceden de los mensajes.
+El registro se centra en los commits de la etapa Godot, desde `3dc9d7d`. Los títulos originales se conservan tal como fueron escritos. Las notas personales entre comillas proceden de los mensajes.
 
 La [bitácora](BITACORA_DESARROLLO.md) agrupa el avance por jornada y el [historial de pushes](HISTORIAL_PUSHES.md) muestra cómo se agruparon los commits en cada envío. Los archivos de prueba mencionados se añadieron o cambiaron en su versión. Los resultados de ejecución están en [Verificaciones](VERIFICACIONES.md) y las funciones disponibles en [Estado actual](ESTADO_ACTUAL.md).
-
-## 15 de octubre de 2026
-
-### 242e755: Inicio del repositorio
-
-**Mensaje original:** `Initial commit`. **Hora:** 19:58:27 (UTC−04:00).
-
-Inicié el control de versiones con la configuración de atributos de Git. Todavía no había aplicaciones ni lógica académica.
-
-**Archivos de referencia:** `.gitattributes`.
-
-### 8302683: Base de Django y Next.js
-
-**Mensaje original:** `Estructura inicial del Proyecto`. **Hora:** 22:07:21 (UTC−04:00).
-
-Preparé el backend, el frontend y los ajustes de desarrollo local. Añadí el usuario con roles, las dependencias, la plantilla de entorno y los primeros documentos de requisitos. Los módulos reservados con .gitkeep seguían siendo planificación, no funciones implementadas.
-
-**Archivos de referencia:** `backend/config/settings/base.py`, `backend/apps/usuarios/models.py`, `docs/ESPECIFICACION_FUNCIONAL.md`.
-
-## 18 de octubre de 2026
-
-### 8162267: Primera composición de la web
-
-**Mensaje original:** `diseñito simplesito`. **Hora:** 19:32:32 (UTC−04:00).
-
-Reorganicé la portada y sus estilos: navegación, bloques de contenido y presentación de los módulos. El cambio se concentra en la interfaz; todavía no conecta un catálogo académico nuevo.
-
-**Archivos de referencia:** `frontend/src/app/page.tsx`, `frontend/src/app/globals.css`.
-
-### 6f5ced9: Catálogo académico conectado
-
-**Mensaje original:** `catalogo y consulta`. **Hora:** 20:03:38 (UTC−04:00).
-
-Incorporé carreras, planes, materias, periodos y requisitos como modelos, con migraciones, administración y consultas públicas. Añadí el componente que consulta el catálogo y presenta materias por semestre. La validación de requisitos contempla duplicados, autorreferencias y ciclos.
-
-**Archivos de referencia:** `backend/apps/academico/models.py`, `backend/apps/academico/views.py`, `frontend/src/components/catalogo-academico.tsx`.
-
-### f97e336: Oferta por paralelos
-
-**Mensaje original:** `consultas`. **Hora:** 21:11:59 (UTC−04:00).
-
-Añadí aulas, habilitación de docentes, paralelos y sesiones semanales. La API consulta la oferta abierta y la interfaz muestra horarios y ocupación. Las validaciones de aulas e intervalos pertenecen a la oferta y no equivalen a un generador automático de horarios.
-
-**Archivos de referencia:** `backend/apps/oferta/models.py`, `backend/apps/oferta/views.py`, `frontend/src/components/oferta-academica.tsx`.
-
-## 19 de octubre de 2026
-
-### bace499: Inscripción con control de cupos
-
-**Mensaje original:** `cosa de inscribirse`. **Hora:** 09:23:39 (UTC−04:00).
-
-Implementé inscripción y retiro para estudiantes autenticados. El servicio usa transacciones y bloquea los paralelos candidatos para comprobar cupos; si el solicitado se llena, recorre los siguientes de la misma materia y periodo.
-
-**Archivos de referencia:** `backend/apps/inscripciones/services.py`, `backend/apps/inscripciones/views.py`.
-
-### c9ecbed: Panel del estudiante
-
-**Mensaje original:** `ya no se we`. **Hora:** 09:39:02 (UTC−04:00).
-
-Añadí el acceso del estudiante y sus acciones de inscripción desde la web. Ajusté el modelo de usuario y los estilos asociados. En esta versión también sustituí la licencia MIT inicial por un aviso de uso libre propio; esa declaración histórica fue retirada más adelante y no es la licencia actual.
-
-**Archivos de referencia:** `frontend/src/components/inscripciones-panel.tsx`, `backend/apps/usuarios/models.py`, `LICENSE`.
-
-### cca8f0e: Actas, notas y correcciones
-
-**Mensaje original:** `gestion`. **Hora:** 21:34:52 (UTC−04:00).
-
-Incorporé las actas por paralelo, carga de notas, cierre y corrección auditada. El cierre actualiza el resultado de las inscripciones; una corrección posterior conserva valores anterior y nuevo, motivo y trámite. Añadí el panel docente para utilizar ese flujo.
-
-**Archivos de referencia:** `backend/apps/notas/services.py`, `backend/apps/notas/models.py`, `frontend/src/components/actas-docente.tsx`.
-
-## 20 de octubre de 2026
-
-### 122d1d3: Elegibilidad y carga académica
-
-**Mensaje original:** `horarios`. **Hora:** 09:35:46 (UTC−04:00).
-
-Amplié el servicio de inscripción con requisitos, corequisitos y límite de seis o siete materias según el promedio calculado. Añadí la consulta de elegibilidad y más información del horario en el panel. El título original dice «horarios», pero el cambio principal está en esas validaciones.
-
-**Archivos de referencia:** `backend/apps/inscripciones/services.py`, `backend/apps/inscripciones/views.py`, `frontend/src/components/inscripciones-panel.tsx`.
 
 ## 21 de octubre de 2026
 
@@ -92,9 +12,9 @@ Amplié el servicio de inscripción con requisitos, corequisitos y límite de se
 
 **Mensaje original:** `cambiso grandes`. **Hora:** 13:39:21 (UTC−04:00).
 
-Incorporé un juego web y el proyecto de escritorio Godot. La gestión académica quedó en /sistema y la portada pasó a la demostración. El juego empezó con catálogo, escena, controlador y preset de exportación; conservé la aplicación web como componente separado.
+Incorporé el proyecto de escritorio Godot con catálogo, escena, controlador y preset de exportación.
 
-**Archivos de referencia:** `frontend/src/components/juego-academico.tsx`, `game/scripts/game.gd`, `game/project.godot`.
+**Archivos de referencia:** `game/scripts/game.gd`, `game/project.godot`.
 
 ## 22 de octubre de 2026
 
@@ -421,3 +341,37 @@ Validé la versión, la posición y la planta guardadas antes de usarlas. Al vol
 **Archivos de referencia:** `game/scripts/campus_world.gd`, `game/scripts/campus_map.gd`, `game/scripts/campus_life.gd`.
 
 **Pruebas tocadas en esta versión:** `test_building_interiors.gd`, `test_campus_life.gd`, `test_grid8_and_cast.gd`.
+
+### 286f86a: Historial de envíos
+
+**Mensaje original:** `docs: documentar los pushes y actualizar el estado de SIS-INF`. **Hora:** 17:10:03 (UTC−04:00).
+
+Contrasté los commits con el registro local de `origin/main` y actualicé las guías. Agrupé los dos commits que se enviaron juntos el 6 de noviembre.
+
+### 4cd9fdc: Exploración contextual y malla por teclado
+
+**Mensaje original:** `feat(frontend): simplifica el campus y convierte la malla en un grafo interactivo`. **Hora:** 22:34:03 (UTC−04:00).
+
+Ajusté las interacciones del campus al lugar y estado de la partida. Añadí el ciclo visual y la navegación de la malla por teclado con una ficha sobre el grafo.
+
+### 3ff6046: Ramas acumulativas y misiones
+
+**Mensaje original:** `feat(frontend): añade ramas acumulativas, terreno con relieve y misiones en el campus`. **Hora:** 23:11:44 (UTC−04:00).
+
+Añadí ramas de correlativas que permanecen abiertas, relieve y personajes más visibles. La exploración muestra el siguiente objetivo académico. Dejé los contratos de integración en la [guía de ramas y misiones](RAMAS_TERRENO_Y_MISIONES.md).
+
+## 10 de noviembre de 2026
+
+### 42f10b7: Paquetes de la primera beta
+
+**Mensaje original:** `build(beta): preparar los instaladores de SIS-INF`. **Hora:** 19:59:19 (UTC−04:00).
+
+Preparé el instalador de Windows, el paquete de Linux y el ZIP universal de macOS. El empaquetador genera también un ZIP de fuentes y las sumas SHA-256. [Instaladores](INSTALADORES_BETA.md)
+
+## 12 de noviembre de 2026
+
+### 2868d19: Descarga y comprobación de la beta
+
+**Mensaje original:** `docs: añadir la descarga y la prueba rápida de SIS-INF Beta`. **Hora:** 23:26:07 (UTC−04:00).
+
+Puse la descarga de la beta en el README y añadí la comprobación de guardado y reanudación de una partida.

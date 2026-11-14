@@ -17,9 +17,10 @@ El instalador de Windows carece de firma Authenticode.
 
 ## Construcción local
 
-Usa Python 3.11 o posterior, Godot 4.7.2 estable con sus plantillas de
-exportación y NSIS 3.12 para Windows. El compilador NSIS debe tener cerca su
-archivo `COPYING`. Las plantillas deben corresponder a la versión exacta
+Usa Python 3.11 o posterior y Godot 4.7.2 estable con sus plantillas de
+exportación. Para Windows, el empaquetador usa NSIS. Busca su licencia en
+`COPYING` junto al compilador o en la ruta indicada mediante `--nsis-license`.
+Las plantillas deben corresponder a la versión exacta
 de Godot. [Plantillas oficiales](https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable).
 
 Desde la raíz del proyecto, con Godot y MakeNSIS en `PATH`:
@@ -49,3 +50,6 @@ Los rótulos y oficinas pendientes de confirmación, el reloj persistente y
 la concesión de recompensas quedan registrados en las notas de
 [exploración contextual](EXPLORACION_CONTEXTUAL_Y_MALLA.md) y
 [ramas y misiones](RAMAS_TERRENO_Y_MISIONES.md).
+
+La configuración de compilación y pruebas en GitHub Actions está en
+[Automatización](AUTOMATIZACION.md).

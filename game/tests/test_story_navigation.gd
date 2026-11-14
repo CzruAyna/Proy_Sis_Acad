@@ -23,6 +23,9 @@ func _run() -> void:
 			await _inspect("historia-relato")
 			ui.show_graph()
 			await _inspect("historia-grafo")
+			var graph := game.find_child("StoryCurriculumGraph", true, false) as CurriculumGraph
+			_check(graph != null and graph.has_focus(), "El grafo de la historia recibe el foco de teclado")
+			_check(game._active_back.is_valid(), "El grafo de la historia permite volver al relato")
 			ui.show_learning()
 			await _inspect("historia-temas")
 			ui.show_subject(ui.report["chapters"][0]["results"][0])
