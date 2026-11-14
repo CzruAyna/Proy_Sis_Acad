@@ -10,70 +10,28 @@ sus aulas, pisos transitables y cuatro minijuegos locales en el bloque E.
 **Simular** reúne la historia de una carrera y una terminal automática que
 presenta las dos carreras y sus cinco menciones.
 
-## Descargar y probar la beta
+## Descargar y jugar
 
-La beta pública incluye paquetes para Windows x64, Linux x86_64 y macOS
-(Intel y Apple Silicon). Descarga el de tu equipo y compara su hash SHA-256
-con el del archivo `SIS-INF-0.1.0-beta.1-SHA256SUMS.txt` antes de instalar.
-[Descargas de SIS-INF 0.1.0-beta.1](https://github.com/CzruAyna/Proy_Sis_Acad/releases/tag/v0.1.0-beta.1)
-
-Después de instalar, abre SIS-INF, crea una partida y entra al campus.
-Abre el mapa, guarda la partida, cierra el juego y comprueba que puedes
-continuarla desde **Jugar**. [Guía de instalación y prueba](docs/INSTALADORES_BETA.md)
+Descarga el paquete para Windows x64, Linux x86_64 o macOS universal.
+Cada publicación incluye un manifiesto SHA-256 para comprobar la descarga.
+[Publicaciones y descargas](https://github.com/CzruAyna/Proy_Sis_Acad/releases) · [Instalación y prueba](docs/INSTALADORES_BETA.md)
 
 ## Ejecutar desde el código fuente
 
-Para ejecutar el juego desde el proyecto se necesita Godot 4.7.2:
+Abre el proyecto con Godot 4.7.2.
 
 ```powershell
 godot --path game
 ```
 
-Para generar la versión de Windows, hay que tener instaladas las plantillas de
-exportación de la misma versión de Godot y usar el preset `Windows Desktop`:
+[Desarrollo local, pruebas y exportación](docs/DESARROLLO_LOCAL.md)
 
-```powershell
-godot --headless --path game --export-release "Windows Desktop" "build/SIS-INF.exe"
-```
+## Documentación y contribuciones
 
-La exportación crea el ejecutable y su archivo `.pck`. Ambos deben permanecer
-juntos para iniciar el juego. `game/build/` es una carpeta local ignorada por
-Git, por lo que los binarios generados no forman parte del código fuente.
-
-Los requisitos detallados de desarrollo están en
-[`docs/DESARROLLO_LOCAL.md`](docs/DESARROLLO_LOCAL.md).
-
-## Estructura del repositorio
-
-```text
-AGENTS.md             Instrucciones permanentes para agentes del proyecto
-REGLAS_USUARIO.txt    Reglas acumuladas expresadas por el usuario
-game/                 Juego de escritorio Godot, sus datos y pruebas
-docs/                 Arquitectura, reglas, diseño y coordinación
-.github/              Pruebas y empaquetado automatizados
-```
-
-## Documentación
-
-- [Estado actual de SIS-INF](docs/ESTADO_ACTUAL.md)
-- [Índice de documentación](docs/README.md)
-- [Arquitectura y componentes](docs/ARQUITECTURA.md)
-- [Desarrollo y compilación local](docs/DESARROLLO_LOCAL.md)
-- [Pruebas y publicación automatizadas](docs/AUTOMATIZACION.md)
-- [Reglas de la simulación individual](docs/SIMULACION_ESTUDIANTE.md)
-- [Identidad visual y navegación](docs/DISENO_VISUAL_CAMPUS.md)
-- [Exploración FNI: personaje, mapa y aulas](docs/EXPLORACION_FNI.md)
-- [Información institucional y fuentes pendientes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
-- [Guía de documentación](docs/GUIA_DOCUMENTACION.md)
-- [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md)
-- [Historial de pushes](docs/HISTORIAL_PUSHES.md)
-- [Detalle técnico por commit](docs/HISTORIAL_COMMITS.md)
-- [Resultados y límites de verificación](docs/VERIFICACIONES.md)
-- [Licencia y libertades del código](docs/LICENCIA_CODIGO_LIBRE.md)
-
-Antes de modificar el proyecto, cualquier agente debe leer `AGENTS.md` y el
-registro completo `REGLAS_USUARIO.txt`. La información institucional pendiente
-de verificación no debe presentarse como normativa oficial.
+- [Estado del juego](docs/ESTADO_ACTUAL.md) y [guías por tema](docs/README.md).
+- [Pruebas y publicaciones automáticas](docs/AUTOMATIZACION.md).
+- [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md).
+- [Cómo contribuir o reportar un fallo](CONTRIBUTING.md).
 
 ## Licencia
 

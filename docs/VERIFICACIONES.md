@@ -1,5 +1,12 @@
 # Registro de verificaciones
 
+## CI en GitHub · 14 de noviembre de 2026
+
+GitHub Actions completó las pruebas de SIS-INF en `main` para el commit
+`b59aabd`. Esa ejecución corresponde a la limpieza del repositorio y
+acredita la suite de CI de ese commit.
+[Ejecución 43647352756](https://github.com/CzruAyna/Proy_Sis_Acad/actions/runs/43647352756)
+
 ## Limpieza y automatización · 14 de noviembre de 2026
 
 En Windows, con Godot 4.7.2 y un perfil aislado, pasaron las 29 suites
