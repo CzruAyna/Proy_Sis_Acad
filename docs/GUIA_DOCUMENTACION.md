@@ -92,6 +92,10 @@ El detalle por commit se mantiene en `HISTORIAL_COMMITS.md`; la bitácora agrupa
 las jornadas sin repetir todos sus archivos. Los resultados de otras entregas
 se fechan en `VERIFICACIONES.md` y se distinguen de una ejecución nueva.
 
+Cada pull request incluye una captura que muestre el cambio o una
+comprobación ejecutada. La plantilla reúne el propósito, las pruebas y las
+capturas. [Guía de contribuciones](../CONTRIBUTING.md)
+
 Para registrar un push, usar el movimiento de la rama remota que conste en el
 reflog local o en la actividad remota. Registrar la hora, la referencia y los
 commits incorporados entre el valor anterior y el nuevo. Si hay varios commits,

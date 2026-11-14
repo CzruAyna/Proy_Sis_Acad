@@ -335,3 +335,12 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     cuando pasan las pruebas y se completan los paquetes. Mantener accesibles
     las instrucciones de instalación y comprobación. Las versiones etiquetadas
     conservan su flujo y el historial publicado.
+
+37. CAPTURAS EN PULL REQUESTS, indicada el 14/11/2026.
+    Cada pull request debe incluir al menos una captura real del cambio o su
+    verificación. Para cambios visuales, mostrar el resultado en el juego y
+    añadir el antes cuando exista una vista comparable. Para motor,
+    documentación o automatización, mostrar el resultado de la prueba, la
+    vista del documento o la ejecución de CI. Identificar qué demuestra la
+    captura y usar datos de prueba sin información personal ni credenciales.
+    Un pull request sin la captura requerida queda en borrador.

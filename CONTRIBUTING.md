@@ -19,3 +19,15 @@ partida, usa una partida de prueba y evita adjuntar datos personales.
 
 Las reglas académicas del juego son parte de la simulación. Si aportas un
 dato institucional, registra su procedencia y vigencia. [Datos y fuentes](docs/PARA_BACKEND_DATOS_Y_FUENTES.txt)
+
+## Capturas para revisión
+
+Cada pull request incluye al menos una captura del resultado. En interfaz,
+muestra el juego y añade una comparación antes/después cuando puedas
+reproducir la vista anterior. Para cambios de motor, documentación o CI,
+captura la prueba ejecutada, la guía renderizada o el resultado de la
+ejecución. Indica qué se comprueba y enlaza el resultado de CI cuando exista.
+Usa datos de prueba y oculta cualquier información sensible.
+
+Mientras falte la captura, conserva el pull request en borrador.
+[Plantilla de pull request](.github/pull_request_template.md)
