@@ -1,6 +1,6 @@
 # Guía de documentación del proyecto
 
-Actualizada el 9 de noviembre de 2026.
+Actualizada el 14 de noviembre de 2026.
 
 ## Para qué se mantiene esta documentación
 
@@ -37,6 +37,10 @@ del repositorio ni se debe confundir con el estado actual del producto.
 |---|---|
 | Reglas expresas acumuladas del usuario | `../REGLAS_USUARIO.txt` |
 | Procedimiento obligatorio para agentes | `../AGENTS.md` |
+| Presentación, descarga y acceso a las guías | [README principal](../README.md) |
+| Reportes de fallos y preparación de cambios | [Contribuciones](../CONTRIBUTING.md) |
+| Instalación para jugadores | [Instaladores](INSTALADORES_BETA.md) |
+| Validación y generación de paquetes | [Automatización](AUTOMATIZACION.md) |
 | Componentes y separación de responsabilidades | `ARQUITECTURA.md` |
 | Requisitos, ejecución, compilación y pruebas locales | `DESARROLLO_LOCAL.md` |
 | Reglas del recorrido individual | `SIMULACION_ESTUDIANTE.md` |
@@ -48,6 +52,14 @@ del repositorio ni se debe confundir con el estado actual del producto.
 | Material institucional y verificaciones de datos | `PARA_BACKEND_DATOS_Y_FUENTES.txt` |
 | Coordinación entre interfaz y motor | `PENDIENTES_FRONTEND_SIMULACION.md` |
 | Licencia, alcance y revisiones de terceros | `LICENCIA_CODIGO_LIBRE.md` |
+
+Mantener las instrucciones completas en la guía correspondiente y enlazarla
+desde el README. Usar la bitácora para explicar decisiones del desarrollo,
+y las notas de cada publicación para identificar el commit y la descarga.
+Este esquema toma como referencia el README de entrada y las guías externas
+de [Godot](https://github.com/godotengine/godot#documentation-and-demos), la
+guía de colaboración de [osu!](https://github.com/ppy/osu/blob/master/CONTRIBUTING.md)
+y la documentación técnica enlazada desde [Luanti](https://github.com/luanti-org/luanti#further-documentation).
 
 ## Qué debe contener una entrada de avance
 

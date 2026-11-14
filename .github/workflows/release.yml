@@ -2,27 +2,38 @@ name: Publicación de SIS-INF
 
 on:
   push:
+    branches: ['**']
     tags: ['v[0-9]*']
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.ref_type == 'tag' && github.ref || github.run_id }}
 
 jobs:
   version:
+    if: github.event.deleted != true
     runs-on: ubuntu-24.04
     outputs:
-      number: ${{ steps.tag.outputs.number }}
+      number: ${{ steps.version.outputs.number }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
-      - id: tag
+      - id: version
+        shell: bash
         run: |
-          if ! [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
-            echo "Etiqueta no admitida: $GITHUB_REF_NAME" >&2
-            exit 1
+          if [[ "$GITHUB_REF_TYPE" == branch ]]; then
+            version="0.0.0-dev.$GITHUB_RUN_ID"
+            tag="build-$GITHUB_RUN_ID"
+          else
+            tag="$GITHUB_REF_NAME"
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+              echo "Etiqueta no admitida: $tag" >&2
+              exit 1
+            fi
+            version="${tag#v}"
           fi
-          printf 'number=%s\n' "${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          printf 'number=%s\ntag=%s\n' "$version" "$tag" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: version
@@ -99,6 +110,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       VERSION: ${{ needs.version.outputs.number }}
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -116,11 +128,33 @@ jobs:
           sha256sum "${assets[@]}" > "$bundle-SHA256SUMS.txt"
           sha256sum -c "$bundle-SHA256SUMS.txt"
 
-          flags=()
-          if [[ "$VERSION" == *-beta.* ]]; then
-            flags+=(--prerelease --latest=false)
-          fi
           guide="$GITHUB_SERVER_URL/$GH_REPO/blob/$GITHUB_SHA/docs/INSTALADORES_BETA.md"
-          notes="Descarga el paquete de tu sistema y verifica su SHA-256 antes de instalar. [Instalación y prueba]($guide)"
-          gh release create "$GITHUB_REF_NAME" "${assets[@]}" "$bundle-SHA256SUMS.txt" \
-            --verify-tag --title "SIS-INF $VERSION" --notes "$notes" --generate-notes "${flags[@]}"
+          commit="$GITHUB_SERVER_URL/$GH_REPO/commit/$GITHUB_SHA"
+          notes=$(printf '%s\n\n%s\n%s\n%s\n\n%s' \
+            "Descarga el paquete de tu sistema y el manifiesto SHA-256 desde Assets o con GitHub CLI." \
+            '~~~sh' \
+            "gh release download $RELEASE_TAG --repo $GH_REPO" \
+            '~~~' \
+            "[Instalación, dependencias y verificación SHA-256]($guide)")
+          title="SIS-INF $VERSION"
+          if [[ "$GITHUB_REF_TYPE" == branch ]]; then
+            flags=(--target "$GITHUB_SHA" --prerelease --latest=false)
+            title="SIS-INF · $GITHUB_REF_NAME · ${GITHUB_SHA:0:7}"
+            notes=$(printf '%s\n\n%s' "Compilación de la rama $GITHUB_REF_NAME en el [commit ${GITHUB_SHA:0:7}]($commit)." "$notes")
+          else
+            flags=(--verify-tag --generate-notes)
+            if [[ "$VERSION" == *-beta.* ]]; then
+              flags+=(--prerelease --latest=false)
+            fi
+          fi
+
+          if draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft'); then
+            if [[ "$draft" == false ]]; then
+              echo "La publicación $RELEASE_TAG ya existe."
+              exit 0
+            fi
+            echo "Revisa el borrador existente de $RELEASE_TAG antes de reintentar." >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" "${assets[@]}" "$bundle-SHA256SUMS.txt" \
+            --title "$title" --notes "$notes" "${flags[@]}"

@@ -1,8 +1,26 @@
-# Instaladores de SIS-INF
+# Instalar y verificar SIS-INF
 
-La beta pública `0.1.0-beta.1` incluye el motor Godot en los paquetes de
-escritorio. Cada descarga corresponde a un sistema y una arquitectura.
-[Archivos de la beta](https://github.com/CzruAyna/Proy_Sis_Acad/releases/tag/v0.1.0-beta.1)
+Los paquetes incluyen el motor Godot. Elige el archivo de tu sistema y
+descarga también el manifiesto `*-SHA256SUMS.txt` de la misma publicación.
+[Publicaciones de SIS-INF](https://github.com/CzruAyna/Proy_Sis_Acad/releases)
+
+Si tienes GitHub CLI, puedes descargar los archivos desde la terminal.
+Este ejemplo obtiene el instalador de Windows y su manifiesto de la primera beta.
+Para Linux usa el patrón `*-Linux-x86_64.tar.gz`, y para macOS,
+`*-macOS-Universal.zip`. Cambia la etiqueta para usar otra publicación.
+
+```sh
+gh release download v0.1.0-beta.1 --repo CzruAyna/Proy_Sis_Acad --pattern '*-Windows-x64-Setup.exe' --pattern '*-SHA256SUMS.txt'
+```
+
+Calcula la suma del archivo descargado y compárala con la línea del mismo
+nombre en el manifiesto. Si difiere, vuelve a descargarlo antes de instalar.
+
+| Sistema | Comando para calcular SHA-256 |
+|---|---|
+| Windows, PowerShell | `Get-FileHash .\SIS-INF-0.1.0-beta.1-Windows-x64-Setup.exe -Algorithm SHA256` |
+| Linux | `sha256sum SIS-INF-0.1.0-beta.1-Linux-x86_64.tar.gz` |
+| macOS | `shasum -a 256 SIS-INF-0.1.0-beta.1-macOS-Universal.zip` |
 
 | Sistema | Archivo | Uso |
 |---|---|---|
@@ -13,7 +31,8 @@ escritorio. Cada descarga corresponde a un sistema y una arquitectura.
 Windows y Linux instalan sin privilegios de administrador. El desinstalador
 retira los archivos del juego y el acceso directo. Godot guarda las partidas
 por separado en `user://` y conserva la ruta de perfiles de SIS-INF.
-El instalador de Windows carece de firma Authenticode.
+El instalador de Windows carece de firma Authenticode. En Linux, la
+extracción y la instalación usan `tar`, `sh` y utilidades GNU básicas.
 
 ## Construcción local
 

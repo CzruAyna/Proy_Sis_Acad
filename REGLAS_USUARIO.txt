@@ -329,3 +329,9 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     web. Conservar los commits publicados y la etiqueta de la primera beta.
     GitHub Actions comprueba el juego y empaqueta las versiones etiquetadas.
     Guardar los grafos generados fuera de los cambios del repositorio.
+
+36. PUBLICACIONES POR PUSH, indicada el 14/11/2026.
+    Cada push a una rama del repositorio genera una publicación de desarrollo
+    cuando pasan las pruebas y se completan los paquetes. Mantener accesibles
+    las instrucciones de instalación y comprobación. Las versiones etiquetadas
+    conservan su flujo y el historial publicado.

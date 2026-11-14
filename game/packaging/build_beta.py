@@ -95,7 +95,7 @@ def macos_package(stage, stem, app_archive, names):
 
 
 def source_package(stage, stem):
-    files = [ROOT / name for name in ("README.md", "AGENTS.md", "LICENSE", "REGLAS_USUARIO.txt",
+    files = [ROOT / name for name in ("README.md", "CONTRIBUTING.md", "AGENTS.md", "LICENSE", "REGLAS_USUARIO.txt",
                                      ".gitattributes", ".gitignore")]
     files.extend(GAME / name for name in ("project.godot", "export_presets.cfg", "README.md"))
     directories = [GAME / name for name in ("assets", "packaging", "scenes", "scripts", "tests", "tools")]
@@ -128,8 +128,8 @@ def promote(output):
 
 
 def build(args):
-    if not re.fullmatch(r"\d+\.\d+\.\d+(?:-beta\.\d+)?", args.version):
-        raise ValueError("Usa una versión como 0.1.0-beta.1.")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-(?:beta|dev)\.[0-9]+)?", args.version):
+        raise ValueError("Usa una versión como 0.1.0, 0.1.0-beta.1 o 0.0.0-dev.123.")
     target = args.target
     if target == "auto":
         target = {"Windows": "windows", "Linux": "linux", "Darwin": "macos"}.get(platform.system())

@@ -1,5 +1,8 @@
 # Documentación
 
+Para descargar o comprobar una instalación, consulta la [guía de instaladores](INSTALADORES_BETA.md).
+Para preparar un cambio, consulta [Contribuir a SIS-INF](../CONTRIBUTING.md).
+
 Este índice reúne guías de uso y documentos de coordinación. Los análisis con
 fecha describen el estado observado durante esa revisión; para reglas vigentes
 del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
