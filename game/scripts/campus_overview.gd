@@ -21,6 +21,7 @@ const SECTORS := {
 
 var state: Dictionary = {}
 var label_size := 14
+var destination := Vector2.INF
 var zoom_index := 0
 var map_center := Map.SIZE * 0.5
 var _player := Map.SPAWN
@@ -154,6 +155,11 @@ func _draw() -> void:
 	_draw_labels(offset, scale, player_position)
 	if Rect2(Vector2.ZERO, size).grow(18).has_point(player_position):
 		_draw_player_arrow(player_position)
+	if destination.is_finite():
+		var point := offset + destination * scale
+		draw_circle(point, 9.0, Color("#202c30"))
+		draw_circle(point, 7.0, Color("#ffe184"), false, 2.0, true)
+		draw_circle(point, 2.5, Color("#ffe184"))
 	Compass.draw(self, Vector2(size.x - 50, 50), 11)
 	_draw_footer(scale)
 

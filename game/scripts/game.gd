@@ -1436,9 +1436,13 @@ func _show_simulate() -> void:
 
 
 func _show_exploration() -> void:
+	_explorer().open()
+
+
+func _explorer() -> RefCounted:
 	if exploration_ui == null:
 		exploration_ui = ExplorationUI.new(self)
-	exploration_ui.open()
+	return exploration_ui
 
 
 func _show_career_presentation() -> void:

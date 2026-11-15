@@ -58,6 +58,11 @@ static func sections() -> Array[Dictionary]:
 	return _sections
 
 
+static func gate() -> Vector2:
+	prepare()
+	return _gate
+
+
 static func near_road(point: Vector2, reach: float) -> bool:
 	prepare()
 	for index in range(_highway.size() - 1):

@@ -43,7 +43,7 @@ func _inspect(screen: String) -> void:
 		_check(pager == null, screen + ": vista directa sin paginador")
 		for control in game.find_children("*", "Control", true, false):
 			if control.is_visible_in_tree() and (control is Button or control is Label):
-				_check(Rect2(Vector2.ZERO, viewport.size).grow(1).encloses(control.get_global_rect()), screen + ": control visible dentro de la ventana")
+				_check(Rect2(Vector2.ZERO, viewport.size).grow(1).encloses(control.get_global_rect()), "%s: %s fuera de %s en %s" % [screen, control.name, viewport.size, control.get_global_rect()])
 		return
 	_check(pager != null, screen + ": navegación explícita")
 	if pager == null:

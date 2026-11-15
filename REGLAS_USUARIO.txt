@@ -344,3 +344,12 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     vista del documento o la ejecución de CI. Identificar qué demuestra la
     captura y usar datos de prueba sin información personal ni credenciales.
     Un pull request sin la captura requerida queda en borrador.
+
+38. GUÍA Y VIDA ESTUDIANTIL, indicada el 15/11/2026.
+    Mostrar qué hacer, adónde ir y qué llevar. Los trámites académicos se
+    atienden en Decanato y las auxiliaturas en Dirección de Carrera. Mostrar
+    horarios y clases jugables en Ciclo Básico con pizarras propias de cada
+    materia. Hacer funcional la mochila, sus carpetas y los puestos de comida
+    y bebida dentro y fuera del campus. Incluir dinero semanal, hambre y sed.
+    Dejar en docs/ los pendientes visuales y criterios de interfaz intuitiva.
+    Aportar capturas reales y usar la publicación automática del proyecto.

@@ -10,6 +10,8 @@ signal clock_changed(text: String)
 signal landmark_requested(id: String)
 signal actor_requested(id: String)
 signal stairs_requested(id: String)
+signal vendor_requested(id: String)
+signal backpack_requested
 
 const Map = preload("res://scripts/campus_map.gd")
 const Neon = preload("res://scripts/neon_visuals.gd")
@@ -26,12 +28,15 @@ const RoomArt = preload("res://scripts/campus_room_art.gd")
 const Scale = preload("res://scripts/campus_scale.gd")
 const AmbientCast = preload("res://scripts/campus_life.gd")
 const Collision = preload("res://scripts/campus_collision.gd")
+const Daily = preload("res://scripts/campus_daily.gd")
+const Classes = preload("res://scripts/campus_classes.gd")
 const SPEED := Scale.WALK_SPEED
 const PLAYER_RADIUS := Scale.FOOT_RADIUS
 const MINUTES_PER_DAY := 1440
 const LIGHTING_RATE := 4.0
 const MORNING := 540.0
-const PROVISIONAL_DESK := "admin_sis"
+const DEAN_OFFICE := "decanato"
+const ASSISTANT_OFFICE := "admin_sis"
 
 var player := Map.SPAWN
 var camera := Map.SPAWN
@@ -57,7 +62,15 @@ var _collision_floor := -1
 var _interior_bounds := Rect2()
 var _interior_walls: Array[Rect2] = []
 var animations_enabled := true
-var lighting_minutes := MORNING
+var daily := Daily.new()
+var lighting_minutes: float:
+	get: return daily.minutes
+	set(value): daily.minutes = value
+var class_schedule: Array[Dictionary] = []
+var destination := Vector2.INF
+var _lesson: Dictionary = {}
+var _board_lines := 0
+static var _vendors: Dictionary = {}
 var _ambient_phase := 0.0
 var _ambient_tick := 0.0
 var cast_instances: Array[Dictionary] = []
@@ -95,6 +108,7 @@ func restore(saved: Dictionary) -> void:
 	room_name = ""
 	floor_level = 0
 	_life_saved = {}
+	daily.restore(saved.get("daily"))
 	visited.clear()
 	var from_map := str(saved.get("map_id", ""))
 	var version: Variant = saved.get("version")
@@ -151,7 +165,7 @@ func _valid_visit(id: String) -> bool:
 
 func snapshot() -> Dictionary:
 	var outside := player if room_id.is_empty() else _outside
-	return {"version": 1, "map_id": Map.ID, "position": [outside.x, outside.y], "exterior_facing": [_exterior_facing.x, _exterior_facing.y], "room_id": room_id, "room_name": room_name, "floor": floor_level, "visited": visited.duplicate(), "life": ambient_cast.snapshot() if not ambient_cast.actors.is_empty() else _life_saved.duplicate(true)}
+	return {"version": 1, "map_id": Map.ID, "position": [outside.x, outside.y], "exterior_facing": [_exterior_facing.x, _exterior_facing.y], "room_id": room_id, "room_name": room_name, "floor": floor_level, "visited": visited.duplicate(), "life": ambient_cast.snapshot() if not ambient_cast.actors.is_empty() else _life_saved.duplicate(true), "daily": daily.snapshot()}
 
 
 func _process(delta: float) -> void:
@@ -201,11 +215,22 @@ func _process(delta: float) -> void:
 
 func _advance_lighting(delta: float) -> void:
 	var previous := floori(lighting_minutes)
-	lighting_minutes += delta * LIGHTING_RATE
+	daily.advance(delta * LIGHTING_RATE)
 	if floori(lighting_minutes) != previous:
 		clock_changed.emit(clock_text())
 		if animations_enabled and room_id.is_empty():
 			queue_redraw()
+		if room_id == Classes.BUILDING:
+			_update_lesson()
+
+
+func _update_lesson() -> void:
+	var lesson := Classes.active(class_schedule, room_name, daily.minutes) if room_id == Classes.BUILDING else {}
+	var count := 0 if lesson.is_empty() else Classes.visible_lines(lesson, daily.minutes)
+	if lesson != _lesson or count != _board_lines:
+		_lesson = lesson
+		_board_lines = count
+		queue_redraw()
 
 
 func clock_text() -> String:
@@ -245,6 +270,11 @@ func _input(event: InputEvent) -> void:
 				paused = true
 				get_viewport().set_input_as_handled()
 				map_requested.emit()
+			elif key == KEY_B:
+				_held.clear()
+				paused = true
+				get_viewport().set_input_as_handled()
+				backpack_requested.emit()
 
 
 func _notification(what: int) -> void:
@@ -256,6 +286,8 @@ func move_player(direction: Vector2, delta: float, running: bool = false) -> voi
 	if paused or not direction.is_finite() or not is_finite(delta) or delta <= 0:
 		return
 	var speed := SPEED if room_id.is_empty() else Scale.INDOOR_SPEED
+	if maxf(daily.hunger, daily.thirst) >= 85.0:
+		speed *= 0.82
 	var motion := direction.limit_length() * speed * (Scale.RUN_MULTIPLIER if running else 1.0) * minf(delta, 0.1)
 	moving = motion.length_squared() > 0.001
 	if moving:
@@ -306,14 +338,14 @@ func _can_stand_outside(point: Vector2, radius: float = Scale.OUTDOOR_RADIUS) ->
 	return Collision.can_stand(point, radius)
 
 
-func _safe_outside_position(point: Vector2) -> Vector2:
-	if _can_stand_outside(point):
+static func _safe_outside_position(point: Vector2) -> Vector2:
+	if Collision.can_stand(point):
 		return point
 	# An older, smaller footprint may have stood too close to a wall.
 	for radius in [8, 16, 24, 32, 48, 64]:
 		for index in range(8):
 			var candidate: Vector2 = (point + Vector2.from_angle(index * TAU / 8) * float(radius)).snapped(Vector2(2, 2))
-			if _can_stand_outside(candidate):
+			if Collision.can_stand(candidate):
 				return candidate
 	return Map.SPAWN
 
@@ -349,13 +381,20 @@ func interaction_text() -> String:
 		if not feature.is_empty():
 			return "E · " + str(feature["title"])
 		if player.y < 92:
-			if room_id == PROVISIONAL_DESK:
-				return "E · Consultar ventanilla académica simulada"
+			if room_id == DEAN_OFFICE:
+				return "E · Trámites en Decanato"
+			if room_id == ASSISTANT_OFFICE:
+				return "E · Auxiliaturas en Dirección de Carrera"
+			if room_id == Classes.BUILDING and Map.room_kind(room_id, room_name) == "classroom":
+				return "E · Horario y pizarra del aula"
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
 	var building := nearby_building()
 	if not building.is_empty():
 		return "E · Entrar: " + str(building["name"])
+	var vendor := nearby_vendor()
+	if not vendor.is_empty():
+		return "E · " + str(Daily.VENDORS[vendor][0])
 	var feature := nearby_feature()
 	if not feature.is_empty():
 		return "E · " + str(feature.get("title", "Conocer este diseño"))
@@ -399,6 +438,12 @@ func interact() -> void:
 		if not building.is_empty():
 			enter_building(str(building["id"]))
 		else:
+			var vendor := nearby_vendor()
+			if not vendor.is_empty():
+				paused = true
+				_held.clear()
+				vendor_requested.emit(vendor)
+				return
 			var feature := nearby_feature()
 			if not feature.is_empty():
 				paused = true
@@ -407,6 +452,32 @@ func interact() -> void:
 					landmark_requested.emit(feature["id"])
 				else:
 					actor_requested.emit(feature["id"])
+
+
+static func vendor_positions() -> Dictionary:
+	if _vendors.is_empty():
+		var gate := Perimeter.gate()
+		_vendors = {
+			"comedor": _safe_outside_position(Vector2(Map.building("comedor")["door"]) + Vector2(78, 26)),
+			"kiosco": _safe_outside_position(gate + Vector2(82, -70)),
+			"pollo": _safe_outside_position(gate + Vector2(-82, 94)),
+			"cafe": _safe_outside_position(gate + Vector2(89, 94)),
+			"tienda": _safe_outside_position(gate + Vector2(-176, 100)),
+			"camion": _safe_outside_position(gate + Vector2(180, 77))
+		}
+	return _vendors
+
+
+func nearby_vendor() -> String:
+	var best := 42.0 * 42.0
+	var found := ""
+	var positions := vendor_positions()
+	for id: String in positions:
+		var distance := player.distance_squared_to(positions[id])
+		if distance < best:
+			best = distance
+			found = id
+	return found
 
 
 func nearby_feature() -> Dictionary:
@@ -474,6 +545,7 @@ func return_to_hall() -> void:
 	if room_id.is_empty() or Map.building(room_id).get("rooms", []).size() < 2:
 		return
 	room_name = ""
+	_update_lesson()
 	player = Map.hall_spawn(room_id)
 	for space in Map.hall_rooms(room_id, floor_level):
 		if space["name"] == previous_room:
@@ -494,6 +566,7 @@ func enter_room(id: String, selected_room: String) -> bool:
 	_outside = building["door"]
 	room_id = id
 	room_name = selected_room
+	_update_lesson()
 	floor_level = level
 	player = Map.room_spawn(id, selected_room)
 	camera = player
@@ -593,6 +666,17 @@ func _draw_campus(view: Rect2) -> void:
 	for block in buildings:
 		if view.grow(80).intersects(block["rect"]):
 			_sign(Rect2(block["rect"]).position + Vector2(3, -8), str(block["name"]), 10)
+	var positions := vendor_positions()
+	for id: String in positions:
+		var point: Vector2 = positions[id]
+		if view.grow(45).has_point(point):
+			draw_rect(Rect2(point + Vector2(-18, -26), Vector2(36, 23)), Color("#483c36"))
+			draw_rect(Rect2(point + Vector2(-20, -29), Vector2(40, 9)), Color("#ffbd77"))
+			draw_rect(Rect2(point + Vector2(-14, -17), Vector2(28, 7)), Color("#54a789"))
+			_sign(point + Vector2(-18, -34), Daily.VENDORS[id][0], 9)
+	if destination.is_finite() and view.grow(50).has_point(destination):
+		draw_circle(destination, 19.0, Color("#ffe184"), false, 2.0)
+		draw_colored_polygon(PackedVector2Array([destination + Vector2(-8, -29), destination + Vector2(8, -29), destination + Vector2(0, -19)]), Color("#ffe184"))
 
 
 func _draw_building(building: Dictionary, view: Rect2) -> void:
@@ -613,7 +697,7 @@ func _draw_room() -> void:
 	var building := Map.building(room_id)
 	var kind := Map.room_kind(room_id, room_name)
 	var layout := Map.room_layout(room_id, room_name)
-	RoomArt.draw(self, layout, room_name)
+	RoomArt.draw(self, layout, room_name, _lesson.get("lines", []).slice(0, _board_lines))
 	var count := 0
 	for actor in cast_instances:
 		if actor.get("state", "") == "CLASS" and actor["building_id"] == room_id and actor["room_name"] == room_name:
@@ -626,7 +710,14 @@ func _draw_room() -> void:
 		_draw_games_room()
 		return
 	_sign(Vector2(40, 52), room_name, 10)
-	_sign(Vector2(32, 80), "E: ACTIVIDADES / AULAS", 10)
+	var cue := "E: ACTIVIDADES"
+	if room_id == DEAN_OFFICE:
+		cue = "E: TRÁMITES"
+	elif room_id == ASSISTANT_OFFICE:
+		cue = "E: AUXILIATURAS"
+	elif room_id == Classes.BUILDING and kind == "classroom":
+		cue = "E: PIZARRA"
+	_sign(Vector2(32, 80), cue, 10)
 	var exit := Map.room_exit(room_id, room_name)
 	draw_rect(Rect2(exit + Vector2(-18, 6), Vector2(36, 16)), Color("#6ddab9"))
 	_sign(exit + Vector2(-20, 4), "PASILLO" if building["rooms"].size() > 1 else "SALIR", 10)

@@ -188,3 +188,13 @@ aprendizaje están previstos en el diseño. Backend debe confirmar tipos,
 concesión, persistencia y duplicados antes de mostrarlos como entregados.
 El usuario indicará las correcciones de nombres y posiciones del mapa.
 Registrar rótulo actual, nombre correcto, referencia espacial y fuente.
+
+GUÍA Y RUTINA ESTUDIANTIL, 15/11/2026
+Consultar docs/GUIA_Y_RUTINA_ESTUDIANTIL.md. En el juego, Decanato atiende
+los trámites y Dirección de Carrera atiende Auxiliaturas. Para contrastar
+el recorrido simulado hacen falta formularios vigentes, orden de oficinas
+y horarios o avisos de atención. Para Ciclo Básico, aportar horarios por
+materia, paralelo, piso y aula, y temarios o ejercicios autorizados.
+Para los puestos, aportar un croquis orientado o fotos propias autorizadas
+del ingreso, el comedor y la acera exterior que permitan ubicar cada lugar.
+Los comercios, sus precios y la asignación semanal son mecánicas del juego.
