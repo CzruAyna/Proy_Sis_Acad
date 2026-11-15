@@ -114,19 +114,19 @@ func create_story(seed_value: int = -1) -> void:
 
 func _page(title: String, subtitle: String, back: Callable = Callable()) -> VBoxContainer:
 	_ui()._apply_career_theme(str(report["program_id"]), str(report["mention_id"]))
-	var page: VBoxContainer = _ui()._make_page(title, subtitle, back if back.is_valid() else show_setup)
+	var page: VBoxContainer = _ui()._make_page(title, subtitle, back if back.is_valid() else show_setup, false, false, true, true)
 	_text(page, "%s · %s · %s" % [report["player_name"], Catalog.program_by_id(str(report["program_id"]))["name"], Catalog.mention_by_id(str(report["program_id"]), str(report["mention_id"]))["name"]], 15).name = "StoryIdentity"
 	return page
 
 
 func _navigation(page: Control) -> void:
-	var row := _actions(page)
-	var previous: Button = _ui()._add_button(row, "← Capítulo anterior", _move.bind(-1), false, 38)
-	previous.disabled = chapter == 0
-	_text(row, "Capítulo %d / %d" % [chapter + 1, report["chapters"].size()], 15)
-	var next: Button = _ui()._add_button(row, "Capítulo siguiente →", _move.bind(1), false, 38)
-	next.disabled = chapter == report["chapters"].size() - 1
-	_ui()._add_button(row, "Desenlace", show_summary, false, 38)
+	_text(page, "Capítulo %d de %d" % [chapter + 1, report["chapters"].size()], 15)
+	_ui()._key_hint(page, "[←/→] Capítulos   [G] Grafo   [T] Temas   [Fin] Desenlace")
+	_ui()._bind_page_key(KEY_LEFT, _move.bind(-1))
+	_ui()._bind_page_key(KEY_RIGHT, _move.bind(1))
+	_ui()._bind_page_key(KEY_G, show_graph)
+	_ui()._bind_page_key(KEY_T, show_learning)
+	_ui()._bind_page_key(KEY_END, show_summary)
 
 
 func _move(step: int) -> void:
@@ -142,9 +142,6 @@ func show_chapter() -> void:
 	var page := _page(str(item["title"]), "Historia simulada · periodo %d · sucesos y resultados del motor académico" % int(item["term"]))
 	_navigation(page)
 	_text(page, str(item["story"]), 19).name = "CareerStoryNarrative"
-	var row := _actions(page)
-	_ui()._add_button(row, "Grafo de este capítulo", show_graph, true, 40).name = "StoryGraphButton"
-	_ui()._add_button(row, "Qué se exploró", show_learning, false, 40)
 	if not item["results"].is_empty():
 		var results: VBoxContainer = _ui()._card(page)
 		_text(results, "Resultados del periodo", 20)
@@ -183,7 +180,7 @@ func show_graph() -> void:
 	var item: Dictionary = report["chapters"][chapter]
 	var ui := _ui()
 	ui._apply_career_theme(str(report["program_id"]), str(report["mention_id"]))
-	var page: VBoxContainer = ui._make_page("Grafo de la historia", "", show_chapter, false, false, false)
+	var page: VBoxContainer = ui._make_page("Grafo de la historia", "", show_chapter, false, false, false, true)
 	_text(page, "%s · %s" % [report["player_name"], Catalog.mention_by_id(str(report["program_id"]), str(report["mention_id"]))["name"]], 14).name = "StoryIdentity"
 	var counter := _text(page, "", 15)
 	var graph := Graph.new()
@@ -231,7 +228,6 @@ func show_graph() -> void:
 
 func show_learning() -> void:
 	var page := _page("Temas de este capítulo", "Contenido orientativo · la historia no acredita aprendizaje real", show_chapter)
-	_ui()._add_button(page, "Volver al relato", show_chapter, false, 38)
 	var results: Array = report["chapters"][chapter]["results"]
 	if results.is_empty():
 		_text(page, "En la titulación se integran los temas recorridos: metodología, argumentación, documentación y comunicación de resultados.")
@@ -246,10 +242,10 @@ func show_learning() -> void:
 func show_subject(subject: Dictionary) -> void:
 	var course := Catalog.course_for_sigla(str(report["program_id"]), str(subject["sigla"]), str(report["mention_id"]))
 	var page := _page(str(course.get("name", subject["name"])), "Exploración didáctica de la historia", show_graph)
-	_ui()._add_button(page, "Volver al grafo", show_graph, false, 38)
-	_ui()._add_button(page, "Volver al relato", show_chapter, false, 38)
+	_ui()._key_hint(page, "[T] Volver al relato")
+	_ui()._bind_page_key(KEY_T, show_chapter)
 	_text(page, str(course.get("desc", "")), 17)
 	_text(page, "Temas orientativos: " + ", ".join(course.get("topics", [])), 15)
 	var demo := Demo.new()
-	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme)
+	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme, _ui())
 	page.add_child(demo)

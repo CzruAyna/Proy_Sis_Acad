@@ -61,6 +61,7 @@ static var _sphere_cache: Dictionary = {}
 
 
 func _ready() -> void:
+	set_meta("gameplay_surface", true)
 	focus_mode = Control.FOCUS_ALL
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip_contents = true

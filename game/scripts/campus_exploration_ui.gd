@@ -30,6 +30,10 @@ func _ui() -> Control:
 	return host.get_ref()
 
 
+func _play_page(title: String, subtitle: String, back: Callable, menu_backdrop: bool = false, campus_navigation: bool = false, pager: bool = true) -> VBoxContainer:
+	return _ui()._make_page(title, subtitle, back, menu_backdrop, campus_navigation, pager, true)
+
+
 func _text(parent: Control, value: String, size: int = 16) -> Label:
 	var label: Label = _ui()._label(value, size, _ui()._current_theme.get("text", Color.WHITE))
 	parent.add_child(label)
@@ -73,7 +77,7 @@ func show_welcome(message: String = "") -> void:
 	var page: VBoxContainer = _ui()._make_page("Explora la FNI", "SIS-INF · ciudad universitaria · recorrido pixel art", _ui()._show_play)
 	var card: VBoxContainer = _ui()._card(page)
 	_text(card, "Tu primera visita", 22)
-	_text(card, "Recorre el campus con WASD o las flechas. Acércate a una puerta y pulsa E para entrar. P abre progreso y M abre el mapa.", 17)
+	_text(card, "Recorre el campus con WASD o las flechas. Acércate a una puerta y pulsa E para entrar. Tab abre la mochila, M el mapa y Esc la pausa.", 17)
 	_text(card, "Nombre o apodo", 16)
 	var name_field := LineEdit.new()
 	name_field.name = "ExplorerName"
@@ -131,7 +135,10 @@ func show_world() -> void:
 		return
 	capture()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Explorar FNI", "", leave, false, false, false)
+	var page: VBoxContainer = _play_page("Explorar FNI", "", show_progress, false, false, false)
+	_ui()._bind_page_key(KEY_G, show_directions)
+	_ui()._bind_page_key(KEY_H, show_schedule.bind(show_world))
+	_ui()._bind_page_key(KEY_F1, show_help.bind(show_world))
 	var workspace := VBoxContainer.new()
 	workspace.name = "ExplorationWorkspace"
 	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -145,6 +152,7 @@ func show_world() -> void:
 	location.name = "ExplorerIdentity"
 	var world := World.new()
 	world.name = "CampusWorld"
+	world.set_meta("gameplay_surface", true)
 	world.player_program = str(_ui().current_profile.get("program_id", ""))
 	world.custom_minimum_size.y = 180
 	world.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -167,29 +175,12 @@ func show_world() -> void:
 	if _ui().simulation != null and not _ui().current_profile.is_empty():
 		_add_objective(workspace)
 	workspace.add_child(world)
-	var status := HBoxContainer.new()
-	status.add_theme_constant_override("separation", 10)
-	workspace.add_child(status)
-	var hint := _text(status, world.interaction_text(), 14)
+	var hint: Label = _ui()._key_hint(workspace, world.interaction_text())
 	hint.name = "ExplorationContext"
-	var interact := LinkButton.new()
-	interact.name = "ExplorationInteractHint"
-	interact.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	interact.add_theme_font_size_override("font_size", roundi(14 * float(_ui().settings["font_scale"])))
-	interact.add_theme_color_override("font_color", _ui()._current_theme["highlight"])
-	interact.pressed.connect(world.interact)
-	status.add_child(interact)
-	for item in [["Mapa [M]", show_map], ["Mochila [B]", show_backpack.bind("", show_world)], ["Pausa [P]", show_progress]]:
-		var button: Button = _ui()._add_button(status, item[0], item[1], false, 36)
-		button.custom_minimum_size.x = 112
-		button.add_theme_font_size_override("font_size", roundi(13 * float(_ui().settings["font_scale"])))
-		button.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var controls: Label = _ui()._key_hint(workspace, "[WASD] Mover   [Tab] Mochila   [M] Mapa   [G] Guía   [H] Horario   [F1] Controles")
+	controls.name = "ExplorationKeys"
 	var update_location := func(value: String) -> void:
 		hint.text = value
-		interact.text = value.left(35) + "…" if value.length() > 36 else value
-		interact.tooltip_text = value
-		interact.visible = value.begins_with("E ·")
-		hint.visible = not interact.visible
 		var place := world.room_name if not world.room_name.is_empty() else str(Map.building(world.room_id).get("name", "")) + " · pasillo"
 		location.text = prefix + (place if not world.room_id.is_empty() else "Ciudad universitaria FNI")
 	world.context_changed.connect(update_location)
@@ -234,17 +225,12 @@ func _add_objective(parent: Control) -> void:
 	copy.add_child(_ui()._label("MISIÓN · " + str(objective["title"]), 16, accent))
 	_text(copy, str(objective["hint"]), 13)
 	if objective.has("building"):
-		var pin: Button = _ui()._add_button(row, "Marcar en mapa", mark_building.bind(str(objective["building"])), true, 36)
-		pin.name = "CampusObjectiveDestination"
+		_ui()._key_hint(row, "[J] Marcar en mapa")
+		_ui()._bind_page_key(KEY_J, mark_building.bind(str(objective["building"])))
 	elif objective.has("action"):
-		var action: Button = _ui()._add_button(row, str(objective["label"]) + " [J]", objective["action"], true, 36)
+		var action: Label = _ui()._key_hint(row, str(objective["label"]) + " [J]")
 		action.name = "CampusObjectiveAction"
-		var key := InputEventKey.new()
-		key.keycode = KEY_J
-		action.shortcut = Shortcut.new()
-		action.shortcut.events = [key]
-		if objective["id"] == "study":
-			_ui()._add_button(row, "Horario", show_schedule.bind(show_world), false, 36)
+		_ui()._bind_page_key(KEY_J, objective["action"])
 	var completed := ""
 	if _last_objective == "matricula" and objective["id"] == "start":
 		completed = "Matrícula completada"
@@ -278,7 +264,7 @@ func leave() -> void:
 func show_progress() -> void:
 	_save()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Pausa y progreso", "El recorrido está detenido", show_world, false, false, false)
+	var page: VBoxContainer = _play_page("Pausa y progreso", "El recorrido está detenido", show_world, false, false, false)
 	_text(page, _name() + " · %d espacios visitados" % saved.get("visited", []).size(), 20)
 	var row := _actions(page)
 	if not _ui().current_profile.is_empty():
@@ -294,9 +280,12 @@ func show_progress() -> void:
 		_ui()._add_button(row, "Malla", _ui()._show_campus_section.bind("malla"), false, 40)
 	else:
 		_text(page, "Visita libre. El recorrido se conserva durante esta sesión.", 16)
-	_ui()._add_button(row, "Controles", show_help, false, 40)
-	_ui()._add_button(row, "Adónde ir", show_directions, true, 40)
-	_ui()._add_button(row, "Mochila", show_backpack.bind("", show_progress), false, 40)
+	_ui()._add_button(page, "Salir del recorrido", leave, false, 34)
+	_ui()._key_hint(page, "[G] Guía   [Tab] Mochila   [M] Mapa   [F1] Controles")
+	_ui()._bind_page_key(KEY_G, show_directions)
+	_ui()._bind_page_key(KEY_TAB, show_backpack.bind("", show_progress))
+	_ui()._bind_page_key(KEY_M, show_map)
+	_ui()._bind_page_key(KEY_F1, show_help.bind(show_progress))
 
 
 func mark_building(id: String) -> void:
@@ -321,7 +310,7 @@ func _clear_marker() -> void:
 func show_directions() -> void:
 	_save()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Adónde ir", "Elige un destino para marcarlo en el mapa.", show_progress, false, false)
+	var page: VBoxContainer = _play_page("Adónde ir", "Elige un destino para marcarlo en el mapa.", show_progress, false, false)
 	var routes := [
 		[World.DEAN_OFFICE, "Decanato", "Matrícula, cartas, cambios de carrera o mención y titulación."],
 		[World.ASSISTANT_OFFICE, "Dirección de Carrera", "Postula a Auxiliaturas y lleva el plan firmado o el permiso de aula."],
@@ -339,7 +328,7 @@ func show_directions() -> void:
 
 
 func show_food_map() -> void:
-	var page: VBoxContainer = _ui()._make_page("Puestos y comedor", "", show_directions, false, false)
+	var page: VBoxContainer = _play_page("Puestos y comedor", "", show_directions, false, false)
 	var positions := World.vendor_positions()
 	for id in Daily.VENDORS:
 		var card: VBoxContainer = _ui()._card(page)
@@ -350,9 +339,11 @@ func show_food_map() -> void:
 func show_map() -> void:
 	capture()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Mapa del campus", "", show_world, false, false, false)
+	var page: VBoxContainer = _play_page("Mapa del campus", "", show_world, false, false, false)
 	var map := Overview.new()
 	map.name = "CampusOverview"
+	map.set_meta("gameplay_surface", true)
+	_ui()._bind_page_key(KEY_TAB, show_backpack.bind("", show_map))
 	map.state = saved.duplicate(true)
 	map.destination = _destination
 	map.label_size = roundi(14 * float(_ui().settings["font_scale"]))
@@ -366,15 +357,16 @@ func show_map() -> void:
 	map.closed.connect(show_world, CONNECT_DEFERRED)
 	var controls := HBoxContainer.new()
 	page.add_child(controls)
-	var hint := _text(controls, "Rueda o + / −: zoom · Arrastre o flechas: mover · Inicio: vista general", 13)
+	var hint := _text(controls, "[M] Cerrar · [+ / −] Zoom · Flechas para mover · Inicio para encuadrar", 13)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var credit := LinkButton.new()
-	credit.text = "Licencia del mapa"
+	credit.text = "© OpenStreetMap contributors"
 	credit.uri = Geo.COPYRIGHT_URL
 	credit.add_theme_font_size_override("font_size", roundi(12 * float(_ui().settings["font_scale"])))
 	controls.add_child(credit)
 	if _destination.is_finite():
 		_text(page, "Destino marcado · " + _destination_name, 15)
+	_ui()._bind_page_key(KEY_M, show_world)
 	_ui()._focus_control.call_deferred(weakref(map))
 
 
@@ -387,6 +379,7 @@ func _inspect(content: Array[Dictionary]) -> void:
 		world.paused = true
 		world._held.clear()
 	var overlay := Inspection.new()
+	overlay.set_meta("gameplay_overlay", true)
 	overlay.action_requested.connect(_inspection_action, CONNECT_DEFERRED)
 	overlay.closed.connect(func() -> void:
 		if is_instance_valid(world) and world.is_inside_tree():
@@ -477,7 +470,7 @@ func show_room(building: Dictionary, room: String) -> void:
 	if id == Classes.BUILDING and Map.room_kind(id, room) == "classroom":
 		show_classroom(room)
 		return
-	var page: VBoxContainer = _ui()._make_page(room, "Interior recreado · " + str(building["name"]), show_world, false, false, false)
+	var page: VBoxContainer = _play_page(room, "Interior recreado · " + str(building["name"]), show_world, false, false, false)
 	_text(page, "Estás en " + room + ". Este ambiente es una recreación didáctica.", 17)
 	if Map.room_kind(str(building["id"]), room) == "restroom":
 		_text(page, "Ambiente de servicios.", 15)
@@ -511,7 +504,7 @@ func show_schedule(back: Callable) -> void:
 	_session()
 	_save()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Horario de Ciclo Básico", "Semanas del juego · horario simulado", back, false, false)
+	var page: VBoxContainer = _play_page("Horario de Ciclo Básico", "Semanas del juego · horario simulado", back, false, false)
 	var schedule := _schedule()
 	if schedule.is_empty():
 		_text(page, "Inicia una partida e inscríbete para ver tus clases.", 17)
@@ -527,7 +520,7 @@ func show_schedule(back: Callable) -> void:
 
 func show_classroom(room: String) -> void:
 	var routine := _daily()
-	var page: VBoxContainer = _ui()._make_page(room, "Ciclo Básico · Piso %d" % Map.room_floor(Classes.BUILDING, room), show_world, false, false)
+	var page: VBoxContainer = _play_page(room, "Ciclo Básico · Piso %d" % Map.room_floor(Classes.BUILDING, room), show_world, false, false)
 	var classes := _schedule()
 	var active := Classes.active(classes, room, routine.minutes)
 	if not active.is_empty():
@@ -598,7 +591,7 @@ func show_vendor(id: String, message: String = "") -> void:
 	_theme()
 	var vendor: Array = Daily.VENDORS[id]
 	var routine := _daily()
-	var page: VBoxContainer = _ui()._make_page(vendor[0], vendor[1], show_world, false, false)
+	var page: VBoxContainer = _play_page(vendor[0], vendor[1], show_world, false, false)
 	_text(page, routine.status(), 16)
 	if not message.is_empty():
 		_text(page, message, 15)
@@ -609,7 +602,8 @@ func show_vendor(id: String, message: String = "") -> void:
 		_text(card, "Al consumir · reduce hambre %d y sed %d" % [goods[2], goods[3]], 14)
 		var button: Button = _ui()._add_button(card, "Tomar agua" if int(goods[1]) == 0 else "Comprar " + str(goods[0]), _buy.bind(id, item), false, 40)
 		button.disabled = routine.balance < int(goods[1]) or routine.load_count() >= Daily.CAPACITY
-	_ui()._add_button(page, "Abrir mochila", show_backpack.bind("", show_vendor.bind(id)), true, 40)
+	_ui()._key_hint(page, "[Tab] Mochila")
+	_ui()._bind_page_key(KEY_TAB, show_backpack.bind("", show_vendor.bind(id)))
 
 
 func _buy(vendor: String, item: String) -> void:
@@ -619,31 +613,52 @@ func _buy(vendor: String, item: String) -> void:
 	show_vendor(vendor, message)
 
 
-func show_backpack(message: String, back: Callable) -> void:
+func show_backpack(message: String, back: Callable, section: int = 0) -> void:
 	if message.is_empty():
 		_save()
 	_theme()
 	var routine := _daily()
-	var page: VBoxContainer = _ui()._make_page("Mochila", "%d/%d espacios · %s" % [routine.load_count(), Daily.CAPACITY, routine.status()], back, false, false)
+	var page: VBoxContainer = _play_page("Mochila", "%d/%d espacios · %s" % [routine.load_count(), Daily.CAPACITY, routine.status()], back)
+	page.set_meta("backpack_section", section)
+	_ui()._bind_page_key(KEY_TAB, back)
+	_ui()._bind_page_key(KEY_LEFT, show_backpack.bind("", back, posmod(section - 1, 3)))
+	_ui()._bind_page_key(KEY_RIGHT, show_backpack.bind("", back, posmod(section + 1, 3)))
+	var tabs := HFlowContainer.new()
+	tabs.add_theme_constant_override("h_separation", 16)
+	page.add_child(tabs)
+	var captions := ["Alimentos", "Carpetas", "Apuntes"]
+	for index in captions.size():
+		var title := "[%d] %s" % [index + 1, captions[index]]
+		var colors: Dictionary = _ui()._current_theme
+		var active_color: Color = colors["highlight"] if section == index else colors["sub"]
+		_ui()._bind_page_key(KEY_1 + index, show_backpack.bind("", back, index))
+		tabs.add_child(_ui()._label(("> " if section == index else "") + title, 15, active_color))
+	_ui()._key_hint(page, "[←/→] Cambiar bolsillo   [Tab] Cerrar")
 	if not message.is_empty():
 		_text(page, message, 16)
-	var supplies: VBoxContainer = _ui()._card(page, true)
-	_text(supplies, "Comida y bebida", 21)
-	if routine.backpack.is_empty():
-		_text(supplies, "Busca el kiosco o el comedor para abastecerte.", 15)
-	for item in routine.backpack:
-		var label := "Consumir %s (×%d)" % [Daily.ITEMS[item][0], routine.backpack[item]]
-		_ui()._add_button(supplies, label, _consume.bind(item, back), false, 40)
-	if _ui().simulation != null and not _ui().current_profile.is_empty():
-		_ui()._campus().show_document_folder(page)
-	var notes: VBoxContainer = _ui()._card(page)
-	_text(notes, "Apuntes de clase", 21)
-	if routine.notes.is_empty():
-		_text(notes, "Asiste a una clase en Ciclo Básico para guardar el apunte.", 15)
-	for note in routine.notes.values():
-		if note is Dictionary and note.get("lines") is Array:
-			_text(notes, str(note.get("title", "")), 17)
-			_text(notes, "\n".join(note["lines"]), 15)
+	match section:
+		0:
+			var supplies: VBoxContainer = _ui()._card(page, true)
+			_text(supplies, "Comida y bebida", 21)
+			if routine.backpack.is_empty():
+				_text(supplies, "Busca el kiosco o el comedor para abastecerte.", 15)
+			for item in routine.backpack:
+				var label := "Consumir %s (×%d)" % [Daily.ITEMS[item][0], routine.backpack[item]]
+				_ui()._add_button(supplies, label, _consume.bind(item, back), false, 34)
+		1:
+			if _ui().simulation != null and not _ui().current_profile.is_empty():
+				_ui()._campus().show_document_folder(page)
+			else:
+				_text(page, "Los expedientes se guardan aquí durante una partida de estudiante.", 15)
+		2:
+			var notes: VBoxContainer = _ui()._card(page, true)
+			_text(notes, "Apuntes de clase", 21)
+			if routine.notes.is_empty():
+				_text(notes, "Asiste a una clase en Ciclo Básico para guardar el apunte.", 15)
+			for note in routine.notes.values():
+				if note is Dictionary and note.get("lines") is Array:
+					_text(notes, str(note.get("title", "")), 17)
+					_text(notes, "\n".join(note["lines"]), 15)
 
 
 func _consume(item: String, back: Callable) -> void:
@@ -658,7 +673,7 @@ func show_games() -> void:
 		minigames.suspend()
 	_save()
 	_theme()
-	var page: VBoxContainer = _ui()._make_page("Sala de juegos · Bloque E", "Elige una partida contra un rival automático", show_world, false, false)
+	var page: VBoxContainer = _play_page("Sala de juegos · Bloque E", "Elige una partida contra un rival automático", show_world, false, false)
 	_text(page, "Cuatro juegos locales con pausa y revancha. Acércate a una mesa con WASD y pulsa E, o elige aquí.", 16)
 	for station in Map.game_stations():
 		var id := str(station["id"])
@@ -668,7 +683,6 @@ func show_games() -> void:
 		_text(card, str(item["description"]), 14)
 		_ui()._add_button(card, "Jugar a " + str(item["title"]), show_minigame.bind(id), false, 38)
 	_text(page, "La pausa conserva la partida. Los resultados recreativos no alteran tu expediente académico.", 14)
-	_ui()._add_button(page, "Volver a la sala", show_world, true, 38)
 
 
 func show_minigame(id: String) -> void:
@@ -679,9 +693,9 @@ func show_minigame(id: String) -> void:
 	minigames.open(id)
 
 
-func show_help() -> void:
+func show_help(back: Callable = Callable()) -> void:
 	capture()
-	var page: VBoxContainer = _ui()._make_page("Controles de exploración", "", show_progress, false, false, false)
-	for line in ["WASD o flechas · Caminar. Shift · Correr.", "E o Enter · Entrar, comprar o consultar el tablero cercano.", "P o Tab · Pausa y progreso. M · Mapa. B · Mochila.", "Esc · Volver. Busca Adónde ir en el menú de pausa.", "Decanato · Trámites. Dirección de Carrera · Auxiliaturas. Ciclo Básico · Horarios y clases."]:
+	var page: VBoxContainer = _play_page("Controles de exploración", "", back if back.is_valid() else show_progress, false, false, false)
+	for line in ["WASD o flechas · Caminar. Shift · Correr.", "E o Enter · Entrar, comprar o consultar el tablero cercano.", "Tab · Mochila. M · Mapa. Esc o P · Pausa.", "G · Guía. H · Horario. J · Misión.", "Flechas · Seleccionar. Enter · Confirmar. Esc · Volver. Re Pág y Av Pág · Recorrer listas extensas.", "Decanato · Trámites. Dirección de Carrera · Auxiliaturas. Ciclo Básico · Horarios y clases."]:
 		_text(page, line, 16)
 	_ui()._add_button(page, "Personajes del campus", show_designs, false, 40)

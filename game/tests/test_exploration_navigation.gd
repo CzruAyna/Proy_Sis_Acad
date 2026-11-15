@@ -3,6 +3,17 @@ extends "res://tests/test_compact_navigation.gd"
 const Map = preload("res://scripts/campus_map.gd")
 
 
+func _key(code: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.pressed = true
+	viewport.push_input(event, true)
+	event.pressed = false
+	viewport.push_input(event, true)
+	await process_frame
+	await process_frame
+
+
 func _run() -> void:
 	viewport = SubViewport.new()
 	root.add_child(viewport)
@@ -67,7 +78,7 @@ func _run() -> void:
 			var map_keys: Array[String] = []
 			for button in game.find_children("*", "Button", true, false):
 				map_keys.append(button.text)
-			_check(map_keys == ["← Atrás"], "Mapa sin botonera de zoom, destinos ni cuadrícula")
+			_check(map_keys.is_empty(), "Mapa sin botonera de zoom, destinos ni salida")
 			_check(game.current_profile.is_empty() and game.simulation == null, "Visita libre sin crear expediente académico")
 	game.draft_player_name = "Prueba compacta"
 	game.active_slot = 1
@@ -98,15 +109,15 @@ func _run() -> void:
 	for office in ["Caja", "Kardex", "Cómputo"]:
 		model.advance_procedure(str(request["id"]), office)
 	ui.show_world()
-	var action: Button = game.find_child("CampusObjectiveAction", true, false)
+	var action: Label = game.find_child("CampusObjectiveAction", true, false)
 	_check(action != null and action.text == "Iniciar [J]" and game.find_child("CampusRewardPreview", true, false) != null, "El siguiente paso y la recompensa prevista aparecen al terminar la matrícula")
 	if action != null:
-		action.pressed.emit()
+		await _key(KEY_J)
 		action = game.find_child("CampusObjectiveAction", true, false)
 		_check(action != null and action.text == "Rendir [J]", "El parcial se abre desde el objetivo")
 		if action != null:
-			action.pressed.emit()
-			game._active_back.call()
+			await _key(KEY_J)
+			await _key(KEY_ESCAPE)
 			_check(game.find_child("CampusWorld", true, false) != null, "Salir del parcial devuelve al campus jugable")
 	game.queue_free()
 	await process_frame

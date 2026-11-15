@@ -125,11 +125,19 @@ func _run() -> void:
 	var model_parameter = game.find_child("ModelParameter", true, false)
 	var demo = model_parameter.get_parent()
 	var factor: float = demo.factor
-	demo.increase.pressed.emit()
-	_check(demo.factor > factor, "El botón aumenta el parámetro didáctico")
-	demo.decrease.pressed.emit()
-	_check(is_equal_approx(demo.factor, factor), "El botón disminuye el parámetro didáctico")
-	game._answer_subject(int(game.current_question["answer"]))
+	var parameter_key := InputEventKey.new()
+	parameter_key.keycode = KEY_PLUS
+	parameter_key.pressed = true
+	viewport.push_input(parameter_key, true)
+	await process_frame
+	_check(demo.factor > factor, "+ aumenta el parámetro didáctico")
+	parameter_key.keycode = KEY_MINUS
+	viewport.push_input(parameter_key, true)
+	await process_frame
+	_check(is_equal_approx(demo.factor, factor), "− disminuye el parámetro didáctico")
+	parameter_key.keycode = KEY_1 + int(game.current_question["answer"])
+	viewport.push_input(parameter_key, true)
+	await process_frame
 	await _inspect("resultado")
 	for key in game.simulation.state["enrollments"].keys().duplicate():
 		var entry: Dictionary = game.simulation.state["enrollments"][key]

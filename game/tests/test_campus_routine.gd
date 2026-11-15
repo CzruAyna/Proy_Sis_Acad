@@ -48,6 +48,17 @@ func _click(label: String) -> void:
 	_check(false, "Falta el botón " + label)
 
 
+func _key(code: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.pressed = true
+	_viewport.push_input(event, true)
+	event.pressed = false
+	_viewport.push_input(event, true)
+	for frame in 8:
+		await process_frame
+
+
 func _picture(name: String) -> void:
 	if not _capture:
 		return
@@ -115,13 +126,19 @@ func _run() -> void:
 		world.player = positions[id]
 		_check(world.nearby_vendor() == id and world.nearby_building().is_empty() and world._can_stand_outside(positions[id]), "El puesto %s tiene punto transitable e interacción." % id)
 	world.player = positions["camion"]
-	world.interact()
-	await process_frame
-	_click("Comprar Sándwich de milanesa")
+	await _key(KEY_E)
+	_check(_game.find_child("CampusWorld", true, false) == null, "E abre el puesto cercano.")
+	_check(_game.find_child("CampusSupplies", true, false) == null, "El puesto tiene su propia pantalla.")
+	await _key(KEY_DOWN)
+	await _key(KEY_ENTER)
 	await _picture("05-puesto")
-	_click("Abrir mochila")
+	await _key(KEY_TAB)
+	var pocket := _game.find_child("PageContent", true, false)
+	_check(pocket != null and pocket.get_meta("backpack_section", -1) == 0, "Tab desde el puesto abre alimentos.")
 	_check(_game.current_profile["campus_exploration"]["daily"]["backpack"].get("milanesa", 0) == 1, "Comprar en el puesto guarda el producto.")
-	_click("Consumir Sándwich de milanesa (×1)")
+	await _key(KEY_DOWN)
+	await _picture("08-mochila-con-producto")
+	await _key(KEY_ENTER)
 	_check(_game.current_profile["campus_exploration"]["daily"]["backpack"].is_empty(), "Consumir desde la mochila guarda la carga.")
 
 	_game._show_exploration()
@@ -153,8 +170,17 @@ func _run() -> void:
 		_check(writing.text == "\n".join(rows[0]["lines"]), "La clase revela los apuntes por etapas.")
 		_check(_game.current_profile["campus_exploration"]["daily"]["notes"].has(rows[0]["key"]), "La clase completa guarda el apunte.")
 		await _picture("03-clase")
-	_game._explorer().show_backpack("", _game._show_exploration)
+	_game._show_exploration()
+	await _key(KEY_TAB)
+	await _key(KEY_RIGHT)
+	pocket = _game.find_child("PageContent", true, false)
+	_check(pocket.get_meta("backpack_section", -1) == 1, "Flecha derecha abre carpetas.")
+	await _key(KEY_3)
+	pocket = _game.find_child("PageContent", true, false)
+	_check(pocket.get_meta("backpack_section", -1) == 2, "3 abre los apuntes.")
 	await _picture("04-mochila")
+	await _key(KEY_TAB)
+	_check(_game.find_child("CampusWorld", true, false) != null, "Tab cierra la mochila y retoma el recorrido.")
 	_check(_game.current_profile["campus_exploration"]["daily"]["notes"].has(rows[0]["key"]), "La mochila conserva el apunte tras cambiar de pantalla.")
 	_game._show_exploration()
 	world = _game.find_child("CampusWorld", true, false) as Control
@@ -163,6 +189,14 @@ func _run() -> void:
 	world.camera = world.player
 	world.queue_redraw()
 	await _picture("06-aula")
+	await _key(KEY_ESCAPE)
+	_check(_game.find_child("CampusWorld", true, false) == null, "Esc abre la pausa del recorrido.")
+	await _key(KEY_ESCAPE)
+	_check(_game.find_child("CampusWorld", true, false) != null, "Esc sale de pausa sin abrir otra pantalla.")
+	await _key(KEY_M)
+	_check(_game.find_child("CampusOverview", true, false) != null, "M abre el mapa.")
+	await _key(KEY_M)
+	_check(_game.find_child("CampusWorld", true, false) != null, "M cierra el mapa.")
 	_game._explorer().mark_building(Classes.BUILDING)
 	var overview := _game.find_child("CampusOverview", true, false)
 	_check(overview != null and overview.destination == Map.building(Classes.BUILDING)["door"], "La guía marca la puerta en el mapa.")

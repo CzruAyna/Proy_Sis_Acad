@@ -26,6 +26,7 @@ func open(controller: Control, focus_target: Control) -> VBoxContainer:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	controller.add_child(self)
 	controller._active_back = close
+	set_meta("gameplay_overlay", true)
 	_panel = PanelContainer.new()
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var style := StyleBoxFlat.new()

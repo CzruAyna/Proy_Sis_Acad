@@ -353,3 +353,11 @@ No borrar ni relajar una regla sin una instrucción expresa del usuario.
     y bebida dentro y fuera del campus. Incluir dinero semanal, hambre y sed.
     Dejar en docs/ los pendientes visuales y criterios de interfaz intuitiva.
     Aportar capturas reales y usar la publicación automática del proyecto.
+
+39. INTERACCIÓN POR TECLADO, indicada el 15/11/2026.
+    Priorizar teclas deducibles y anunciarlas junto a la acción que corresponda.
+    Tab abre la mochila en el recorrido. Usar Escape para pausa o regreso
+    según la vista y flechas y Enter para seleccionar y confirmar. Retirar
+    botoneras redundantes durante el juego. Mantener el foco legible, la
+    escritura en formularios y las funciones de mapa y malla ya acordadas.
+    Aportar capturas reales del cambio o su verificación con el push.

@@ -727,7 +727,7 @@ func show_course_preview(key: String) -> void:
 	for topic in course.get("topics", []):
 		_text(page, "• " + str(topic), 16)
 	var demo := Demo.new()
-	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme)
+	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme, _ui())
 	page.add_child(demo)
 	var prompts: Array = course.get("partials", [])
 	for question in prompts:

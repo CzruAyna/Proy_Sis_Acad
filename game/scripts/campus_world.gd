@@ -260,7 +260,7 @@ func _input(event: InputEvent) -> void:
 			if key in [KEY_E, KEY_ENTER]:
 				get_viewport().set_input_as_handled()
 				interact()
-			elif key in [KEY_P, KEY_TAB]:
+			elif key in [KEY_P, KEY_ESCAPE]:
 				_held.clear()
 				paused = true
 				get_viewport().set_input_as_handled()
@@ -270,7 +270,7 @@ func _input(event: InputEvent) -> void:
 				paused = true
 				get_viewport().set_input_as_handled()
 				map_requested.emit()
-			elif key == KEY_B:
+			elif key in [KEY_TAB, KEY_B]:
 				_held.clear()
 				paused = true
 				get_viewport().set_input_as_handled()

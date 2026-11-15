@@ -2,7 +2,7 @@
 
 ## Cómo jugar
 
-- En el campus, pulsa **P** y abre **Adónde ir**. Al marcar un destino se
+- En el campus, pulsa **G** para abrir la guía. Al marcar un destino se
   resalta su ubicación en el mapa. La marca sigue visible al llegar al
   exterior del edificio o puesto.
 - Entra a **Decanato**, acércate al mostrador y pulsa **E** para iniciar o
@@ -12,16 +12,27 @@
 - En **Dirección de Carrera**, en el edificio de Administración de Sistemas,
   consulta Auxiliaturas, postula y abre las carpetas de la convocatoria o del
   trabajo asignado.
-- Abre **Materias → Ver mi horario** o consulta una pizarra de **Ciclo Básico**.
+- Pulsa **H** en el recorrido para abrir el horario o consulta una pizarra de **Ciclo Básico**.
   El horario de tus inscripciones indica el día, la franja, el aula y el piso.
   En la pizarra pulsa **E**. Si la clase todavía no comenzó, puedes esperar en
   el aula. El reloj y las necesidades avanzan durante esa espera. Al terminar
   de escribirse la pizarra se guarda el apunte en la mochila. Los parciales
   se habilitan al iniciar el semestre.
-- Acércate a un puesto y pulsa **E** para comprar. En la **mochila [B]** puedes
-  consumir alimentos y bebidas, consultar apuntes y revisar tus carpetas.
+- Acércate a un puesto y pulsa **E** para comprar. Con **Tab** abres o cierras la mochila. Puedes
+  cambiar entre **Alimentos**, **Carpetas** y **Apuntes** con **1–3** o **←/→**.
+  Selecciona alimentos con **↑/↓** y consúmelos con **Enter**.
   El comedor y el kiosco están dentro del campus. Encuentra el pollo, el café
   espumoso, la tienda con licor y el camión de milanesas por el ingreso exterior.
+
+## Teclas según la pantalla
+
+| Pantalla | Teclas |
+|---|---|
+| Recorrido | WASD o flechas para moverte, Shift para correr, E para interactuar, J para la misión actual, M para el mapa y F1 para los controles. |
+| Mochila | Tab para abrir desde el mundo, la pausa, el mapa o un puesto. Tab o Esc devuelve a la pantalla desde la que entraste. |
+| Pausa y pantallas académicas | Esc pausa o regresa. F2–F5 abre los accesos anunciados en el campus. En las listas, ↑/↓ permite seleccionar, Enter confirma y Re Pág/Av Pág recorre el contenido extenso. |
+| Formularios | Tab y Mayús+Tab recorren campos. Los atajos de juego ceden mientras escribes. |
+| Mapas y grafos | Flechas y teclas indicadas en el lienzo. +/− y la rueda ajustan el zoom. |
 
 ## Reglas del juego
 
@@ -60,3 +71,14 @@ Para sustituir la recreación hacen falta horarios o listados de aulas por
 materia y paralelo, temarios o apuntes autorizados, formularios y orden de
 oficinas vigentes, y un croquis o fotos propias de los puestos con permiso
 de uso. Consultar el [registro de fuentes](PARA_BACKEND_DATOS_Y_FUENTES.txt).
+
+## Capturas de comprobación
+
+Godot 4.7.2 en Windows. Partida ficticia de Sistemas, vista lógica de
+1200 × 780. Las parejas muestran el mismo aula y los apuntes de Física I
+antes y después de aplicar los atajos contextuales.
+
+| Pantalla | Antes | Después |
+|---|---|---|
+| Aula en Ciclo Básico | [Botonera del recorrido](evidencia/teclado/aula-antes.png) | [Indicaciones de interacción, misión y pausa](evidencia/teclado/aula-despues.png) |
+| Mochila | [Inventario, carpetas y apuntes en una vista](evidencia/teclado/mochila-antes.png) | [Apuntes en su bolsillo, seleccionable mediante 3 o flechas](evidencia/teclado/mochila-despues.png) |

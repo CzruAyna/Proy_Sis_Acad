@@ -111,20 +111,12 @@ func _rebuild() -> void:
 	for item in page.get("actions", []):
 		var action: Button = ui._add_button(copy, str(item["label"]), _request_action.bind(item), false, 38)
 		action.disabled = not bool(item.get("enabled", true))
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 10)
-	actions.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_child(actions)
+	var controls := "[Esc] Cerrar"
 	if pages.size() > 1:
-		for direction in [-1, 1]:
-			var arrow: Button = ui._add_button(actions, "←" if direction < 0 else "→", _change.bind(direction), false, 38)
-			arrow.custom_minimum_size.x = 44
-			var target: int = page_index + direction
-			arrow.disabled = target < 0 or target >= pages.size()
-			if not arrow.disabled:
-				arrow.tooltip_text = str(pages[target]["title"])
-				arrow.accessibility_name = arrow.tooltip_text
-	ui._add_button(actions, "Volver", close, true, 38)
+		controls = "[←/→] Cambiar ficha   " + controls
+	if not page.get("actions", []).is_empty():
+		controls += "   [↑/↓] Seleccionar   [Enter] Confirmar"
+	ui._key_hint(box, controls)
 	_fit.call_deferred()
 	queue_redraw()
 
@@ -151,9 +143,22 @@ func _fit() -> void:
 		buttons[index].focus_neighbor_top = previous
 		buttons[index].focus_neighbor_right = next
 		buttons[index].focus_neighbor_bottom = next
-	if not buttons.is_empty():
-		buttons.back().grab_focus()
+	if buttons.is_empty():
+		panel.focus_mode = Control.FOCUS_ALL
+		panel.grab_focus()
+	else:
+		buttons.front().grab_focus()
 	queue_redraw()
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree() or not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if pages.size() > 1 and event.keycode in [KEY_LEFT, KEY_RIGHT]:
+		_change(-1 if event.keycode == KEY_LEFT else 1)
+		get_viewport().set_input_as_handled()
+	elif panel.has_focus() and event.keycode in [KEY_TAB, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_ENTER]:
+		get_viewport().set_input_as_handled()
 
 
 func _change(direction: int) -> void:

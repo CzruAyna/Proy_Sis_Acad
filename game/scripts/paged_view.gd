@@ -17,9 +17,11 @@ var page_ends: Array[float] = [0.0]
 var _pending := false
 var _running := false
 var _focus_connections := {}
+var _keyboard_only := false
 
 
-func configure(ui: Control) -> void:
+func configure(ui: Control, keyboard_only: bool = false) -> void:
+	_keyboard_only = keyboard_only
 	name = "PageNavigator"
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -44,17 +46,19 @@ func configure(ui: Control) -> void:
 	add_child(navigation)
 	navigation.visible = false
 	navigation.alignment = BoxContainer.ALIGNMENT_CENTER
-	previous = ui._add_button(navigation, "↑ Anterior", change_page.bind(-1), false, 36)
-	previous.name = "PreviousPage"
+	if not _keyboard_only:
+		previous = ui._add_button(navigation, "↑ Anterior", change_page.bind(-1), false, 36)
+		previous.name = "PreviousPage"
 	counter = ui._label("", 14, ui._current_theme.get("sub", Color.WHITE), true)
 	counter.name = "PageCounter"
 	navigation.add_child(counter)
-	next = ui._add_button(navigation, "Siguiente ↓", change_page.bind(1), false, 36)
-	next.name = "NextPage"
-	for action in [previous, next]:
-		action.custom_minimum_size = Vector2(128, 36)
-		action.autowrap_mode = TextServer.AUTOWRAP_OFF
-		action.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
+	if not _keyboard_only:
+		next = ui._add_button(navigation, "Siguiente ↓", change_page.bind(1), false, 36)
+		next.name = "NextPage"
+		for action in [previous, next]:
+			action.custom_minimum_size = Vector2(128, 36)
+			action.autowrap_mode = TextServer.AUTOWRAP_OFF
+			action.add_theme_font_size_override("font_size", int(14 * float(ui.settings["font_scale"])))
 	viewport.resized.connect(request_layout)
 	content.minimum_size_changed.connect(request_layout)
 	content.child_order_changed.connect(request_layout)
@@ -149,6 +153,14 @@ func change_page(direction: int) -> void:
 	_apply_page()
 
 
+func on_page(control: Control) -> bool:
+	if not content.is_ancestor_of(control):
+		return false
+	if _page_clip.size.y <= 0:
+		return page_index == 0
+	return _page_clip.get_global_rect().grow(1).encloses(control.get_global_rect())
+
+
 func show_control(control: Control) -> void:
 	if not is_instance_valid(control) or not content.is_ancestor_of(control):
 		return
@@ -165,9 +177,10 @@ func _apply_page() -> void:
 	navigation.visible = page_offsets.size() > 1
 	_page_clip.size = Vector2(viewport.size.x, clampf(page_ends[page_index] - page_offsets[page_index] + 1, 0, viewport.size.y))
 	content.position.y = -page_offsets[page_index]
-	previous.disabled = page_index == 0
-	next.disabled = page_index == page_offsets.size() - 1
-	counter.text = _section_title()
+	if not _keyboard_only:
+		previous.disabled = page_index == 0
+		next.disabled = page_index == page_offsets.size() - 1
+	counter.text = "[Re Pág / Av Pág] " + _section_title() if _keyboard_only else _section_title()
 	for control in content.find_children("*", "Control", true, false):
 		if control.focus_mode == Control.FOCUS_NONE:
 			continue

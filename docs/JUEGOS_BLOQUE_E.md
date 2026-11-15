@@ -13,7 +13,20 @@ Las primeras partidas se incorporaron en `b122e96`. La
 presentación del 31/10 y su contrato propuesto se conservan como antecedente
 en [la bitácora](BITACORA_DESARROLLO.md).
 
-## Acceso y controles
+## Atajos vigentes
+
+En las cuatro mesas, **P** pausa, **F1** abre las reglas, **R** reinicia y
+**Esc** regresa a la sala. Durante la preparación de un tiro, **Esc** primero
+cancela esa preparación.
+
+| Mesa | Teclas durante la partida |
+|---|---|
+| Billar | Flechas ajustan el tiro. Espacio dispara. C activa la colocación de la blanca, las flechas la mueven y Enter confirma. 1–6 elige tronera e IJKL ajusta el efecto. Las partidas antiguas de seis bolas conservan los controles de tiro. |
+| Ping-pong | W/S o flechas mueven la paleta. Espacio sirve. Shift impulsa. |
+| Ajedrez | Flechas y Enter mueven piezas. 1–4 elige promoción. T reclama tablas cuando se habilitan. Q abandona. |
+| Ruta del campus | ←/→ consulta casillas, Espacio lanza o termina el turno y Enter compra o construye cuando corresponde. |
+
+## Acceso y controles originales
 
 Explorar la facultad → **Sistemas E · Juegos**. Se llega a las mesas con WASD;
 E / Interactuar abre la partida. El cartel del fondo abre el catálogo. Se puede

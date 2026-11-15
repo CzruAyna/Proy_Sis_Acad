@@ -11,7 +11,7 @@ var _body: Label
 var _title: Label
 var _example: Label
 var _counter: Label
-var _pause: Button
+var _pause: Label
 var _last_chars := -1
 
 
@@ -46,19 +46,14 @@ func build(ui: Control, parent: Control) -> void:
 	model.chapter_changed.connect(_chapter)
 	model.pause_changed.connect(_pause_scene)
 	model.execute(Presentation.COMMAND)
-	var controls := HFlowContainer.new()
-	controls.name = "DemoControls"
-	controls.add_theme_constant_override("h_separation", 6)
-	controls.add_theme_constant_override("v_separation", 6)
-	parent.add_child(controls)
-	for item in [["Anterior", model.previous], ["Pausa", toggle_pause], ["Siguiente", model.next], ["1x / 2x", toggle_speed], ["Resumen / completo", model.toggle_detail], ["Reiniciar", restart]]:
-		var button: Button = ui._add_button(controls, item[0], item[1], false, 34)
-		button.add_theme_font_size_override("font_size", int(13 * float(ui.settings["font_scale"])))
-		var font_size: int = button.get_theme_font_size("font_size")
-		button.custom_minimum_size.x = maxf(100, button.get_theme_font("font").get_string_size("Continuar" if item[0] == "Pausa" else item[0], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 32)
-		button.autowrap_mode = TextServer.AUTOWRAP_OFF
-		if item[0] == "Pausa":
-			_pause = button
+	_pause = ui._key_hint(parent, "[Espacio] Pausa")
+	ui._key_hint(parent, "[←/→] Cambiar capítulo   [V] Velocidad   [D] Detalle   [R] Reiniciar")
+	ui._bind_page_key(KEY_SPACE, toggle_pause)
+	ui._bind_page_key(KEY_LEFT, model.previous)
+	ui._bind_page_key(KEY_RIGHT, model.next)
+	ui._bind_page_key(KEY_V, toggle_speed)
+	ui._bind_page_key(KEY_D, model.toggle_detail)
+	ui._bind_page_key(KEY_R, restart)
 	_sync()
 
 
@@ -100,7 +95,7 @@ func _sync() -> void:
 		_body.visible_characters = -1 if reduced_motion and model.phase != "COMMAND" else count
 	_command.visible_characters = -1 if reduced_motion else 2 + model.visible_command()
 	if _pause != null:
-		_pause.text = "Continuar" if model.paused else "Pausa"
+		_pause.text = "[Espacio] Continuar" if model.paused else "[Espacio] Pausa"
 
 
 func toggle_pause() -> void:

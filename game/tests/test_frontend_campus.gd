@@ -240,8 +240,14 @@ func _layout_scenarios() -> void:
 			game._show_course_preview(str(game.simulation.curriculum()[0]))
 			await _settle()
 			var demo = game.find_child("ModelParameter", true, false)
-			_check(demo.size.x > 100 and demo.get_child_count() == 2, "La demostración tiene botones explícitos para su parámetro")
 			var parent = demo.get_parent()
+			var plus := InputEventKey.new()
+			plus.keycode = KEY_PLUS
+			plus.shift_pressed = true
+			plus.pressed = true
+			viewport.push_input(plus, true)
+			await process_frame
+			_check(demo.size.x > 100 and parent.parameter == 55 and parent.find_children("*", "Button", true, false).is_empty(), "La demostración ajusta su parámetro con + y sin botonera")
 			_check(demo.position.y < parent.size.y and parent.size.y < 500, "La demo no colapsa a miles de píxeles")
 			game._show_campus_section("malla")
 			await _settle()
