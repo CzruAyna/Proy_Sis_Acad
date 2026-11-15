@@ -5,6 +5,15 @@ const Chess = preload("res://scripts/chess_game.gd")
 const Store = preload("res://scripts/simulation_save_store.gd")
 
 
+func _send_key(code: Key) -> void:
+	var key := InputEventKey.new()
+	key.keycode = code
+	key.pressed = true
+	viewport.push_input(key, true)
+	key.pressed = false
+	viewport.push_input(key, true)
+
+
 func _run() -> void:
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(900, 640)
@@ -25,6 +34,8 @@ func _run() -> void:
 		var model = ui.sessions[id]
 		_check(game.find_child("MinigameBoard", true, false) != null, "Tablero disponible: " + id)
 		if id == "ajedrez":
+			_send_key(KEY_2)
+			_check(ui.promotion == Chess.ROOK, "2 selecciona la torre para la promoción")
 			var click := InputEventMouseButton.new()
 			click.button_index = MOUSE_BUTTON_LEFT
 			click.pressed = true
@@ -35,9 +46,18 @@ func _run() -> void:
 			ui._board._gui_input(click)
 			_check(model.board[Chess.square("e4")] == Chess.PAWN and model.turn == -1, "Clic de origen/destino juega una pieza")
 		elif id == "billar":
-			_check(ui.action({"type": "shoot"})["ok"], "Botón de tiro conectado")
+			_send_key(KEY_C)
+			_send_key(KEY_DOWN)
+			_send_key(KEY_ENTER)
+			_check(ui._board._drag.is_empty() and model.positions[0].y > 150, "C, flechas y Enter colocan la blanca")
+			_send_key(KEY_2)
+			_send_key(KEY_I)
+			_check(model.called_pocket == 1 and model.spin.y > 0, "2 anuncia tronera e I aplica efecto")
+			_send_key(KEY_SPACE)
+			_check(model.phase == "MOVING", "Espacio dispara la blanca")
 		elif id == "ping_pong":
-			_check(ui.action({"type": "serve"})["ok"], "Botón de saque conectado")
+			_send_key(KEY_SPACE)
+			_check(model.phase == "PLAY", "Espacio saca")
 			var key := InputEventKey.new()
 			key.physical_keycode = KEY_W
 			key.pressed = true
@@ -48,12 +68,17 @@ func _run() -> void:
 			key.pressed = false
 			ui._board._gui_input(key)
 		elif id == "monopolio":
-			_check(ui.action({"type": "roll"})["ok"], "Botón de dados conectado")
-		ui._pause()
-		_check(model.paused, "Pausa desde UI detiene la partida")
+			_send_key(KEY_RIGHT)
+			_check(ui._board.selected_tile == 1, "Flecha consulta la siguiente casilla")
+			_send_key(KEY_SPACE)
+			_check(model.phase != "READY", "Espacio lanza los dados")
+		_send_key(KEY_P)
+		_check(model.paused, "P detiene la partida")
+		_check(game.find_children("*", "Button", true, false).all(func(control: Control) -> bool: return not control.is_visible_in_tree()), "El tablero usa atajos sin botones en pantalla")
 		var saved: Dictionary = model.serialize()
-		ui.rules()
+		_send_key(KEY_F1)
 		await _inspect("reglas " + id)
+		_check(game.find_child("MinigameBoard", true, false) == null, "F1 abre las reglas")
 		ui.open(id)
 		_check(model == ui.sessions[id] and not model.paused, "Reanudar conserva la misma sesión")
 		ui.suspend()

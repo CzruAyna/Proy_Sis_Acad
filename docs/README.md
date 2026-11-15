@@ -32,6 +32,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Ramas, terreno y misiones](RAMAS_TERRENO_Y_MISIONES.md) | Malla acumulativa, controles del mapa, arte del campus, objetivos y contrato de recompensas. |
 | [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md) | Empalmes continuos, rosa orientada, inicio con cuatro acciones, interiores variados y contrato para motor/backend. |
 | [Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md) | Pisos transitables, rutinas persistentes, caricias, Piedritas 1/100, logros y optimizaciones medidas; pendientes para frontend y datos. |
+| [Guía y rutina estudiantil](GUIA_Y_RUTINA_ESTUDIANTIL.md) | Destinos, expedientes, horarios, clases, mochila, tiendas y tareas de diseño. |
 | [Mapa en cuatro cuadrantes, histórico](MAPA_PARA_CORRECCIONES.md) | Exportación del 03/11/2026, sustituida por la matriz 8×8. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
 | [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Cuatro minijuegos jugables contra rivales, variantes, controles, guardado, optimizaciones y pendientes. |

@@ -11,23 +11,14 @@ func _open_station(station: Dictionary, code: int) -> void:
 	world.enter_building("sis_e")
 	world.player = station["approach"]
 	await _settle()
-	if code == 0:
-		var control: LinkButton = game.find_child("ExplorationInteractHint", true, false)
-		var click := InputEventMouseButton.new()
-		click.position = control.get_global_rect().get_center()
-		click.global_position = click.position
-		click.button_index = MOUSE_BUTTON_LEFT
-		click.pressed = true
-		viewport.push_input(click, true)
-		click.pressed = false
-		viewport.push_input(click, true)
-	else:
-		var key := InputEventKey.new()
-		key.physical_keycode = code
-		key.pressed = true
-		viewport.push_input(key, true)
-		key.pressed = false
-		viewport.push_input(key, true)
+	var hint := game.find_child("ExplorationContext", true, false) as Label
+	_check(hint != null and hint.text.begins_with("E ·"), "La indicación de la mesa es texto contextual.")
+	var key := InputEventKey.new()
+	key.physical_keycode = code
+	key.pressed = true
+	viewport.push_input(key, true)
+	key.pressed = false
+	viewport.push_input(key, true)
 	await _settle()
 	var board = game.find_child("MinigameBoard", true, false)
 	_check(board != null and board.model.game_id == station["id"], "Entrada %d abre %s" % [code, station["id"]])
@@ -53,9 +44,9 @@ func _run() -> void:
 	game._show_exploration()
 	game.exploration_ui.guest_name = "Prueba de entrada"
 	for station in Map.game_stations():
-		for code in [KEY_E, KEY_ENTER, 0]:
+		for code in [KEY_E, KEY_ENTER]:
 			await _open_station(station, code)
-	for code in [KEY_P, KEY_M]:
+	for code in [KEY_P, KEY_M, KEY_TAB]:
 		game.exploration_ui.show_world()
 		await _settle()
 		var key := InputEventKey.new()
@@ -63,7 +54,7 @@ func _run() -> void:
 		key.pressed = true
 		viewport.push_input(key, true)
 		await _settle()
-		_check(game.find_child("CampusWorld", true, false) == null, "P/M cambia de pantalla al terminar el despacho de entrada")
+		_check(game.find_child("CampusWorld", true, false) == null, "P, M o Tab cambia de pantalla al terminar el despacho de entrada")
 		key.pressed = false
 		viewport.push_input(key, true)
 	game.queue_free()

@@ -2,7 +2,7 @@ extends RefCounted
 const FONT = preload("res://assets/fonts/campus_pixel.fnt")
 
 
-static func draw(canvas: CanvasItem, layout: Dictionary, room: String) -> void:
+static func draw(canvas: CanvasItem, layout: Dictionary, room: String, lines: Array = []) -> void:
 	var extent: Vector2 = layout["size"]
 	var kind: String = layout["kind"]
 	var brick: bool = kind == "classroom" or layout["id"] in ["fis_mat", "basicas"]
@@ -39,9 +39,16 @@ static func draw(canvas: CanvasItem, layout: Dictionary, room: String) -> void:
 		formula = "pH = -log[H+]   H2O"
 	elif kind in ["computer_lab", "physics_virtual"]:
 		formula = "SIMULACIÓN · FÍSICA" if kind == "physics_virtual" else "algoritmo → código → prueba"
+	elif layout["id"] == "basicas" and kind == "classroom":
+		formula = "Consulta el horario [E]"
 	elif kind == "classroom":
 		formula = "f(x) = ax + b   ∑   ∫"
-	canvas.draw_string(FONT, board.position + Vector2(8, 20), formula, HORIZONTAL_ALIGNMENT_LEFT, 188, 9, Color("#b6e1c6"))
+	if lines.is_empty():
+		canvas.draw_string(FONT, board.position + Vector2(8, 20), formula, HORIZONTAL_ALIGNMENT_LEFT, 188, 9, Color("#b6e1c6"))
+	else:
+		canvas.draw_rect(Rect2(board.position, Vector2(board.size.x, 52)), Color("#31594e"))
+		for index in lines.size():
+			canvas.draw_string(ThemeDB.fallback_font, board.position + Vector2(7, 12 + 12 * index), str(lines[index]), HORIZONTAL_ALIGNMENT_LEFT, 184, 9, Color("#e1f5e8"))
 	for x in [extent.x * 0.28, extent.x * 0.72]:
 		canvas.draw_rect(Rect2(x - 20, 68, 40, 4), Color("#eff0cc"))
 	for item in layout["items"]:

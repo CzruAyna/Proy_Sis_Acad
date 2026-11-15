@@ -26,6 +26,7 @@ var graph_term_seen := 0
 var _branches_by_plan: Dictionary = {}
 var _recent_approvals: Dictionary = {}
 var _office_back := Callable()
+var _office := ""
 var show_request_form := false
 var show_documents := false
 var show_closed_requests := false
@@ -164,7 +165,8 @@ func _overview(page: VBoxContainer, snapshot: Dictionary) -> void:
 		_button(stats, "Ver mi graduación", _go.bind("graduacion"), true, true)
 	elif snapshot["phase"] == "INSCRIPCION":
 		if not _document_present("matricula", "", snapshot):
-			_text(stats, "Siguiente paso · Completa la matrícula desde la ventanilla simulada en Administración de Sistemas.", 16)
+			_text(stats, "Siguiente paso · Ve a Decanato y presenta la matrícula.", 16)
+			_button(stats, "Marcar Decanato en el mapa", ui._explorer().mark_building.bind("decanato"))
 		elif enrolled > 0:
 			_button(stats, "Iniciar semestre", perform.bind("start_term", [], "resumen"), true, true)
 		else:
@@ -182,17 +184,17 @@ func exploration_objective(back: Callable) -> Dictionary:
 	if snapshot["graduated"]:
 		return {"id": "graduated", "title": "Recorrido completo", "hint": "Tu título está emitido."}
 	if snapshot["studies_complete"]:
-		return {"id": "degree", "title": "Graduación disponible", "hint": "Consulta las modalidades en la ventanilla de Administración de Sistemas."}
+		return {"id": "degree", "title": "Graduación disponible", "hint": "Ve a Decanato y consulta las modalidades de graduación.", "building": "decanato"}
 	if snapshot["phase"] == "INSCRIPCION":
 		if not _document_present("matricula", "", snapshot):
-			return {"id": "matricula", "title": "Completa la matrícula", "hint": "Administración de Sistemas · entra y pulsa E al fondo de la oficina."}
+			return {"id": "matricula", "title": "Completa la matrícula", "hint": "Decanato · entra, acércate al mostrador y pulsa E.", "building": "decanato"}
 		if snapshot["subjects"].any(func(subject: Dictionary) -> bool: return not subject["enrollment"].is_empty()):
 			return {"id": "start", "title": "Inicia el semestre", "hint": "Matrícula vigente · abre los parciales de tus materias.", "label": "Iniciar", "action": perform.bind("start_term", [], "resumen", false, back)}
 		return {"id": "plan", "title": "Elige tus materias", "hint": "Inscríbelas antes de iniciar el semestre.", "label": "Materias", "action": _go.bind("materias")}
 	for subject in snapshot["subjects"]:
 		var entry: Dictionary = subject["enrollment"]
 		if not entry.is_empty() and entry["score"] == null:
-			return {"id": "study", "title": str(subject["name"]), "hint": "Parcial %d de 3 · continúa desde aquí." % (entry["answers"].size() + 1), "label": "Rendir", "action": _ui()._start_subject.bind(str(subject["id"]), back)}
+			return {"id": "study", "title": str(subject["name"]), "hint": "Clases en Ciclo Básico · parcial %d de 3 pendiente." % (entry["answers"].size() + 1), "label": "Rendir", "action": _ui()._start_subject.bind(str(subject["id"]), back)}
 	return {"id": "close", "title": "Cierra el semestre", "hint": "Ya tienes un resultado en todas tus materias.", "label": "Cerrar", "action": _confirm_close.bind(back)}
 
 
@@ -255,6 +257,10 @@ func _subjects(page: VBoxContainer, snapshot: Dictionary) -> void:
 	if int(snapshot["term"]) == 1 and snapshot["phase"] == "INSCRIPCION":
 		message = "Inscripción inicial automática"
 	_text(page, "Carga %d/%d · %s" % [_model().state["enrollments"].size(), int(snapshot["load_limit"]), message], 16)
+	var next := _ui()._card(page, true) as VBoxContainer
+	_text(next, "Dónde estudiar · Ciclo Básico", 19)
+	_text(next, "Busca el aula y el piso en tu horario. Abre una materia de la lista para repasar o rendir su parcial.", 15)
+	_button(next, "Ver mi horario", _ui()._explorer().show_schedule.bind(_go.bind("materias")), true, true)
 	var toolbar := HBoxContainer.new()
 	toolbar.add_theme_constant_override("separation", 10)
 	page.add_child(toolbar)
@@ -349,16 +355,18 @@ func open_request(id: String) -> void:
 	_go("tramites")
 
 
-func open_office(back: Callable) -> void:
+func open_office(back: Callable, office: String = "decanato") -> void:
 	_office_back = back
+	_office = office
 	selected_request = ""
 	show_request_form = false
-	_go("tramites")
+	_go("auxiliatura" if office == "admin_sis" else "tramites")
 
 
 func _leave_office() -> void:
 	var back := _office_back
 	_office_back = Callable()
+	_office = ""
 	if back.is_valid():
 		back.call()
 
@@ -366,12 +374,33 @@ func _leave_office() -> void:
 func _office_index() -> void:
 	selected_request = ""
 	show_request_form = false
-	_go("tramites")
+	_go("auxiliatura" if _office == "admin_sis" else "tramites")
+
+
+func _request_building(kind: String) -> String:
+	return "admin_sis" if kind in ["auxiliatura", "trabajo_auxiliar"] else "decanato"
+
+
+func _destination_card(page: Control, office: String, instruction: String) -> void:
+	var card: VBoxContainer = _ui()._card(page, true)
+	var place := "Dirección de Carrera · Administración de Sistemas" if office == "admin_sis" else "Decanato"
+	_text(card, "Dónde ir · " + place, 19)
+	_text(card, instruction, 15)
+	_button(card, "Marcar en el mapa", _mark_office.bind(office), true, true)
+
+
+func _mark_office(office: String) -> void:
+	_office_back = Callable()
+	_office = ""
+	_ui()._explorer().mark_building(office)
 
 
 func _procedures(page: VBoxContainer, snapshot: Dictionary) -> void:
-	var contextual := _office_back.is_valid()
-	_text(page, "Ventanilla académica simulada. Consulta el expediente y la oficina indicada para su siguiente paso." if contextual else "Consulta de expedientes. Los documentos y pagos del juego son simulados.", 15, true)
+	var contextual := _office == "decanato"
+	if contextual:
+		_text(page, "Ventanilla académica simulada · Decanato", 18)
+	elif _office.is_empty() and selected_request.is_empty():
+		_destination_card(page, "decanato", "Abre un expediente para revisar el siguiente paso y qué llevar. Entra a Decanato y pulsa E en el mostrador.")
 	if show_request_form and contextual:
 		_procedure_form(page)
 		_button(page, "Volver a expedientes", _office_index)
@@ -388,14 +417,14 @@ func _procedures(page: VBoxContainer, snapshot: Dictionary) -> void:
 			_button(quick, "Nueva solicitud", _new_request_form, true, true)
 			if not _document_present("matricula", "", snapshot) and not snapshot["procedures"].any(func(request: Dictionary) -> bool: return request["kind"] == "matricula" and request["status"] in ["PENDIENTE", "OBSERVADO"]):
 				_button(quick, "Abrir matrícula", perform.bind("open_procedure", ["matricula"], "tramites", true))
-		if snapshot["subjects"].any(func(subject: Dictionary) -> bool: return subject["approved"]):
-			_button(quick, "Auxiliatura", _go.bind("auxiliatura"))
 		if snapshot["studies_complete"] and not snapshot["graduated"]:
 			_button(quick, "Graduación", _go.bind("graduacion"))
 	_button(quick, "Documentos", _toggle_documents)
 	_button(quick, "Ocultar cerrados" if show_closed_requests else "Expedientes cerrados", _toggle_closed_requests)
 	_text(page, "Tus expedientes", 22)
 	for request in snapshot["procedures"]:
+		if contextual and _request_building(str(request["kind"])) != _office:
+			continue
 		if not show_closed_requests and not ["PENDIENTE", "OBSERVADO"].has(request["status"]):
 			continue
 		var card: VBoxContainer = _ui()._card(page)
@@ -405,15 +434,33 @@ func _procedures(page: VBoxContainer, snapshot: Dictionary) -> void:
 			_text(card, "%s → %s" % [step["office"], step["label"]], 15, true)
 		_button(card, "Abrir expediente", open_request.bind(str(request["id"])))
 	if show_documents and not snapshot["documents"].is_empty():
-		var documents: VBoxContainer = _ui()._card(page)
-		_text(documents, "Tu carpeta de documentos", 21)
-		for key in snapshot["documents"]:
-			var document: Dictionary = snapshot["documents"][key]
-			_text(documents, "%s · semestre %d%s" % [DOCUMENT_NAMES.get(document["kind"], document["kind"]), int(document["term"]), " · " + str(document["request_id"]) if not str(document["request_id"]).is_empty() else ""], 14, true)
-
+		var documents := _document_folder(page, snapshot)
 		if contextual:
 			_button(documents, "Registrar pago de historial", perform.bind("pay", ["historial"], "tramites"))
 			_button(documents, "Emitir historial", perform.bind("issue_document", ["historial"], "tramites"))
+
+
+func show_document_folder(page: Control) -> void:
+	var snapshot: Dictionary = _model().snapshot()
+	_document_folder(page, snapshot)
+	var pending := snapshot["procedures"].filter(func(request: Dictionary) -> bool: return request["status"] in ["PENDIENTE", "OBSERVADO"]) as Array
+	if not pending.is_empty():
+		var card: VBoxContainer = _ui()._card(page)
+		_text(card, "Expedientes en curso", 21)
+		for request in pending:
+			_button(card, str(request["name"]), open_request.bind(str(request["id"])))
+
+
+func _document_folder(page: Control, snapshot: Dictionary) -> VBoxContainer:
+	var card: VBoxContainer = _ui()._card(page)
+	_text(card, "Carpeta de documentos", 21)
+	for document: Dictionary in snapshot["documents"].values():
+		var id := str(document.get("request_id", ""))
+		var kind := str(document["kind"])
+		_text(card, "%s · %s%s" % [DOCUMENT_NAMES.get(kind, kind),
+			"listo" if _document_present(kind, id, snapshot) else "por actualizar",
+			" · " + id if not id.is_empty() else ""], 15)
+	return card
 
 
 func _new_request_form() -> void:
@@ -451,37 +498,44 @@ func _request_detail(page: VBoxContainer, request: Dictionary, snapshot: Diction
 		_text(card, "Recorrido de simulación: representa una experiencia introductoria del trámite.", 14, true)
 	if request["payload"].has("reason"):
 		_text(card, "Justificación: " + str(request["payload"]["reason"]), 15, true)
-	for index in range(request["steps"].size()):
-		var step: Dictionary = request["steps"][index]
-		var marker := "✓" if index < int(request["step"]) else ("→" if index == int(request["step"]) else "○")
-		_text(card, "%s %d. %s · %s" % [marker, index + 1, step["office"], step["label"]], 15, index != int(request["step"]))
 	var current := Procedures.current_step(request)
-	if not current.is_empty() and not _office_back.is_valid():
-		_text(card, "Continúa en la ventanilla simulada de Administración de Sistemas.", 15, true)
-	elif not current.is_empty():
-		_text(card, "En esta oficina necesitas:", 17)
+	if not current.is_empty():
+		var office := _request_building(str(request["kind"]))
+		var at_office := _office == office
+		_text(card, "Ahora · %s · %s" % [current["office"], current["label"]], 18)
+		if not at_office:
+			_destination_card(card, office, "Lleva este expediente al mostrador y pulsa E para continuar.")
+		_text(card, "Qué llevar", 17)
 		for kind in current.get("documents", []):
 			var present := _document_present(str(kind), id, snapshot)
 			_text(card, ("✓ " if present else "Pendiente · ") + str(DOCUMENT_NAMES.get(kind, kind)), 15, present)
-			if not present and ["historial", "solvencia", "perfil", "borrador", "plan_aux"].has(kind):
+			if at_office and not present and ["historial", "solvencia", "perfil", "borrador", "plan_aux"].has(kind):
 				if kind == "historial":
 					_button(card, "Registrar pago de historial", perform.bind("pay", ["historial"], "tramites"))
 				var scope := id if ["perfil", "borrador", "plan_aux"].has(kind) else ""
 				_button(card, "Preparar " + str(DOCUMENT_NAMES[kind]), perform.bind("issue_document", [str(kind), scope], "tramites"))
 		if current.has("receipt"):
 			var scope := "" if current["receipt"] == "matricula" else id
-			_button(card, "Registrar comprobante de pago simulado", perform.bind("pay", [str(current["receipt"]), scope], "tramites"))
-		if current.get("requires_sessions", false):
+			_text(card, "Comprobante de pago simulado", 15)
+			if at_office:
+				_button(card, "Registrar comprobante de pago simulado", perform.bind("pay", [str(current["receipt"]), scope], "tramites"))
+		if at_office and current.get("requires_sessions", false):
 			var sessions := int(request["payload"].get("sessions", 0))
 			_text(card, "%d/3 actividades de apoyo completadas" % sessions, 16)
 			_button(card, "Realizar actividad de apoyo", _ui()._show_simulation_activity.bind("apoyo", id), sessions < 3, true)
-		if current.get("requires_defense", false):
+		if at_office and current.get("requires_defense", false):
 			var passed := bool(request["payload"].get("defense_passed", false))
 			_text(card, "Defensa aprobada" if passed else "El tribunal evaluará tres respuestas. Se conservan los intentos.", 16)
 			_button(card, "Presentar defensa", _ui()._show_simulation_activity.bind("defensa", id), not passed, true)
-		var actions := _actions(card)
-		_button(actions, "Presentar en " + str(current["office"]), perform.bind("advance_procedure", [id, str(current["office"])], "tramites"), true, true)
-		_button(actions, "Cancelar solicitud", _confirm.bind("Cancelar solicitud", "Se conservará el expediente cancelado en tu historial de trámites.", perform.bind("cancel_procedure", [id], "tramites")))
+		if at_office:
+			var actions := _actions(card)
+			_button(actions, "Presentar en " + str(current["office"]), perform.bind("advance_procedure", [id, str(current["office"])], "tramites"), true, true)
+			_button(actions, "Cancelar solicitud", _confirm.bind("Cancelar solicitud", "Se conservará el expediente cancelado en tu historial de trámites.", perform.bind("cancel_procedure", [id], "tramites")))
+	_text(card, "Recorrido del expediente", 17)
+	for index in range(request["steps"].size()):
+		var step: Dictionary = request["steps"][index]
+		var marker := "✓" if index < int(request["step"]) else ("→" if index == int(request["step"]) else "·")
+		_text(card, "%s %d. %s · %s" % [marker, index + 1, step["office"], step["label"]], 15, index != int(request["step"]))
 	for event in request.get("events", []).slice(-3):
 		_text(card, "• " + _friendly(str(event.get("observation", event.get("action", "Paso registrado")))), 14, true)
 
@@ -597,6 +651,9 @@ func _submit_form() -> void:
 
 
 func _assistant(page: VBoxContainer, snapshot: Dictionary) -> void:
+	var at_office := _office == "admin_sis"
+	if not at_office:
+		_destination_card(page, "admin_sis", "La postulación, la competencia y los documentos del paralelo se atienden en Dirección de Carrera.")
 	_text(page, "La auxiliatura es parte de tu vida como estudiante. Ganar la competencia inicia el trabajo con un docente y un paralelo.", 16, true)
 	for assignment in snapshot["assignments"]:
 		var card: VBoxContainer = _ui()._card(page, true)
@@ -614,7 +671,7 @@ func _assistant(page: VBoxContainer, snapshot: Dictionary) -> void:
 			_text(card, "Resultado %.2f · Puesto %d" % [float(application["score"]), int(application["ranking"])], 16)
 		var row := _actions(card)
 		_button(row, "Ver expediente", open_request.bind(str(application["request_id"])))
-		_button(row, "Rendir competencia", _ui()._show_simulation_activity.bind("examen", str(application["id"])), application["status"] == "HABILITADA" and int(application["term"]) == int(snapshot["term"]), true)
+		_button(row, "Rendir competencia", _ui()._show_simulation_activity.bind("examen", str(application["id"])), at_office and application["status"] == "HABILITADA" and int(application["term"]) == int(snapshot["term"]), true)
 	_text(page, "Materias para postular", 22)
 	var approved := 0
 	for subject in snapshot["subjects"]:
@@ -629,7 +686,7 @@ func _assistant(page: VBoxContainer, snapshot: Dictionary) -> void:
 		var card: VBoxContainer = _ui()._card(page)
 		_text(card, "%s · %s" % [subject["sigla"], subject["name"]], 18)
 		_text(card, "Ya postulaste a esta convocatoria." if already else str(check["message"]), 15, true)
-		_button(card, "Postular", perform.bind("apply_assistant", [str(subject["id"])], "auxiliatura", true), bool(check["ok"]) and not already, true)
+		_button(card, "Postular", perform.bind("apply_assistant", [str(subject["id"])], "auxiliatura", true), at_office and bool(check["ok"]) and not already, true)
 	if approved == 0:
 		_text(page, "Primero aprueba una materia y cierra el semestre. Después revisa la convocatoria con tu matrícula vigente.", 18)
 
@@ -642,9 +699,9 @@ func _graduation(page: VBoxContainer, snapshot: Dictionary) -> void:
 	_text(card, "Título emitido" if snapshot["graduated"] else ("Estudios concluidos" if snapshot["studies_complete"] else "Tu camino a la graduación"), 24)
 	_text(card, "Concluir el plan, aprobar una modalidad, obtener el diploma y emitir el título son etapas diferentes.", 16)
 	_text(card, str(snapshot["excellence"]["message"]), 16, true)
-	if not _office_back.is_valid():
+	if _office != "decanato":
 		if not snapshot["graduated"]:
-			_text(card, "Consulta las modalidades en la ventanilla simulada de Administración de Sistemas.", 16)
+			_destination_card(card, "decanato", "Consulta las modalidades de graduación en la ventanilla.")
 		return
 	for request in snapshot["procedures"]:
 		if ["excelencia", "tesis", "proyecto"].has(request["kind"]):
@@ -670,7 +727,7 @@ func show_course_preview(key: String) -> void:
 	for topic in course.get("topics", []):
 		_text(page, "• " + str(topic), 16)
 	var demo := Demo.new()
-	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme)
+	demo.setup(course, 0, float(_ui().settings["font_scale"]), _ui()._current_theme, _ui())
 	page.add_child(demo)
 	var prompts: Array = course.get("partials", [])
 	for question in prompts:

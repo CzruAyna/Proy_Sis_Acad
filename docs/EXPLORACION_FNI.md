@@ -64,12 +64,12 @@ de la sede del centro. [Fuentes pendientes](PARA_BACKEND_DATOS_Y_FUENTES.txt)
 | WASD o flechas | Caminar; las diagonales mantienen la velocidad. |
 | Shift | Correr. |
 | E o Enter | Entrar cerca de una puerta, salir desde el umbral interior o consultar el tablero. |
-| P o Tab | Pausar y consultar progreso. |
-| M | Abrir o cerrar el mapa. Usa los botones + y − para el zoom. |
-| Escape | Volver desde la vista actual. En el mundo, regresar al campus académico o al inicio de la visita libre. |
-| Botones visibles | Abrir progreso, mapa, ayuda o interacción sin recordar sus atajos. |
+| Esc o P | Pausar y consultar progreso. Esc vuelve al recorrido. |
+| Tab | Abrir o cerrar la mochila. |
+| M | Abrir o cerrar el mapa. Usa +, − o la rueda para el zoom. |
+| G / H / J / F1 | Guía, horario, misión actual y ayuda, según la indicación visible. |
 
-La cámara sigue al personaje. No se usa rueda, barras ni deslizadores. Las
+La cámara sigue al personaje. La rueda ajusta el zoom del mapa. Las
 paredes, los edificios y las mesas impiden atravesarlos; los árboles exteriores
 son decoración y no bloquean accesos. Se liberan las teclas al perder el foco.
 Cambiar de página retira el mundo activo y detiene el movimiento. Las fichas
@@ -78,9 +78,8 @@ superpuestas de estatuas, personajes y pisos lo pausan sin retirarlo.
 ## Progreso y actividades
 
 **Pausa y progreso** presenta visitas, periodo, aprobaciones y promedio. Desde
-una partida permite abrir Materias, Malla, Historial, Trámites, Auxiliatura y
-Graduación. El acceso **Explorar FNI** permite volver al personaje desde esas
-pantallas. Las actividades académicas mantienen las validaciones del motor;
+una partida permite abrir el campus académico y la malla. La guía indica los
+lugares para trámites y auxiliaturas. **Esc** permite volver al personaje. Las actividades académicas mantienen las validaciones del motor;
 una visita no aprueba materias ni completa trámites.
 
 En aulas y laboratorios, el tablero abre estudiar/repasar. En los edificios

@@ -121,6 +121,10 @@ var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "ant
 var formula_font: Font
 var random := RandomNumberGenerator.new()
 var _active_back := Callable()
+var _keyboard_page := false
+var _page_keys: Dictionary = {}
+var _keyboard_content: VBoxContainer
+var _keyboard_pager: CampusPagedView
 var _home_art := false
 var _menu_backdrop_active := false
 var _transitioning := false
@@ -851,12 +855,79 @@ func _input(event: InputEvent) -> void:
 		return
 	if _transitioning:
 		return
+	if event is InputEventKey and event.pressed and not event.echo and _keyboard_page:
+		if _handle_page_key(event):
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("ui_cancel") and _active_back.is_valid():
 		if _menu_backdrop_active:
 			_transition_to(_active_back)
 		else:
 			_active_back.call()
 		get_viewport().set_input_as_handled()
+
+
+func _bind_page_key(key: Key, action: Callable) -> void:
+	_page_keys[key] = action
+
+
+func _handle_page_key(event: InputEventKey) -> bool:
+	if event.alt_pressed or event.ctrl_pressed or event.meta_pressed:
+		return false
+	var focused := get_viewport().gui_get_focus_owner()
+	if focused is LineEdit or focused is TextEdit or _has_gameplay_overlay():
+		return false
+	var key := event.keycode if event.keycode != 0 else event.physical_keycode
+	if _page_keys.has(key) and (key != KEY_TAB or not event.shift_pressed):
+		var action: Callable = _page_keys[key]
+		action.call_deferred()
+		return true
+	if is_instance_valid(_keyboard_pager) and key in [KEY_PAGEUP, KEY_PAGEDOWN]:
+		_keyboard_pager.change_page(-1 if key == KEY_PAGEUP else 1)
+		if focused != null and not _keyboard_pager.on_page(focused):
+			focused.release_focus()
+		return true
+	if not is_instance_valid(_keyboard_content) or (focused != null and focused.has_meta("gameplay_surface")):
+		return false
+	if key not in [KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER]:
+		return false
+	var choices: Array[Control] = []
+	for item in _keyboard_content.find_children("*", "Control", true, false):
+		if item is Control and item.is_visible_in_tree() and item.focus_mode == Control.FOCUS_ALL:
+			if item is BaseButton and item.disabled:
+				continue
+			choices.append(item)
+	var index := choices.find(focused)
+	if index < 0 and is_instance_valid(_keyboard_pager):
+		var visible_choices: Array[Control] = []
+		for choice in choices:
+			if _keyboard_pager.on_page(choice):
+				visible_choices.append(choice)
+		choices = visible_choices
+	if choices.is_empty():
+		return false
+	if key in [KEY_ENTER, KEY_KP_ENTER]:
+		if index >= 0 or focused != null:
+			return false
+		choices[0].grab_focus()
+		return true
+	var next := (choices.size() - 1 if key == KEY_UP else 0) if index < 0 else clampi(index + (-1 if key == KEY_UP else 1), 0, choices.size() - 1)
+	choices[next].grab_focus()
+	return true
+
+
+func _has_gameplay_overlay() -> bool:
+	for child in get_children():
+		if child.has_meta("gameplay_overlay") and not child.is_queued_for_deletion():
+			return true
+	return false
+
+
+func _key_hint(parent: Control, text: String, centered: bool = false) -> Label:
+	var hint := _label(text, 14, _current_theme.get("highlight", _current_theme.get("accent", INK)), centered)
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(hint)
+	return hint
 
 
 func _setup_theme() -> void:
@@ -983,7 +1054,11 @@ func _show_global_achievements(back: Callable = Callable(), _menu_backdrop: bool
 			card.add_child(_label("✦ " + str(title), 16, _current_theme.get("text", INK)))
 
 
-func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false, campus_navigation: bool = true, use_pager: bool = true) -> VBoxContainer:
+func _make_page(title: String, subtitle: String, back: Callable = Callable(), menu_backdrop: bool = false, campus_navigation: bool = true, use_pager: bool = true, keyboard_play: bool = false) -> VBoxContainer:
+	_keyboard_page = not menu_backdrop and (keyboard_play or (not current_profile.is_empty() and simulation != null and title not in ["Crea tu recorrido", "Menciones y enfoques"]))
+	_page_keys.clear()
+	_keyboard_content = null
+	_keyboard_pager = null
 	if not current_profile.is_empty() and simulation != null and not menu_backdrop:
 		_apply_career_theme(str(current_profile["program_id"]), str(current_profile["mention_id"]))
 	if menu_backdrop:
@@ -1042,7 +1117,9 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 	if use_pager:
 		var pager := PagedView.new()
 		layout.add_child(pager)
-		pager.configure(self)
+		pager.configure(self, _keyboard_page)
+		if _keyboard_page:
+			_keyboard_pager = pager
 		content = pager.content
 	else:
 		content = VBoxContainer.new()
@@ -1050,15 +1127,22 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		content.add_theme_constant_override("separation", 10)
 		content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		layout.add_child(content)
+	if _keyboard_page:
+		_keyboard_content = content
 	if back.is_valid():
 		var footer := HBoxContainer.new()
 		layout.add_child(footer)
-		var action := Callable(self, "_transition_to").bind(back) if menu_backdrop else back
-		var back_label := "Guardar y salir" if back == Callable(self, "_return_to_menu") else "← Atrás"
-		var button := _add_button(footer, back_label, action, false, 42)
-		button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		if not current_profile.is_empty() and simulation != null:
-			footer.add_child(_label("Simulación educativa", 12, _current_theme.get("sub", INK)))
+		var back_label := "Guardar y salir" if back == Callable(self, "_return_to_menu") else "Atrás"
+		if _keyboard_page:
+			if graph_workspace or game_workspace:
+				var label := "Pausa" if title == "Explorar FNI" else back_label
+				_key_hint(footer, "[Esc] " + label)
+			else:
+				_key_hint(footer, "[↑/↓] Seleccionar   [Enter] Confirmar   [Esc] " + back_label)
+		else:
+			var action := Callable(self, "_transition_to").bind(back) if menu_backdrop else back
+			var button := _add_button(footer, "← " + back_label if back_label == "Atrás" else back_label, action, false, 42)
+			button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		if not _save_feedback.is_empty() and not current_profile.is_empty():
 			footer.add_child(_label(_save_feedback, 13, _current_theme.get("sub", INK)))
 	if bool(settings["animations"]):
@@ -1090,17 +1174,14 @@ func _show_campus_section(section: String) -> void:
 func _add_campus_navigation(parent: Control) -> void:
 	var navigation := HFlowContainer.new()
 	navigation.name = "CampusNavigation"
-	navigation.add_theme_constant_override("h_separation", 6)
-	navigation.add_theme_constant_override("v_separation", 6)
+	navigation.add_theme_constant_override("h_separation", 14)
 	parent.add_child(navigation)
-	var sections := [["resumen", "Mi campus"], ["exploracion", "Explorar FNI"], ["materias", "Materias"], ["malla", "Malla"]]
-	for section in sections:
-		var button := _add_button(navigation, section[1], _show_campus_section.bind(section[0]), _campus_section == section[0], 38)
-		button.custom_minimum_size.x = maxf(100, NeonVisuals.PIXEL_FONT.get_string_size(section[1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * float(settings["font_scale"]))).x + 42)
-		button.autowrap_mode = TextServer.AUTOWRAP_OFF
-		button.add_theme_font_size_override("font_size", int(14 * float(settings["font_scale"])))
-		if _campus_section == section[0]:
-			_focus_control.call_deferred(weakref(button))
+	for caption in ["[F2] Mi campus", "[F3] Materias", "[F4] Malla", "[F5] Recorrido"]:
+		_key_hint(navigation, caption)
+	_bind_page_key(KEY_F2, _show_campus_section.bind("resumen"))
+	_bind_page_key(KEY_F3, _show_campus_section.bind("materias"))
+	_bind_page_key(KEY_F4, _show_campus_section.bind("malla"))
+	_bind_page_key(KEY_F5, _show_campus_section.bind("exploracion"))
 
 
 func _adaptive_grid(parent: Control, minimum_width: float = 360.0, maximum_columns: int = 3) -> GridContainer:
@@ -1185,10 +1266,34 @@ func _add_button(parent: Control, text: String, action: Callable, accent: bool =
 	if accent:
 		button.icon = null
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	if _keyboard_page:
+		_style_keyboard_choice(button, accent)
 	if action.is_valid():
 		button.pressed.connect(action)
 	parent.add_child(button)
 	return button
+
+
+func _style_keyboard_choice(choice: Button, emphasis: bool = false) -> void:
+	var accent: Color = _current_theme.get("highlight", _current_theme.get("accent", GREEN))
+	var clean := StyleBoxEmpty.new()
+	clean.content_margin_left = 12
+	clean.content_margin_right = 12
+	var marked := StyleBoxFlat.new()
+	marked.bg_color = Color(accent, 0.13)
+	marked.border_color = accent
+	marked.border_width_left = 3
+	marked.content_margin_left = 12
+	marked.content_margin_right = 12
+	choice.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	choice.custom_minimum_size.y = minf(choice.custom_minimum_size.y, 34)
+	choice.add_theme_stylebox_override("normal", clean)
+	choice.add_theme_stylebox_override("disabled", clean)
+	for state in ["hover", "pressed", "focus"]:
+		choice.add_theme_stylebox_override(state, marked)
+	choice.add_theme_color_override("font_color", accent if emphasis else _current_theme.get("text", INK))
+	choice.add_theme_color_override("font_focus_color", Color.WHITE)
+	choice.add_theme_constant_override("outline_size", 0)
 
 
 func _add_menu_button(parent: Control, text: String, action: Callable, accent: bool = true, height: int = 48) -> Button:
@@ -1316,6 +1421,10 @@ func _add_compact_list(parent: Control) -> VBoxContainer:
 
 
 func _show_main() -> void:
+	_keyboard_page = false
+	_page_keys.clear()
+	_keyboard_content = null
+	_keyboard_pager = null
 	_active_back = Callable()
 	_effects.clear()
 	_page_style = null
@@ -1436,9 +1545,13 @@ func _show_simulate() -> void:
 
 
 func _show_exploration() -> void:
+	_explorer().open()
+
+
+func _explorer() -> RefCounted:
 	if exploration_ui == null:
 		exploration_ui = ExplorationUI.new(self)
-	exploration_ui.open()
+	return exploration_ui
 
 
 func _show_career_presentation() -> void:
@@ -1447,7 +1560,7 @@ func _show_career_presentation() -> void:
 		if exploration_ui.minigames != null:
 			exploration_ui.minigames.suspend()
 	_use_neutral_theme()
-	var page := _make_page("Demostración automática", "Sistemas e Informática · recorrido explicativo en bucle", _show_simulate, false, false)
+	var page := _make_page("Demostración automática", "Sistemas e Informática · recorrido explicativo en bucle", _show_simulate, false, false, true, true)
 	page.add_child(_label(CareerPresentationView.Presentation.NOTICE, 12, Color("#a2b7c1")))
 	var presentation := CareerPresentationView.new()
 	presentation.reduced_motion = not bool(settings["animations"]) or bool(settings["low_performance"])
@@ -1905,7 +2018,7 @@ func _show_exam() -> void:
 	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
 	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
 	var demo := StudyDemo.new()
-	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme)
+	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme, self)
 	lesson.add_child(demo)
 	var exam := VBoxContainer.new()
 	exam.set_meta("page_atomic", true)
@@ -1913,10 +2026,16 @@ func _show_exam() -> void:
 	columns.add_child(exam)
 	exam.add_child(_label(str(current_question["q"]), 19, accent, true))
 	for option in range(current_question["options"].size()):
-		_add_button(exam, str(current_question["options"][option]), _answer_subject.bind(option), false, 48)
+		var answer := _answer_subject.bind(option)
+		var row := _add_button(exam, str(current_question["options"][option]), answer, false, 38)
+		row.text = "[%d] %s" % [option + 1, row.text]
+		_bind_page_key(KEY_1 + option, answer)
 	var cheat_key := "%d:%s:%d" % [int(simulation.state["term"]), key, partial_index]
 	var cheat := _add_button(exam, "Chanchullo · usar apunte", _try_chanchullo.bind(cheat_key), true, 42)
 	cheat.disabled = current_profile.get("chanchullo_used", []).has(cheat_key)
+	if not cheat.disabled:
+		cheat.text = "[U] " + cheat.text
+		_bind_page_key(KEY_U, _try_chanchullo.bind(cheat_key))
 
 
 func _answer_subject(option_index: int) -> void:
@@ -2055,7 +2174,7 @@ func _show_simulation_console() -> void:
 	if is_instance_valid(simulation_console):
 		_close_simulation_console()
 		return
-	var page := _make_page("Consola de exploración · F10", "Gestión opcional por comandos. La navegación habitual está en los botones del campus.", _close_simulation_console)
+	var page := _make_page("Consola de exploración · F10", "Gestión opcional por comandos. Los atajos del recorrido aparecen en pantalla.", _close_simulation_console)
 	simulation_console = page
 	var field := LineEdit.new()
 	field.placeholder_text = "Comando de gestión o /ayuda"

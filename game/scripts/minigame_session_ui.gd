@@ -8,9 +8,9 @@ const Property = preload("res://scripts/campus_property_game.gd")
 const Board = preload("res://scripts/minigame_board.gd")
 const CATALOG := {
 	"billar": {"title": "Billar", "rules": "Ocho bolas: quince numeradas y la blanca. Tras la apertura, una embocada legal asigna lisas/rayadas. Embocar una propia conserva turno. Sin contacto, primer contacto incorrecto, blanca embocada o falta de banda/embocada tras contacto: bola en mano para el rival. Primero limpia tu grupo y luego elige tronera para la negra. Negra prematura, con falta o en otra tronera pierde. Negra en apertura se repone; apertura sin embocada exige cuatro bolas en banda. Efectos arcade, sin saltos ni tiros elevados.", "controls": "Clic apunta; mantén, retira el taco y suelta para tirar. Clic derecho/Escape cancela. Flechas afinan ángulo/fuerza; Espacio tira. Arrastra la blanca cuando esté en mano; en apertura sólo detrás de la línea. Elige efecto en el diagrama de blanca y tronera haciendo clic en su agujero."},
-	"ping_pong": {"title": "Ping-pong", "rules": "Duelo arcade. Gana quien llegue a 7 con dos de ventaja; a 11 se decide sin ventaja. Servicio alterno cada dos puntos. El rival tiene velocidad limitada, reacción y error. Mover la paleta al contactar influye en la devolución. Impulso dura 0,28 s y se recupera en 3 s.", "controls": "W/S, ↑/↓ o ratón mueven tu paleta. Espacio o clic en la mesa saca. Shift, clic derecho o Impulso acelera brevemente la paleta."},
+	"ping_pong": {"title": "Ping-pong", "rules": "Duelo arcade. Gana quien llegue a 7 con dos de ventaja; a 11 se decide sin ventaja. Servicio alterno cada dos puntos. El rival tiene velocidad limitada, reacción y error. Mover la paleta al contactar influye en la devolución. Impulso dura 0,28 s y se recupera en 3 s.", "controls": "W/S, ↑/↓ o ratón mueven tu paleta. Espacio o clic en la mesa saca. Shift, clic derecho acelera brevemente la paleta."},
 	"ajedrez": {"title": "Ajedrez", "rules": "Juegas con blancas, sin reloj. Jaque, mate, ahogado, enroque, captura al paso y promoción. Puedes reclamar tablas por tres repeticiones o 50 movimientos; cinco repeticiones/75 movimientos son automáticas. El rival busca dos medias jugadas, con presupuesto limitado.", "controls": "Selecciona origen y destino con ratón o flechas/Enter. Las seis piezas tienen siluetas propias y una leyenda visual. Elige la promoción junto al tablero."},
-	"monopolio": {"title": "Monopolio · Ruta del campus", "rules": "Variante propia: 600 créditos iniciales, 20 casillas, dos dados, compras, rentas y dos mejoras de 70. Pasar Inicio da 100; servicios cuestan 45. Descanso salta un turno. Se venden propiedades por la mitad para cubrir deudas; bancarrota pierde. A los 40 turnos gana el mayor patrimonio.", "controls": "Haz clic en los dados del tablero para lanzar; consulta cualquier casilla con clic. Compra/construye o finaliza desde la tarjeta central. Espacio/Enter lanza o pasa. Los peones muestran el recorrido; el rival conserva una reserva antes de invertir."}
+	"monopolio": {"title": "Monopolio · Ruta del campus", "rules": "Variante propia: 600 créditos iniciales, 20 casillas, dos dados, compras, rentas y dos mejoras de 70. Pasar Inicio da 100; servicios cuestan 45. Descanso salta un turno. Se venden propiedades por la mitad para cubrir deudas; bancarrota pierde. A los 40 turnos gana el mayor patrimonio.", "controls": "Haz clic en los dados del tablero para lanzar; consulta cualquier casilla con clic. Compra/construye o finaliza desde la tarjeta central. Espacio lanza o pasa. Enter compra o construye; las flechas consultan casillas. Los peones muestran el recorrido; el rival conserva una reserva antes de invertir."}
 }
 
 var host: WeakRef
@@ -102,7 +102,7 @@ func open(id: String) -> void:
 	var owner = campus.get_ref()
 	owner._save()
 	owner._theme()
-	var page: VBoxContainer = _ui()._make_page(str(CATALOG[id]["title"]), "Sala E · tú contra un rival automático · partida local", back, false, false)
+	var page: VBoxContainer = _ui()._make_page(str(CATALOG[id]["title"]), "Sala E · tú contra un rival automático · partida local", back, false, false, true, true)
 	var workspace := VBoxContainer.new()
 	workspace.name = "MinigameWorkspace"
 	workspace.set_meta("page_atomic", true)
@@ -112,6 +112,7 @@ func open(id: String) -> void:
 	_status.name = "MinigameStatus"
 	_board = Board.new()
 	_board.name = "MinigameBoard"
+	_board.set_meta("gameplay_surface", true)
 	_board.model = model
 	_board.animations = bool(_ui().settings["animations"]) and not bool(_ui().settings["low_performance"])
 	_board.text_scale = float(_ui().settings["font_scale"])
@@ -123,11 +124,17 @@ func open(id: String) -> void:
 	_board.pause_requested.connect(_pause)
 	_board.action_requested.connect(action)
 	_board.promotion_selected.connect(_promotion)
-	var general: HFlowContainer = owner._actions(workspace)
-	_button(general, "Pausa [P]", _pause)
-	_button(general, "Reglas", rules)
-	_button(general, "Reiniciar", restart)
-	_button(general, "Volver a la sala", back)
+	_ui()._key_hint(workspace, "[P] Pausa   [F1] Reglas   [R] Reiniciar")
+	var keys := {
+		"ajedrez": "[Flechas] Casilla   [Enter] Jugar   [1–4] Promoción   [T] Tablas   [Q] Abandonar",
+		"billar": "[Flechas] Ajustar   [Espacio] Tiro   [C] Colocar blanca   [1–6] Tronera   [IJKL] Efecto",
+		"ping_pong": "[W/S] Paleta   [Espacio] Saque   [Shift] Impulso",
+		"monopolio": "[←/→] Casillas   [Espacio] Dados o terminar   [Enter] Comprar o construir"
+	}
+	_ui()._key_hint(workspace, keys[id])
+	_ui()._bind_page_key(KEY_F1, rules)
+	_ui()._bind_page_key(KEY_R, restart)
+	_ui()._bind_page_key(KEY_ESCAPE, _escape)
 	var pager = _ui().find_child("PageNavigator", true, false)
 	pager.space_changed.connect(func(available: Vector2) -> void:
 		if is_instance_valid(_board):
@@ -137,12 +144,9 @@ func open(id: String) -> void:
 	_ui()._focus_control.call_deferred(weakref(_board))
 
 
-func _button(parent: Control, text: String, callback: Callable, enabled: bool = true) -> Button:
-	var result: Button = _ui()._add_button(parent, text, callback, false, 34)
-	result.add_theme_font_size_override("font_size", int(13 * float(_ui().settings["font_scale"])))
-	result.custom_minimum_size.x = minf(200, maxf(80, text.length() * 9 * float(_ui().settings["font_scale"]) + 24))
-	result.disabled = not enabled
-	return result
+func _escape() -> void:
+	if not _board.cancel_preview():
+		back()
 
 
 func action(data: Dictionary) -> Dictionary:
@@ -187,7 +191,10 @@ func _select_cell(index: int) -> void:
 	if selected >= 0:
 		for move in legal:
 			if move["from"] == selected and move["to"] == index and (move["promotion"] == 0 or move["promotion"] == promotion):
-				action({"type": "move", "from": selected, "to": index, "promotion": promotion})
+				var command := {"type": "move", "from": selected, "to": index}
+				if move["promotion"] != 0:
+					command["promotion"] = promotion
+				action(command)
 				selected = -1
 				_board.destinations.clear()
 				_refresh()
@@ -212,11 +219,10 @@ func restart() -> void:
 func rules() -> void:
 	suspend()
 	var owner = campus.get_ref()
-	var page: VBoxContainer = _ui()._make_page("Reglas · " + str(CATALOG[current_id]["title"]), "Partida pausada", open.bind(current_id), false, false)
+	var page: VBoxContainer = _ui()._make_page("Reglas · " + str(CATALOG[current_id]["title"]), "Partida pausada", open.bind(current_id), false, false, true, true)
 	owner._text(page, "Partida conservada de seis bolas: cada embocada puntúa; faltas cambian turno y conceden las bolas al rival. Reiniciar comienza la variante de ocho bolas." if current_id == "billar" and sessions[current_id].positions.size() == 7 else str(CATALOG[current_id]["rules"]), 17)
 	owner._text(page, str(CATALOG[current_id]["controls"]), 16)
-	owner._text(page, "P o Pausa detiene también al rival. Reiniciar crea una partida nueva. Las partidas se conservan en el perfil académico, sin alterar materias, notas ni logros; en visita libre duran la sesión.", 15)
-	_button(page, "Volver a jugar", open.bind(current_id))
+	owner._text(page, "P detiene también al rival. R crea una partida nueva. Las partidas se conservan en el perfil académico, sin alterar materias, notas ni logros; en visita libre duran la sesión.", 15)
 
 
 func back() -> void:

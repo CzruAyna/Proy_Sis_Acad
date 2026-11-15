@@ -60,19 +60,20 @@ func _text_present(text: String) -> bool:
 	return false
 
 
-func _visit_desk() -> void:
+func _visit_desk(office: String = "decanato") -> void:
 	game._show_exploration()
 	var world = game.find_child("CampusWorld", true, false)
 	if not world.room_id.is_empty():
 		world.leave_room()
-	world.player = CampusMap.building("admin_sis")["door"]
+	world.player = CampusMap.building(office)["door"]
 	world.interact()
-	_check(world.room_id == "admin_sis", "E abre la oficina desde su puerta exterior")
+	_check(world.room_id == office, "E abre la oficina desde su puerta exterior")
 	world.player = Vector2(148, 80)
-	_check(world.interaction_text().contains("ventanilla"), "La ventanilla se anuncia al acercarse en el interior")
+	var sign := "Trámites" if office == "decanato" else "Auxiliaturas"
+	_check(world.interaction_text().contains(sign), "El servicio se anuncia al acercarse en el interior")
 	world.interact()
 	await _settle()
-	_check(_text_present("Ventanilla académica simulada") and game.find_child("CampusNavigation", true, false) == null, "La interacción abre trámites en contexto")
+	_check(game._campus()._office == office and game.find_child("CampusNavigation", true, false) == null, "La interacción abre el servicio de la oficina correspondiente")
 
 
 func _finish_matriculation() -> void:
@@ -160,6 +161,8 @@ func _run() -> void:
 	_check(before == JSON.stringify(game.simulation.snapshot()), "Repasar no registra notas ni modifica historial")
 	await _finish_matriculation()
 	game._show_campus_section("auxiliatura")
+	_check(_text_present("Dónde ir · Dirección de Carrera"), "Fuera de Dirección se indica el edificio correcto")
+	await _visit_desk("admin_sis")
 	_click("Postular")
 	var applications: Array = game.simulation.snapshot()["applications"]
 	_check(applications.size() == 1, "Postulación desde tarjeta de materia aprobada")
@@ -196,6 +199,7 @@ func _run() -> void:
 		_check(game.simulation.procedure(work_id)["status"] == "COMPLETADO", "Trabajo de auxiliatura termina desde su expediente")
 		_check(game.simulation.snapshot()["assignments"][0]["status"] == "CUMPLIDA", "La interfaz usa el resultado del motor para el trabajo")
 	await _layout_scenarios()
+	await _visit_desk()
 	_form_scenarios()
 	await _graduation_scenarios()
 	game._save_failed = true
@@ -236,8 +240,14 @@ func _layout_scenarios() -> void:
 			game._show_course_preview(str(game.simulation.curriculum()[0]))
 			await _settle()
 			var demo = game.find_child("ModelParameter", true, false)
-			_check(demo.size.x > 100 and demo.get_child_count() == 2, "La demostración tiene botones explícitos para su parámetro")
 			var parent = demo.get_parent()
+			var plus := InputEventKey.new()
+			plus.keycode = KEY_PLUS
+			plus.shift_pressed = true
+			plus.pressed = true
+			viewport.push_input(plus, true)
+			await process_frame
+			_check(demo.size.x > 100 and parent.parameter == 55 and parent.find_children("*", "Button", true, false).is_empty(), "La demostración ajusta su parámetro con + y sin botonera")
 			_check(demo.position.y < parent.size.y and parent.size.y < 500, "La demo no colapsa a miles de píxeles")
 			game._show_campus_section("malla")
 			await _settle()

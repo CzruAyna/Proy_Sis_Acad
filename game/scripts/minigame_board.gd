@@ -167,6 +167,14 @@ func _gui_input(event: InputEvent) -> void:
 			_pool_motion(_court_point(point))
 
 
+func cancel_preview() -> bool:
+	if _drag.is_empty():
+		return false
+	_drag = ""
+	queue_redraw()
+	return true
+
+
 func _key_action(key: int) -> void:
 	match model.game_id:
 		"ajedrez":
@@ -179,19 +187,63 @@ func _key_action(key: int) -> void:
 				queue_redraw()
 			elif key in [KEY_ENTER, KEY_SPACE]:
 				cell_selected.emit(keyboard_square)
+			elif key >= KEY_1 and key <= KEY_4:
+				promotion_selected.emit([5, 4, 3, 2][key - KEY_1])
+			elif key == KEY_T and (model.halfmoves >= 100 or int(model.repetitions.get(model.position_key(), 0)) >= 3):
+				_dispatch({"type": "claim_draw"})
+			elif key == KEY_Q:
+				_dispatch({"type": "resign"})
 		"billar":
-			if key in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
-				_dispatch({"type": "aim", "angle": model.angle + (int(key == KEY_RIGHT) - int(key == KEY_LEFT)) * deg_to_rad(0.5), "power": model.power + (int(key == KEY_UP) - int(key == KEY_DOWN)) * 5})
-			elif key == KEY_SPACE:
-				_dispatch({"type": "shoot"})
+			_pool_key(key)
 		"ping_pong":
 			if key == KEY_SPACE:
 				_dispatch({"type": "serve"})
 			elif key == KEY_SHIFT:
 				_dispatch({"type": "boost"})
 		"monopolio":
-			if key in [KEY_SPACE, KEY_ENTER] and not _property_busy():
+			if _property_busy():
+				return
+			if key in [KEY_LEFT, KEY_RIGHT]:
+				var tile := selected_tile if selected_tile >= 0 else int(model.positions[0])
+				selected_tile = posmod(tile + (1 if key == KEY_RIGHT else -1), 20)
+				queue_redraw()
+			elif key == KEY_ENTER and model.phase in ["BUY", "UPGRADE"]:
+				_dispatch({"type": "buy" if model.phase == "BUY" else "upgrade"})
+			elif key in [KEY_SPACE, KEY_ENTER]:
 				_dispatch({"type": "roll" if model.phase == "READY" else "end"})
+
+
+func _pool_key(key: int) -> void:
+	if model.turn != 1 or model.phase not in ["READY", "PLACEMENT"]:
+		return
+	var directions := {KEY_LEFT: Vector2.LEFT, KEY_RIGHT: Vector2.RIGHT, KEY_UP: Vector2.UP, KEY_DOWN: Vector2.DOWN}
+	var current_rules: bool = model.positions.size() == 16
+	if current_rules and key == KEY_C and model.can_place:
+		if _drag == "place":
+			cancel_preview()
+		else:
+			_drag = "place"
+			_cue_preview = model.positions[0]
+			queue_redraw()
+	elif current_rules and _drag == "place":
+		if directions.has(key):
+			var bounds: Rect2 = model.TABLE.grow(-1)
+			_cue_preview = (_cue_preview + Vector2(directions[key]) * 6).clamp(bounds.position, bounds.end)
+			queue_redraw()
+		elif key in [KEY_ENTER, KEY_KP_ENTER]:
+			if model.valid_placement(_cue_preview):
+				_drag = ""
+			_dispatch({"type": "place", "x": _cue_preview.x, "y": _cue_preview.y})
+	elif directions.has(key):
+		_dispatch({"type": "aim", "angle": model.angle + (int(key == KEY_RIGHT) - int(key == KEY_LEFT)) * deg_to_rad(0.5), "power": model.power + (int(key == KEY_UP) - int(key == KEY_DOWN)) * 5})
+	elif key == KEY_SPACE:
+		_dispatch({"type": "shoot"})
+	elif current_rules and key >= KEY_1 and key <= KEY_6:
+		_dispatch({"type": "call", "pocket": key - KEY_1})
+	elif current_rules and key in [KEY_I, KEY_J, KEY_K, KEY_L]:
+		var offset := Vector2(int(key == KEY_L) - int(key == KEY_J), int(key == KEY_I) - int(key == KEY_K))
+		var spin := (Vector2(model.spin) + offset * 0.25).limit_length()
+		_dispatch({"type": "spin", "x": spin.x, "y": spin.y})
 
 
 func _mouse_down(point: Vector2) -> void:
@@ -313,9 +365,8 @@ func _target(rect: Rect2, text: String, action: Dictionary, enabled: bool = true
 	if model.game_id == "ping_pong" and action.get("type") == "boost":
 		can_play = enabled and not model.paused and model.phase == "PLAY"
 	_hotspots.append({"rect": rect, "action": action, "enabled": can_play})
-	draw_rect(rect, Color("#15394a") if can_play else Color("#15232b"))
-	draw_rect(rect, Color("#65d4e7") if can_play else Color("#526368"), false, 2)
-	_text(rect.position + Vector2(12, rect.size.y * 0.5 + 6), text, 16, Color("#effbdc") if can_play else Color("#7e9295"))
+	if not text.is_empty():
+		_text(rect.position + Vector2(12, rect.size.y * 0.5 + 6), text, 16, Color("#c9f5db") if can_play else Color("#7e9295"))
 
 
 static func chess_cell_centre(square: int) -> Vector2:
@@ -351,11 +402,11 @@ func _chess() -> void:
 		var rect := Rect2(790, 120 + index * 67, 150, 58)
 		_target(rect, "", {"type": "promotion", "piece": type})
 		draw_texture_rect(Pieces.texture(type), Rect2(rect.position + Vector2(12, 6), Vector2(36, 45)), false)
-		_text(rect.position + Vector2(60, 35), ["Dama", "Torre", "Alfil", "Caballo"][index], 15)
+		_text(rect.position + Vector2(60, 35), "[%d] %s" % [index + 1, ["Dama", "Torre", "Alfil", "Caballo"][index]], 15)
 		if promotion == type:
 			draw_rect(rect.grow(-3), Color("#eacb64"), false, 2)
-	_target(Rect2(790, 414, 180, 42), "Tablas", {"type": "claim_draw"}, model.halfmoves >= 100 or int(model.repetitions.get(model.position_key(), 0)) >= 3)
-	_target(Rect2(790, 470, 180, 42), "Abandonar", {"type": "resign"})
+	_target(Rect2(790, 414, 180, 42), "[T] Tablas", {"type": "claim_draw"}, model.halfmoves >= 100 or int(model.repetitions.get(model.position_key(), 0)) >= 3)
+	_target(Rect2(790, 470, 180, 42), "[Q] Abandonar", {"type": "resign"})
 	for rank in range(8):
 		_text(Vector2(224, CHESS.position.y + rank * 64 + 40), str(8 - rank), 14)
 	for file in range(8):
@@ -397,8 +448,10 @@ func _pool() -> void:
 		var point: Vector2 = model.POCKETS[pocket]
 		draw_circle(point, 18, Color("#b6a27b"))
 		draw_circle(point, 15, Color("#02090c"))
-		if modern and model.called_pocket == pocket:
-			draw_arc(point, 19, 0, TAU, 24, Color("#ffe878"), 2)
+		if modern:
+			_text(point + Vector2(-4, 5), str(pocket + 1), 12, Color("#e5e7cc"), false)
+			if model.called_pocket == pocket:
+				draw_arc(point, 19, 0, TAU, 24, Color("#ffe878"), 2)
 	if modern and model.break_shot:
 		draw_line(Vector2(150, 30), Vector2(150, 270), Color(0.8, 0.9, 0.7, 0.25))
 	for number in range(model.positions.size()):
@@ -429,19 +482,22 @@ func _pool() -> void:
 	draw_set_transform(_origin, 0, Vector2.ONE * _scale)
 	_text(Vector2(65, 551), "FUERZA %d%% · RETIRA EL TACO Y SUELTA · CLIC DERECHO CANCELA" % int(_pull if _drag == "cue" else model.power), 17)
 	if modern:
-		_text(Vector2(65, 581), "BLANCA EN MANO: COLOCAR" if model.phase == "PLACEMENT" else "FLECHAS: AJUSTE FINO · ESPACIO: TIRO · NEGRA: ELIGE TRONERA", 15, Color("#aad9cb"))
+		var key_hint := "[C] COLOCAR BLANCA" if model.can_place else "[1–6] TRONERA PARA LA NEGRA"
+		if _drag == "place":
+			key_hint = "FLECHAS: MOVER · ENTER: COLOCAR · ESC: CANCELAR"
+		_text(Vector2(65, 581), key_hint, 15, Color("#aad9cb"))
 		# Direct contact point on the cue-ball diagram; not a slider.
 		_text(Vector2(938, 121), "EFECTO", 12)
 		_pixel_ball(Vector2(962, 170), 0, 26)
 		var contact: Vector2 = Vector2(962, 170) + Vector2(model.spin.x, -model.spin.y) * 20
 		draw_rect(Rect2(contact - Vector2.ONE * 3, Vector2.ONE * 6), Color("#de465d"))
-		_text(Vector2(944, 221), "CLIC", 12)
+		_text(Vector2(940, 221), "IJKL", 12)
 
 
 func _pong() -> void:
 	_text(Vector2(65, 32), "PING-PONG", 25)
 	_text(Vector2(420, 38), "%02d : %02d" % [model.scores[0], model.scores[1]], 36)
-	_target(Rect2(700, 5, 235, 44), "Impulso [Shift]", {"type": "boost"}, model.boost_cooldown <= 0 and model.phase == "PLAY")
+	_target(Rect2(700, 5, 235, 44), "[Shift] Impulso", {"type": "boost"}, model.boost_cooldown <= 0 and model.phase == "PLAY")
 	draw_set_transform(_origin + COURT_ORIGIN * _scale, 0, Vector2.ONE * _scale * COURT_SCALE)
 	draw_rect(Rect2(-5, -5, 610, 310), Color("#253a52"))
 	draw_rect(Rect2(0, 0, 600, 300), Color("#215a7a"))
@@ -531,8 +587,8 @@ func _property() -> void:
 		_text(Vector2(247, 385), "CLIC EN CUALQUIER CASILLA PARA CONSULTARLA", 14)
 	var current := int(model.positions[0])
 	if model.phase == "BUY":
-		_target(Rect2(247, 414, 235, 46), "Comprar %d C" % int(model.PRICES[current]), {"type": "buy"}, tile == current and model.cash[0] >= int(model.PRICES[current]))
+		_target(Rect2(247, 414, 235, 46), "[Enter] Comprar %d C" % int(model.PRICES[current]), {"type": "buy"}, tile == current and model.cash[0] >= int(model.PRICES[current]))
 	elif model.phase == "UPGRADE":
-		_target(Rect2(247, 414, 235, 46), "Construir 70 C", {"type": "upgrade"}, tile == current and model.cash[0] >= 70)
+		_target(Rect2(247, 414, 235, 46), "[Enter] Construir 70 C", {"type": "upgrade"}, tile == current and model.cash[0] >= 70)
 	if model.phase in ["BUY", "UPGRADE", "END"]:
-		_target(Rect2(507, 414, 245, 46), "Finalizar turno", {"type": "end"})
+		_target(Rect2(507, 414, 245, 46), "[Espacio] Terminar", {"type": "end"})
