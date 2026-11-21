@@ -23,8 +23,8 @@ jobs:
         shell: bash
         run: |
           if [[ "$GITHUB_REF_TYPE" == branch ]]; then
-            version="0.0.0-dev.$GITHUB_RUN_ID"
-            tag="build-$GITHUB_RUN_ID"
+            version="0.2.0-beta.$GITHUB_RUN_NUMBER"
+            tag="v$version"
           else
             tag="$GITHUB_REF_NAME"
             if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
@@ -139,7 +139,6 @@ jobs:
           title="SIS-INF $VERSION"
           if [[ "$GITHUB_REF_TYPE" == branch ]]; then
             flags=(--target "$GITHUB_SHA" --prerelease --latest=false)
-            title="SIS-INF · $GITHUB_REF_NAME · ${GITHUB_SHA:0:7}"
             notes=$(printf '%s\n\n%s' "Compilación de la rama $GITHUB_REF_NAME en el [commit ${GITHUB_SHA:0:7}]($commit)." "$notes")
           else
             flags=(--verify-tag --generate-notes)
