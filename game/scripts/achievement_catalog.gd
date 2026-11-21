@@ -2,6 +2,9 @@ extends RefCounted
 
 const Catalog = preload("res://scripts/catalog.gd")
 const ACHIEVEMENTS := [
+	{"id": "notebook", "title": "Cuaderno de campo", "description": "Guarda apuntes de tres clases.", "hidden": false},
+	{"id": "all_shops", "title": "Sabores del campus", "description": "Compra en los seis puestos.", "hidden": false},
+	{"id": "prepared", "title": "Siempre preparado", "description": "Equipa los lentes y la agenda.", "hidden": true},
 	{"id": "campus_friend", "title": "Compañía en el campus", "description": "Acaricia a un perro del campus durante tu recorrido.", "hidden": false},
 	{"id": "campus_memory", "title": "Memoria de la facultad", "description": "Visita de cerca las fichas de Piedritas y el Chivato.", "hidden": false},
 	{"id": "secret_campus_friend", "title": "Un encuentro especial", "description": "Conociste y acariciaste al compañero especial de este recorrido.", "hidden": true},
@@ -136,6 +139,11 @@ static func evaluate(profile: Dictionary, run: Dictionary = {}) -> bool:
 	conditions["explorer"] = all_programs
 	var exploration: Variant = run.get("campus_exploration", {})
 	var life: Variant = exploration.get("life", {}) if exploration is Dictionary else {}
+	var daily: Variant = exploration.get("daily", {}) if exploration is Dictionary else {}
+	if daily is Dictionary:
+		conditions["notebook"] = daily.get("notes") is Dictionary and daily["notes"].size() >= 3
+		conditions["all_shops"] = daily.get("shops") is Dictionary and daily["shops"].size() >= 6
+		conditions["prepared"] = daily.get("equipment") is Dictionary and daily["equipment"].size() >= 2
 	if life is Dictionary:
 		var pets: Variant = life.get("petted", [])
 		var monuments: Variant = life.get("monuments", [])

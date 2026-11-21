@@ -159,6 +159,7 @@ func show_world() -> void:
 	world.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	world.animations_enabled = bool(_ui().settings["animations"]) and not bool(_ui().settings.get("low_performance", false))
 	world.restore(saved)
+	_assign_trait(world.daily)
 	world.destination = _destination
 	world.class_schedule = _schedule()
 	world._update_lesson()
@@ -407,6 +408,8 @@ func show_actor(id: String) -> void:
 		if not actor.is_empty():
 			var dog: bool = world.ambient_cast.is_dog(actor)
 			var page := {"kind": "cast_grid", "title": "Compañero del campus" if dog else "Vida del campus", "items": [{"id": actor["id"], "label": "Compañero" if dog else "Personaje"}], "text": "Acércate y acaricia a este compañero. Su reacción forma parte de la simulación." if dog else "Rutina simulada: %s. Edificio %s; aula %s. Esta actividad no registra asistencia ni notas del jugador." % [actor["state"], actor["building_id"], actor["room_name"]], "source": "Personaje ficticio; horarios y aulas ilustrativos, sin asignación institucional verificada."}
+			if actor.has("program"):
+				page["text"] = str(actor["program"]) + " · " + str(page["text"])
 			if dog:
 				page["actions"] = [{"type": "pet", "instance_id": id, "label": "Acariciar", "enabled": world.player.distance_to(actor["point"]) <= 52}]
 			_inspect([page])
@@ -491,7 +494,13 @@ func _schedule() -> Array[Dictionary]:
 func _daily() -> RefCounted:
 	var routine := Daily.new()
 	routine.restore(saved.get("daily"))
+	_assign_trait(routine)
 	return routine
+
+
+func _assign_trait(routine: RefCounted) -> void:
+	if routine.student_trait.is_empty():
+		routine.student_trait = Daily.TRAITS[posmod(session_key.hash(), Daily.TRAITS.size())]
 
 
 func _save_daily(routine: RefCounted) -> void:
@@ -589,13 +598,20 @@ func _live_class(page: VBoxContainer, row: Dictionary, routine: RefCounted) -> v
 	ink.name = "LiveClassWriting"
 	var feedback := _text(board, "", 15)
 	var timer := Timer.new()
-	timer.wait_time = 3.0
+	timer.wait_time = 5.0 if routine.student_trait == "Miopía" and not routine.equipment.has("lentes") else 3.0
 	board.add_child(timer)
 	var sync := func() -> void:
 		var count := Classes.visible_lines(row, routine.minutes)
 		ink.text = "\n".join(row["lines"].slice(0, count))
 		if count == row["lines"].size():
 			timer.stop()
+			if routine.student_trait == "Cabeza de pollo" and not routine.equipment.has("agenda"):
+				feedback.text = "Copia el apunte a mano o equipa una agenda para guardarlo automáticamente."
+				_ui()._add_button(board, "Copiar apunte", func() -> void:
+					routine.notes[row["key"]] = {"title": row["name"], "lines": row["lines"]}
+					_save_daily(routine)
+					show_backpack("", show_world, 2), true, 36)
+				return
 			routine.notes[row["key"]] = {"title": row["name"], "lines": row["lines"]}
 			feedback.text = "Apunte guardado en tu mochila."
 			_save_daily(routine)
@@ -645,7 +661,12 @@ func show_vendor(id: String, message: String = "") -> void:
 		var goods: Array = Daily.ITEMS[item]
 		var card: VBoxContainer = _ui()._card(page)
 		_text(card, "%s · %d créditos" % [goods[0], goods[1]], 18)
-		_text(card, "Al consumir · reduce hambre %d y sed %d" % [goods[2], goods[3]], 14)
+		if Daily.GEAR.has(item):
+			_text(card, Daily.GEAR[item], 14)
+		elif item == "leche" and routine.student_trait == "Intolerancia a la lactosa":
+			_text(card, "Contiene lactosa. Tu personaje tolera la opción sin lactosa.", 14)
+		else:
+			_text(card, "Al consumir · reduce hambre %d y sed %d" % [goods[2], goods[3]], 14)
 		var button: Button = _ui()._add_button(card, "Tomar agua" if int(goods[1]) == 0 else "Comprar " + str(goods[0]), _buy.bind(id, item), false, 40)
 		button.disabled = routine.balance < int(goods[1]) or routine.load_count() >= Daily.CAPACITY
 	_ui()._key_hint(page, "[Tab] Mochila")
@@ -685,11 +706,14 @@ func show_backpack(message: String, back: Callable, section: int = 0) -> void:
 	match section:
 		0:
 			var supplies: VBoxContainer = _ui()._card(page, true)
-			_text(supplies, "Comida y bebida", 21)
+			_text(supplies, "Comida y objetos", 21)
+			_text(supplies, "Tu personaje · " + routine.student_trait, 16)
+			for id in routine.equipment:
+				_text(supplies, "En uso · " + str(Daily.GEAR[id]), 15)
 			if routine.backpack.is_empty():
 				_text(supplies, "Busca el kiosco o el comedor para abastecerte.", 15)
 			for item in routine.backpack:
-				var label := "Consumir %s (×%d)" % [Daily.ITEMS[item][0], routine.backpack[item]]
+				var label := ("Equipar %s (×%d)" if Daily.GEAR.has(item) else "Consumir %s (×%d)") % [Daily.ITEMS[item][0], routine.backpack[item]]
 				_ui()._add_button(supplies, label, _consume.bind(item, back), false, 34)
 		1:
 			if _ui().simulation != null and not _ui().current_profile.is_empty():

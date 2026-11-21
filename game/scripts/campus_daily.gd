@@ -5,7 +5,11 @@ const WEEK := 7 * DAY
 const START := 540.0
 const ALLOWANCE := 100
 const CAPACITY := 12
+const TRAITS := ["Miopía", "Intolerancia a la lactosa", "Cabeza de pollo"]
+const GEAR := {"lentes": "Lentes para leer la pizarra", "agenda": "Agenda de bolsillo"}
 const ITEMS := {
+	"lentes": ["Lentes", 10, 0, 0], "agenda": ["Agenda", 5, 0, 0],
+	"leche": ["Leche", 4, 10, 25], "sin_lactosa": ["Leche sin lactosa", 4, 10, 25],
 	"agua": ["Agua", 0, 0, 45], "pollo": ["Porción de pollo", 9, 58, 0],
 	"milanesa": ["Sándwich de milanesa", 7, 48, 2], "cafe": ["Café espumoso", 4, 4, 25],
 	"jugo": ["Jugo", 3, 4, 37], "pan": ["Pan", 3, 25, 0],
@@ -14,13 +18,16 @@ const ITEMS := {
 }
 const VENDORS := {
 	"comedor": ["Comedor FNI", "Dentro del campus · junto a la puerta del comedor", ["almuerzo", "agua"]],
-	"kiosco": ["Kiosco del campus", "Dentro del campus · junto al ingreso principal", ["pan", "jugo", "agua"]],
+	"kiosco": ["Kiosco del campus", "Dentro del campus · junto al ingreso principal", ["pan", "jugo", "agua", "leche", "sin_lactosa"]],
 	"pollo": ["Puesto de pollo", "Fuera del campus · cruza el ingreso principal", ["pollo", "agua"]],
 	"cafe": ["Café espumoso", "Fuera del campus · por la acera del ingreso", ["cafe", "pan", "agua"]],
-	"tienda": ["Tienda y licorería", "Fuera del campus · por la acera del ingreso", ["gaseosa", "jugo", "agua", "licor"]],
+	"tienda": ["Tienda y licorería", "Fuera del campus · por la acera del ingreso", ["gaseosa", "jugo", "agua", "licor", "lentes", "agenda"]],
 	"camion": ["Camión de milanesas", "Fuera del campus · frente al ingreso, hacia el norte", ["milanesa", "jugo", "agua"]]
 }
 
+var student_trait := ""
+var equipment: Dictionary = {}
+var shops: Dictionary = {}
 var minutes := START
 var balance := ALLOWANCE
 var hunger := 0.0
@@ -31,6 +38,14 @@ var notes: Dictionary = {}
 
 func restore(data: Variant) -> void:
 	var stored: Dictionary = data if data is Dictionary else {}
+	student_trait = str(stored.get("student_trait", ""))
+	if student_trait not in TRAITS:
+		student_trait = ""
+	equipment = {}
+	for id in GEAR:
+		if stored.get("equipment") is Dictionary and stored["equipment"].get(id) == true:
+			equipment[id] = true
+	shops = stored["shops"].duplicate() if stored.get("shops") is Dictionary else {}
 	minutes = _number(stored.get("minutes"), START, START, 1000000000.0)
 	balance = int(_number(stored.get("balance"), ALLOWANCE, 0.0, 1000000000.0))
 	hunger = _number(stored.get("hunger"), 0.0, 0.0, 100.0)
@@ -53,7 +68,7 @@ func _number(value: Variant, fallback: float, low: float, high: float) -> float:
 
 
 func snapshot() -> Dictionary:
-	return {"minutes": minutes, "balance": balance, "hunger": hunger, "thirst": thirst,
+	return {"student_trait": student_trait, "equipment": equipment.duplicate(), "shops": shops.duplicate(), "minutes": minutes, "balance": balance, "hunger": hunger, "thirst": thirst,
 		"backpack": backpack.duplicate(), "notes": notes.duplicate(true)}
 
 
@@ -82,6 +97,9 @@ func buy(vendor: String, item: String) -> String:
 		return "Te faltan %d créditos." % (price - balance)
 	if load_count() >= CAPACITY:
 		return "Tu mochila está llena."
+	if GEAR.has(item) and (equipment.has(item) or backpack.has(item)):
+		return "Ya tienes ese objeto."
+	shops[vendor] = true
 	balance -= price
 	backpack[item] = int(backpack.get(item, 0)) + 1
 	return "%s guardado en la mochila." % ITEMS[item][0]
@@ -95,6 +113,12 @@ func consume(item: String) -> String:
 		backpack.erase(item)
 	else:
 		backpack[item] = count - 1
+	if GEAR.has(item):
+		equipment[item] = true
+		return "%s en uso." % ITEMS[item][0]
+	if item == "leche" and student_trait == "Intolerancia a la lactosa":
+		hunger = minf(100.0, hunger + 8)
+		return "El personaje tiene malestar. En el kiosco hay leche sin lactosa."
 	hunger = maxf(0.0, hunger - float(ITEMS[item][2]))
 	thirst = maxf(0.0, thirst - float(ITEMS[item][3]))
 	return "%s · hambre %d%% · sed %d%%." % [ITEMS[item][0], roundi(hunger), roundi(thirst)]

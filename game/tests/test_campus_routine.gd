@@ -175,6 +175,8 @@ func _run() -> void:
 		for index in rows[0]["lines"].size() - 1:
 			timer.timeout.emit()
 		_check(writing.text == "\n".join(rows[0]["lines"]), "La clase revela los apuntes por etapas.")
+		if _game.find_children("*", "Button", true, false).any(func(b: Button) -> bool: return b.text == "Copiar apunte"):
+			_click("Copiar apunte")
 		_check(_game.current_profile["campus_exploration"]["daily"]["notes"].has(rows[0]["key"]), "La clase completa guarda el apunte.")
 		await _picture("03-clase")
 	_game._show_exploration()

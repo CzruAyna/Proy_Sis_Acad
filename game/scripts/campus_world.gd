@@ -792,6 +792,11 @@ func _draw_player() -> void:
 	var shadow := Vector2(15, 4) if room_id.is_empty() else Vector2(22, 5)
 	draw_rect(Rect2(player.round() - shadow / 2, shadow), Color(0.08, 0.13, 0.14, 0.52))
 	draw_texture_rect(Cast.player_texture(player_program, pose, frame), player_sprite_rect(), false)
+	if daily.student_trait == "Cabeza de pollo":
+		var head := player_sprite_rect().abs().get_center() - Vector2(5, 10)
+		draw_rect(Rect2(head, Vector2(10, 9)), Color("#fff0cb"))
+		draw_rect(Rect2(head + Vector2(3, -3), Vector2(5, 4)), Color("#d45740"))
+		draw_rect(Rect2(head + Vector2(-2 if facing.x < 0 else 8, 5), Vector2(4, 2)), Color("#ffc052"))
 
 
 func player_sprite_rect() -> Rect2:
