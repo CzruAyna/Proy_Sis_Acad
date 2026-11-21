@@ -202,6 +202,15 @@ func show_world() -> void:
 
 func _add_objective(parent: Control) -> void:
 	var objective: Dictionary = _ui()._campus().exploration_objective(show_world)
+	var world: Control = world_ref.get_ref()
+	var building := str(objective.get("building", "basicas"))
+	if not world.destination.is_finite() and objective["id"] != "graduated":
+		world.destination = Map.building(building)["door"]
+	if objective["id"] == "study":
+		for row in world.class_schedule:
+			if row["name"] == objective["title"]:
+				objective["hint"] = "%s · %s" % [objective["hint"], Classes.timing(row)]
+				break
 	var colors: Dictionary = _ui()._current_theme
 	var accent: Color = colors["highlight"]
 	var panel := PanelContainer.new()
@@ -525,7 +534,7 @@ func show_schedule(back: Callable) -> void:
 	for row in schedule:
 		var card: VBoxContainer = _ui()._card(page)
 		_text(card, "%s · %s" % [row["code"], row["name"]], 17)
-		_text(card, Classes.timing(row), 15)
+		_text(card, Classes.timing(row) + (" · Paralelo " + str(row["parallel"]) if _ui().simulation.planning_available() else ""), 15)
 
 		var clashes := Classes.conflicts(row, schedule)
 		if not clashes.is_empty():
@@ -546,6 +555,8 @@ func show_phone() -> void:
 	var routine := _daily()
 	var week := floori(routine.minutes / Daily.WEEK)
 	var rows := _schedule()
+	if _ui().simulation != null and not _ui().current_profile.is_empty():
+		_ui()._add_button(page, "Mi historia", show_journal, true, 36)
 	if rows.is_empty():
 		_text(page, "Tus grupos aparecen al inscribir materias.", 16)
 	for row in rows:
@@ -557,6 +568,30 @@ func show_phone() -> void:
 		_text(card, "%s %02d:%02d · %s · piso %d" % [weekdays[(minute / Daily.DAY) % 7], (minute / 60) % 24, minute % 60, row["room"], row["floor"]], 15)
 		_text(card, str(session["message"]), 16)
 
+
+
+func show_journal() -> void:
+	var snapshot: Dictionary = _ui().simulation.snapshot()
+	var page := _play_page("Mi historia", _name(), show_phone)
+	_text(page, "El ingreso · Llegaste a la FNI con tu primer horario y una carpeta por completar.", 17)
+	var chapters := {}
+	for record in snapshot["history"]:
+		var term := int(record["term"])
+		if not chapters.has(term):
+			chapters[term] = [0, 0]
+		chapters[term][0 if record["passed"] else 1] += 1
+	for term in chapters:
+		var marks: Array = chapters[term]
+		var consequence := "El siguiente semestre se abrió con nuevas opciones." if marks[1] == 0 else "Tocó volver al aula y organizar el siguiente horario con los recursados."
+		_text(page, "Semestre %d · Aprobaste %d y reprobaste %d. %s" % [term, marks[0], marks[1], consequence], 16)
+	for assignment in snapshot["assignments"]:
+		_text(page, "Ganaste la auxiliatura del paralelo %s y trabajaste con %s." % [assignment["parallel"], assignment["teacher"]], 16)
+	for request in snapshot["procedures"]:
+		if request["status"] == "COMPLETADO" and request["kind"] != "matricula":
+			_text(page, "Semestre %d · Completaste %s." % [request["term"], request["name"]], 16)
+	var mission: Dictionary = _ui()._campus().exploration_objective(show_world)
+	_text(page, "Hoy · " + str(mission["title"]), 19)
+	_text(page, str(mission["hint"]), 15)
 
 
 func show_classroom(room: String) -> void:
@@ -626,18 +661,76 @@ func _live_class(page: VBoxContainer, row: Dictionary, routine: RefCounted) -> v
 	)
 	timer.start()
 	sync.call()
+	if routine.tasks.has(row["key"]):
+		_text(page, "Tarea de clasificación completada.", 15)
+	else:
+		_ui()._add_button(page, "Resolver tarea de aula", _practice.bind(row), false, 38)
 	if _ui().simulation.state["phase"] == "CURSANDO":
 		var entry: Dictionary = _ui().simulation.state["enrollments"].get(row["course"], {})
 		if not entry.is_empty() and entry["score"] == null:
 			var week := floori(routine.minutes / Daily.WEEK)
 			var session := Classes.appointment(row, week)
-			if session["exam"]:
-				_ui()._add_button(page, "Rendir parcial", _ui()._start_subject.bind(row["course"], show_classroom.bind(row["room"])), true, 40)
+			var project: bool = _ui().PROJECT_COURSES.has(row["code"])
+			if (session["exam"] or project) and int(entry.get("last_assessment_week", -1)) < week:
+				_ui()._add_button(page, "Presentar avance" if project else "Rendir parcial", _sit_assessment.bind(row, week), true, 40)
 			else:
 				var exam_week := week + (2 - week % 3)
+				if exam_week == week:
+					exam_week += 3
+				if project:
+					exam_week = week + 1
 				var exam := Classes.appointment(row, exam_week)
-				_ui()._add_button(page, "Esperar al examen · día %d" % (int(exam["start"]) / Daily.DAY + 1), _wait_for_exam.bind(row, exam["start"]), false, 40)
+				if exam["cancelled"]:
+					exam = Classes.appointment(row, exam_week + 1)
+				_ui()._add_button(page, ("Esperar a la revisión · día %d" if project else "Esperar al examen · día %d") % (int(exam["start"]) / Daily.DAY + 1), _wait_for_exam.bind(row, exam["start"]), false, 40)
 	_ui()._add_button(page, "Ver horario", show_schedule.bind(show_world), false, 40)
+
+
+func _practice(row: Dictionary, message: String = "") -> void:
+	var routine := _daily()
+	var page := _play_page("Tarea de aula", row["name"], show_classroom.bind(row["room"]))
+	var expected := str(row["lines"][0])
+	var choices: Array[String] = [expected]
+	for other in _schedule():
+		var line := str(other["lines"][0])
+		if not choices.has(line):
+			choices.append(line)
+		if choices.size() == 3:
+			break
+	if choices.size() == 1:
+		choices.append("Registrar un trámite de matrícula")
+	choices.sort()
+	_text(page, "Clasifica el apunte que corresponde a " + str(row["name"]), 19)
+	if not message.is_empty():
+		_text(page, message, 15)
+	for line in choices:
+		_ui()._add_button(page, line, func() -> void:
+			if line == expected:
+				routine.tasks[row["key"]] = true
+				_save_daily(routine)
+				show_classroom(row["room"])
+			else:
+				_practice(row, "Ese apunte pertenece a otro tema. Revisa la pizarra y vuelve a elegir."), false, 40)
+
+
+func assessment_route(course: String, back: Callable) -> void:
+	_session()
+	_save()
+	for row in _schedule():
+		if row["course"] != course:
+			continue
+		var page := _play_page("Preparar evaluación", row["name"], back)
+		_text(page, "Ve a Ciclo Básico · " + Classes.timing(row), 18)
+		_text(page, "Pulsa E en la pizarra. Allí puedes esperar al docente y presentar el trabajo.", 16)
+		_ui()._add_button(page, "Marcar aula en el mapa", mark_building.bind(Classes.BUILDING), true, 38)
+		return
+	back.call()
+
+
+func _sit_assessment(row: Dictionary, week: int) -> void:
+	var game := _ui()
+	game._start_subject(row["course"], show_classroom.bind(row["room"]))
+	game._scheduled_week = week
 
 
 func _wait_for_exam(row: Dictionary, start: int) -> void:

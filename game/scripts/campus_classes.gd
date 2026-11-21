@@ -42,7 +42,7 @@ static func schedule(snapshot: Dictionary) -> Array[Dictionary]:
 		rows.append({
 			"key": "%d/%s" % [int(snapshot["term"]), subject["id"]],
 			"course": str(subject["id"]), "code": code, "name": str(subject["name"]),
-			"room": room, "floor": Map.room_floor(BUILDING, room), "teacher": ["Vega", "Quispe", "Flores", "Mamani", "Rojas"][posmod(code.hash(), 5)], "seed": seed_key.hash(), "day": slot % DAYS.size(),
+			"parallel": ["A", "B", "C"][posmod(parallel, 3)], "room": room, "floor": Map.room_floor(BUILDING, room), "teacher": ["Vega", "Quispe", "Flores", "Mamani", "Rojas"][posmod(code.hash(), 5)], "seed": seed_key.hash(), "day": slot % DAYS.size(),
 			"start": STARTS[(slot / DAYS.size()) % STARTS.size()], "lines": _lines(code, course)
 		})
 	return rows
