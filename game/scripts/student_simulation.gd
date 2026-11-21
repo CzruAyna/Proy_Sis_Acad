@@ -272,6 +272,15 @@ func enroll(value: String) -> Dictionary:
 	return _enroll_course(value)
 
 
+func change_parallel(key: String) -> bool:
+	if not planning_available() or not state["enrollments"].has(key):
+		return false
+	var entry: Dictionary = state["enrollments"][key]
+	entry["parallel"] = (int(entry.get("parallel", 0)) + 1) % 3
+	_sync_profile()
+	return true
+
+
 func planning_available() -> bool:
 	return int(state["term"]) >= 2 and state["phase"] == "INSCRIPCION" and not state["studies_complete"] and not state["graduated"]
 
@@ -795,7 +804,7 @@ func snapshot() -> Dictionary:
 			row["eligibility"] = eligibility(key)
 			row["enrollment"] = state["enrollments"][key].duplicate(true)
 			subjects.append(row)
-	return {"term": state["term"], "phase": state["phase"], "planning_available": planning_available(), "subjects": subjects, "load_limit": load_limit(), "history": state["history"].duplicate(true), "procedures": state["procedures"].duplicate(true), "documents": state["documents"].duplicate(true), "applications": state["applications"].duplicate(true), "assignments": state["assignments"].duplicate(true), "studies_complete": state["studies_complete"], "graduated": state["graduated"], "average": average(), "excellence": excellence(), "unlocked_all": state["unlocked_all"]}
+	return {"student_seed": profile.get("created_at", profile.get("player_name", "")), "term": state["term"], "phase": state["phase"], "planning_available": planning_available(), "subjects": subjects, "load_limit": load_limit(), "history": state["history"].duplicate(true), "procedures": state["procedures"].duplicate(true), "documents": state["documents"].duplicate(true), "applications": state["applications"].duplicate(true), "assignments": state["assignments"].duplicate(true), "studies_complete": state["studies_complete"], "graduated": state["graduated"], "average": average(), "excellence": excellence(), "unlocked_all": state["unlocked_all"]}
 
 
 func _ok(message: String, extra: Dictionary = {}) -> Dictionary:

@@ -99,6 +99,13 @@ func _check_economy() -> void:
 
 func _run() -> void:
 	_check_economy()
+	var row := {"day": 2, "start": 570, "seed": 15}
+	for week in 32:
+		var session := Classes.appointment(row, week)
+		var next := Classes.next_start(row, week * Daily.WEEK)
+		_check(next >= week * Daily.WEEK and next < (week + 2) * Daily.WEEK, "El calendario siempre ofrece una siguiente clase.")
+		_check(session["exam"] == (week % 3 == 2), "Los exámenes corresponden a la semana anunciada.")
+
 	_viewport = SubViewport.new()
 	_viewport.size = Vector2i(1200, 780)
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS

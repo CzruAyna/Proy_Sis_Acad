@@ -137,6 +137,7 @@ func show_world() -> void:
 	_theme()
 	var page: VBoxContainer = _play_page("Explorar FNI", "", show_progress, false, false, false)
 	_ui()._bind_page_key(KEY_G, show_directions)
+	_ui()._bind_page_key(KEY_C, show_phone)
 	_ui()._bind_page_key(KEY_H, show_schedule.bind(show_world))
 	_ui()._bind_page_key(KEY_F1, show_help.bind(show_world))
 	var workspace := VBoxContainer.new()
@@ -177,7 +178,7 @@ func show_world() -> void:
 	workspace.add_child(world)
 	var hint: Label = _ui()._key_hint(workspace, world.interaction_text())
 	hint.name = "ExplorationContext"
-	var controls: Label = _ui()._key_hint(workspace, "[WASD] Mover   [Tab] Mochila   [M] Mapa   [G] Guía   [H] Horario   [F1] Controles")
+	var controls: Label = _ui()._key_hint(workspace, "[WASD] Mover   [Tab] Mochila   [M] Mapa   [G] Guía   [H] Horario   [C] Celular")
 	controls.name = "ExplorationKeys"
 	var update_location := func(value: String) -> void:
 		hint.text = value
@@ -517,6 +518,37 @@ func show_schedule(back: Callable) -> void:
 		_text(card, "%s · %s" % [row["code"], row["name"]], 17)
 		_text(card, Classes.timing(row), 15)
 
+		var clashes := Classes.conflicts(row, schedule)
+		if not clashes.is_empty():
+			_text(card, "Choque con " + ", ".join(clashes), 15)
+		if _ui().simulation.planning_available():
+			_ui()._add_button(card, "Cambiar paralelo", _change_parallel.bind(row["course"], back), false, 34)
+
+
+func _change_parallel(course: String, back: Callable) -> void:
+	if _ui().simulation.change_parallel(course):
+		_ui()._save_profile()
+	show_schedule(back)
+
+
+func show_phone() -> void:
+	_save()
+	var page := _play_page("Celular", "Chat de tus materias", show_world)
+	var routine := _daily()
+	var week := floori(routine.minutes / Daily.WEEK)
+	var rows := _schedule()
+	if rows.is_empty():
+		_text(page, "Tus grupos aparecen al inscribir materias.", 16)
+	for row in rows:
+		var card: VBoxContainer = _ui()._card(page)
+		var session := Classes.appointment(row, week)
+		var minute := int(session["start"])
+		var weekdays := ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+		_text(card, "Prof. %s · %s" % [row["teacher"], row["name"]], 18)
+		_text(card, "%s %02d:%02d · %s · piso %d" % [weekdays[(minute / Daily.DAY) % 7], (minute / 60) % 24, minute % 60, row["room"], row["floor"]], 15)
+		_text(card, str(session["message"]), 16)
+
+
 
 func show_classroom(room: String) -> void:
 	var routine := _daily()
@@ -536,7 +568,7 @@ func show_classroom(room: String) -> void:
 		var start := Classes.next_start(next, routine.minutes)
 		_text(page, "Próxima clase · " + str(next["name"]), 20)
 		_text(page, Classes.timing(next), 16)
-		_text(page, "Día %d del recorrido" % (floori(start / Daily.DAY) + 1), 15)
+		_text(page, "Siguiente sesión efectiva · día %d, %02d:%02d" % [floori(start / Daily.DAY) + 1, int(start / 60) % 24, int(start) % 60], 15)
 		_ui()._add_button(page, "Esperar aquí hasta la clase", _wait_for_class.bind(next), true, 42)
 	_ui()._add_button(page, "Ver todo mi horario", show_schedule.bind(show_world), false, 40)
 
@@ -581,8 +613,22 @@ func _live_class(page: VBoxContainer, row: Dictionary, routine: RefCounted) -> v
 	if _ui().simulation.state["phase"] == "CURSANDO":
 		var entry: Dictionary = _ui().simulation.state["enrollments"].get(row["course"], {})
 		if not entry.is_empty() and entry["score"] == null:
-			_ui()._add_button(page, "Rendir parcial", _ui()._start_subject.bind(row["course"], show_classroom.bind(row["room"])), true, 40)
+			var week := floori(routine.minutes / Daily.WEEK)
+			var session := Classes.appointment(row, week)
+			if session["exam"]:
+				_ui()._add_button(page, "Rendir parcial", _ui()._start_subject.bind(row["course"], show_classroom.bind(row["room"])), true, 40)
+			else:
+				var exam_week := week + (2 - week % 3)
+				var exam := Classes.appointment(row, exam_week)
+				_ui()._add_button(page, "Esperar al examen · día %d" % (int(exam["start"]) / Daily.DAY + 1), _wait_for_exam.bind(row, exam["start"]), false, 40)
 	_ui()._add_button(page, "Ver horario", show_schedule.bind(show_world), false, 40)
+
+
+func _wait_for_exam(row: Dictionary, start: int) -> void:
+	var routine := _daily()
+	routine.advance(start - routine.minutes)
+	_save_daily(routine)
+	show_classroom(str(row["room"]))
 
 
 func show_vendor(id: String, message: String = "") -> void:

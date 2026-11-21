@@ -34,12 +34,16 @@ static func schedule(snapshot: Dictionary) -> Array[Dictionary]:
 		var index := rows.size()
 		var code := str(subject["sigla"])
 		var course := Catalog.course_for_sigla(str(subject["program_id"]), code, str(subject["mention_id"]))
-		var room: String = ROOMS[index % ROOMS.size()]
+		var term := int(snapshot["term"])
+		var seed_key := "%s/%d/%s" % [snapshot.get("student_seed", ""), term, subject["id"]]
+		var parallel := int(subject["enrollment"].get("parallel", 0))
+		var slot := index if term == 1 else posmod(seed_key.hash() + parallel * 7, DAYS.size() * STARTS.size())
+		var room: String = ROOMS[(index if term == 1 else posmod(code.hash(), ROOMS.size())) % ROOMS.size()]
 		rows.append({
 			"key": "%d/%s" % [int(snapshot["term"]), subject["id"]],
 			"course": str(subject["id"]), "code": code, "name": str(subject["name"]),
-			"room": room, "floor": Map.room_floor(BUILDING, room), "day": index % DAYS.size(),
-			"start": STARTS[(index / DAYS.size()) % STARTS.size()], "lines": _lines(code, course)
+			"room": room, "floor": Map.room_floor(BUILDING, room), "teacher": ["Vega", "Quispe", "Flores", "Mamani", "Rojas"][posmod(code.hash(), 5)], "seed": seed_key.hash(), "day": slot % DAYS.size(),
+			"start": STARTS[(slot / DAYS.size()) % STARTS.size()], "lines": _lines(code, course)
 		})
 	return rows
 
@@ -55,8 +59,40 @@ static func _lines(code: String, course: Dictionary) -> Array:
 
 
 static func next_start(row: Dictionary, minutes: float) -> float:
-	var start := floorf(minutes / Daily.WEEK) * Daily.WEEK + int(row["day"]) * Daily.DAY + int(row["start"])
-	return start if minutes < start + DURATION else start + Daily.WEEK
+	var week := floori(minutes / Daily.WEEK)
+	for offset in 3:
+		var session := appointment(row, week + offset)
+		if not session["cancelled"] and minutes < float(session["start"]) + DURATION:
+			return float(session["start"])
+	return INF
+
+
+static func appointment(row: Dictionary, week: int) -> Dictionary:
+	var start := week * Daily.WEEK + int(row["day"]) * Daily.DAY + int(row["start"])
+	var exam := week % 3 == 2
+	# A regular week always follows a cancelled week.
+	var roll := posmod(hash("%s/%d" % [row.get("seed", 0), week]), 10) if week % 2 == 1 else 9
+	var cancelled := roll == 0 and not exam
+	var message := "Clase confirmada."
+	if cancelled:
+		message = "Hoy no podré asistir. Retomamos la próxima semana."
+	elif exam and roll < 3:
+		start += Daily.DAY
+		message = "Postergué el examen hasta mañana, en la misma aula."
+	elif roll < 4:
+		start += 20
+		message = "Llegaré veinte minutos tarde."
+	if exam:
+		message = "Examen programado. " + message
+	return {"start": start, "cancelled": cancelled, "exam": exam, "message": message}
+
+
+static func conflicts(row: Dictionary, schedule_rows: Array[Dictionary]) -> PackedStringArray:
+	var others := PackedStringArray()
+	for other in schedule_rows:
+		if row["course"] != other["course"] and row["day"] == other["day"] and row["start"] == other["start"]:
+			others.append(str(other["code"]))
+	return others
 
 
 static func active(rows: Array[Dictionary], room: String, minutes: float) -> Dictionary:
