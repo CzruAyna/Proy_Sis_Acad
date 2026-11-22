@@ -33,6 +33,7 @@ var balance := ALLOWANCE
 var hunger := 0.0
 var thirst := 0.0
 var backpack: Dictionary = {}
+var tasks: Dictionary = {}
 var notes: Dictionary = {}
 
 
@@ -57,6 +58,7 @@ func restore(data: Variant) -> void:
 			var count := int(_number(stock.get(id), 0.0, 0.0, CAPACITY - load_count()))
 			if count > 0:
 				backpack[id] = count
+	tasks = stored["tasks"].duplicate() if stored.get("tasks") is Dictionary else {}
 	var saved_notes: Variant = stored.get("notes")
 	notes = saved_notes.duplicate(true) if saved_notes is Dictionary else {}
 
@@ -69,7 +71,7 @@ func _number(value: Variant, fallback: float, low: float, high: float) -> float:
 
 func snapshot() -> Dictionary:
 	return {"student_trait": student_trait, "equipment": equipment.duplicate(), "shops": shops.duplicate(), "minutes": minutes, "balance": balance, "hunger": hunger, "thirst": thirst,
-		"backpack": backpack.duplicate(), "notes": notes.duplicate(true)}
+		"backpack": backpack.duplicate(), "tasks": tasks.duplicate(), "notes": notes.duplicate(true)}
 
 
 func advance(elapsed: float) -> void:

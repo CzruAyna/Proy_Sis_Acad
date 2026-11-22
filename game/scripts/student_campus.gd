@@ -184,17 +184,25 @@ func exploration_objective(back: Callable) -> Dictionary:
 	if snapshot["graduated"]:
 		return {"id": "graduated", "title": "Recorrido completo", "hint": "Tu título está emitido."}
 	if snapshot["studies_complete"]:
+		for request in snapshot["procedures"]:
+			if request["kind"] in ["excelencia", "tesis", "proyecto"] and request["status"] in ["PENDIENTE", "OBSERVADO"]:
+				var step := Procedures.current_step(request)
+				return {"id": "degree", "title": request["name"], "hint": "Decanato · " + str(step.get("label", "Consulta tu expediente")), "building": "decanato"}
 		return {"id": "degree", "title": "Graduación disponible", "hint": "Ve a Decanato y consulta las modalidades de graduación.", "building": "decanato"}
 	if snapshot["phase"] == "INSCRIPCION":
 		if not _document_present("matricula", "", snapshot):
-			return {"id": "matricula", "title": "Completa la matrícula", "hint": "Decanato · entra, acércate al mostrador y pulsa E.", "building": "decanato"}
+			var hint := "Entra y pulsa E en el mostrador."
+			for request in snapshot["procedures"]:
+				if request["kind"] == "matricula" and request["status"] in ["PENDIENTE", "OBSERVADO"]:
+					hint = str(Procedures.current_step(request).get("label", hint))
+			return {"id": "matricula", "title": "Completa la matrícula", "hint": "Decanato · " + hint, "building": "decanato"}
 		if snapshot["subjects"].any(func(subject: Dictionary) -> bool: return not subject["enrollment"].is_empty()):
 			return {"id": "start", "title": "Inicia el semestre", "hint": "Matrícula vigente · abre los parciales de tus materias.", "label": "Iniciar", "action": perform.bind("start_term", [], "resumen", false, back)}
 		return {"id": "plan", "title": "Elige tus materias", "hint": "Inscríbelas antes de iniciar el semestre.", "label": "Materias", "action": _go.bind("materias")}
 	for subject in snapshot["subjects"]:
 		var entry: Dictionary = subject["enrollment"]
 		if not entry.is_empty() and entry["score"] == null:
-			return {"id": "study", "title": str(subject["name"]), "hint": "Clases en Ciclo Básico · parcial %d de 3 pendiente." % (entry["answers"].size() + 1), "label": "Rendir", "action": _ui()._start_subject.bind(str(subject["id"]), back)}
+			return {"id": "study", "title": str(subject["name"]), "hint": "Clases en Ciclo Básico · parcial %d de 3 pendiente." % (entry["answers"].size() + 1), "label": "Rendir", "action": _ui()._explorer().assessment_route.bind(str(subject["id"]), back)}
 	return {"id": "close", "title": "Cierra el semestre", "hint": "Ya tienes un resultado en todas tus materias.", "label": "Cerrar", "action": _confirm_close.bind(back)}
 
 
@@ -866,7 +874,7 @@ func _show_subject_sheet(data: Dictionary, return_focus: Control, snapshot: Dict
 		var key := str(subject["id"])
 		var entry: Dictionary = subject["enrollment"]
 		if snapshot["phase"] == "CURSANDO" and not entry.is_empty() and entry["score"] == null:
-			_button(details, "Estudiar y rendir", ui._start_subject.bind(key), true, true)
+			_button(details, "Estudiar y rendir", ui._explorer().assessment_route.bind(key, _go.bind("materias")), true, true)
 		elif snapshot["planning_available"] and entry.is_empty() and subject["eligibility"]["ok"] and not subject["approved"]:
 			_button(details, "Inscribir", _enroll.bind(key), true, true)
 		elif snapshot["planning_available"] and not entry.is_empty() and not subject["approved"]:

@@ -1977,7 +1977,12 @@ func _show_solo_hub() -> void:
 	_show_campus_section("resumen")
 
 
+const PROJECT_COURSES := ["SIS 1110", "SIS 2210", "INF 2430"]
+var _scheduled_week := -1
+
+
 func _start_subject(key: String, back: Callable = Callable()) -> void:
+	_scheduled_week = -1
 	_study_return = back if back.is_valid() else _show_solo_hub
 	if simulation == null or simulation.state["phase"] != "CURSANDO" or not simulation.state["enrollments"].has(key):
 		_study_return.call()
@@ -2012,19 +2017,33 @@ func _show_exam() -> void:
 	var accent: Color = theme.get("accent", GREEN)
 	_current_theme = theme
 	var content := _make_page("Parcial %d / 3 · %s (%s)" % [partial_index + 1, course["name"], subject["sigla"]], "Semestre cursado %d · Tres parciales determinan la nota final" % int(simulation.state["term"]), _study_return if _study_return.is_valid() else _show_solo_hub, false, false)
+	var is_project := PROJECT_COURSES.has(str(subject["sigla"]))
+	var teacher: String = ["Vega", "Quispe", "Flores", "Mamani", "Rojas"][posmod(str(subject["sigla"]).hash(), 5)]
+	var hits := 0
+	for response in entry["answers"]:
+		if response:
+			hits += 1
+	content.add_child(_label("Proyecto · revisión con %s" % teacher if is_project else "Hoja de examen · Prof. %s" % teacher, 20, accent))
+	content.add_child(_label("Avance %d de 3 · %d aciertos · objetivo: acertar al menos dos" % [partial_index + 1, hits], 15))
+	if is_project:
+		_project_review(content, entry, partial_index)
+		return
 	var columns := _adaptive_grid(content, 470.0, 2)
-	var lesson := _card(columns, true)
-	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
-	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
-	var demo := StudyDemo.new()
-	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme, self)
-	lesson.add_child(demo)
 	var exam := VBoxContainer.new()
 	exam.set_meta("page_atomic", true)
 	exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(exam)
-	exam.add_child(_label(str(current_question["q"]), 19, accent, true))
+	var paper := PanelContainer.new()
+	var sheet := StyleBoxFlat.new()
+	sheet.bg_color = Color("#f3ecd7")
+	sheet.border_width_left = 5
+	sheet.border_color = Color("#c97970")
+	sheet.content_margin_left = 16
+	sheet.content_margin_top = 12
+	sheet.content_margin_bottom = 12
+	paper.add_theme_stylebox_override("panel", sheet)
+	exam.add_child(paper)
+	paper.add_child(_label(str(current_question["q"]), 19, Color("#182734")))
 	for option in range(current_question["options"].size()):
 		var answer := _answer_subject.bind(option)
 		var row := _add_button(exam, str(current_question["options"][option]), answer, false, 38)
@@ -2036,6 +2055,52 @@ func _show_exam() -> void:
 	if not cheat.disabled:
 		cheat.text = "[U] " + cheat.text
 		_bind_page_key(KEY_U, _try_chanchullo.bind(cheat_key))
+
+	var lesson := _card(columns, true)
+	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
+	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
+	var demo := StudyDemo.new()
+	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme, self)
+	lesson.add_child(demo)
+
+
+func _project_review(content: Control, entry: Dictionary, phase: int) -> void:
+	var stages := ["Prototipo", "Pruebas", "Entrega"]
+	var actions := ["Construir el prototipo", "Contrastar con un caso de prueba", "Entregar el informe"]
+	var card := _card(content, true)
+	card.add_child(_label("Hito · " + str(stages[phase]), 20))
+	if not entry.has("draft_option"):
+		card.add_child(_label("Decide cómo resolver esta parte del proyecto: " + str(current_question["q"]), 17))
+		for index in current_question["options"].size():
+			var choose := _project_draft.bind(index)
+			_add_button(card, str(current_question["options"][index]), choose, false, 36)
+			_bind_page_key(KEY_1 + index, choose)
+	else:
+		var choice := clampi(int(entry["draft_option"]), 0, current_question["options"].size() - 1)
+		card.add_child(_label("Tu propuesta · " + str(current_question["options"][choice]), 17))
+		card.add_child(_label("Elige la acción que acredita este hito ante el docente.", 16))
+		for offset in actions.size():
+			var action := (phase + offset + 1) % actions.size()
+			var deliver := _deliver_project.bind(action)
+			_add_button(card, actions[action], deliver, false, 36)
+			_bind_page_key(KEY_1 + offset, deliver)
+
+
+func _project_draft(index: int) -> void:
+	var key := str(current_profile["current_subject"])
+	simulation.state["enrollments"][key]["draft_option"] = index
+	_save_profile()
+	_show_exam()
+
+
+func _deliver_project(action: int) -> void:
+	var entry: Dictionary = simulation.state["enrollments"][current_profile["current_subject"]]
+	if not entry.has("draft_option"):
+		return
+	var correct: bool = int(entry["draft_option"]) == int(current_question["answer"]) and action == entry["answers"].size()
+	entry.erase("draft_option")
+	_finish_subject_question(correct, false)
 
 
 func _answer_subject(option_index: int) -> void:
@@ -2068,6 +2133,8 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 	if not result["ok"]:
 		_show_result("Resultado pendiente", str(result["message"]), false, _show_solo_hub)
 		return
+	if _scheduled_week >= 0:
+		simulation.state["enrollments"][key]["last_assessment_week"] = _scheduled_week
 	current_question = {}
 	current_profile["confidence"] = clampi(int(current_profile.get("confidence", 60)) + (4 if correct and not cheated else -3), 0, 100)
 	current_profile["partial_index"] = partial + 1
@@ -2078,7 +2145,7 @@ func _finish_subject_question(correct: bool, cheated: bool) -> void:
 		_show_result("Materia aprobada" if result["passed"] else "Materia reprobada", explanation, bool(result["passed"]), _study_return if _study_return.is_valid() else _show_solo_hub)
 	else:
 		_save_profile()
-		_show_result("Parcial registrado", explanation + " La nota final se calcula con los tres parciales.", correct, _show_exam)
+		_show_result("Parcial registrado", explanation + " La nota final se calcula con los tres parciales.", correct, _study_return if _scheduled_week >= 0 else _show_exam)
 
 
 func _show_titles() -> void:

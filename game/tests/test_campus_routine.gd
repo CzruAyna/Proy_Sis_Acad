@@ -38,6 +38,7 @@ func _check(condition: bool, message: String) -> void:
 	_count += 1
 	if not condition:
 		_errors.append(message)
+		push_error(message)
 
 
 func _click(label: String) -> void:
@@ -46,6 +47,14 @@ func _click(label: String) -> void:
 			button.pressed.emit()
 			return
 	_check(false, "Falta el botón " + label)
+
+
+func _click_prefix(prefix: String) -> void:
+	for button in _game.find_children("*", "Button", true, false):
+		if button.text.begins_with(prefix) and not button.disabled:
+			button.pressed.emit()
+			return
+	_check(false, "Falta la acción " + prefix)
 
 
 func _key(code: Key) -> void:
@@ -119,6 +128,18 @@ func _run() -> void:
 	_game._show_campus_section("materias")
 	_click("Ver mi horario")
 	var rows := Classes.schedule(_game.simulation.snapshot())
+	for lesson in rows:
+		_check(Classes.conflicts(lesson, rows).is_empty(), "El horario de ingreso carece de choques.")
+	var next_term: Dictionary = _game.simulation.snapshot()
+	next_term["term"] = 2
+	var later := Classes.schedule(next_term)
+	var chosen := str(later[0]["course"])
+	for subject in next_term["subjects"]:
+		if subject["id"] == chosen:
+			subject["enrollment"]["parallel"] = 1
+	var revised := Classes.schedule(next_term)
+	_check(revised[0]["day"] != later[0]["day"] and revised[0]["parallel"] == "B", "Cambiar de paralelo cambia la cita del segundo semestre.")
+	_check(revised == Classes.schedule(next_term), "Consultar de nuevo el horario conserva los paralelos.")
 	_check(rows.size() == 5, "Cada materia inscrita aparece en el horario.")
 	_check(rows[0]["lines"] != rows[1]["lines"], "Cada materia usa contenido propio.")
 	_check(Classes.active(rows, rows[0]["room"], 570.0)["key"] == rows[0]["key"], "El horario activa la clase al comienzo de su franja.")
@@ -210,9 +231,46 @@ func _run() -> void:
 	var overview := _game.find_child("CampusOverview", true, false)
 	_check(overview != null and overview.destination == Map.building(Classes.BUILDING)["door"], "La guía marca la puerta en el mapa.")
 	await _picture("07-mapa")
+	_game._show_exploration()
+	await _key(KEY_C)
+	await _picture("08-celular")
+	_click("Mi historia")
+	await _picture("09-historia")
+	var model: RefCounted = _game.simulation
+	model.pay("matricula")
+	var request: Dictionary = model.snapshot()["procedures"][0]
+	for office in ["Caja", "Kardex", "Cómputo"]:
+		model.advance_procedure(request["id"], office)
+	model.start_term()
+	_game._show_exploration()
+	world = _game.find_child("CampusWorld", true, false) as Control
+	world.enter_room(Classes.BUILDING, str(rows[0]["room"]))
+	world.player = Vector2(146, 82)
+	world.interact()
+	await process_frame
+	if _game.find_child("LiveClassBoard", true, false) == null:
+		_click("Esperar aquí hasta la clase")
+	_click("Resolver tarea de aula")
+	_click(str(rows[0]["lines"][0]))
+	_check(_game.current_profile["campus_exploration"]["daily"]["tasks"].has(rows[0]["key"]), "La tarea completada queda en el recorrido.")
+	_click_prefix("Esperar al examen")
+	_click("Rendir parcial")
+	_check(not _game.current_question.is_empty(), "El examen abre desde la pizarra en la fecha anunciada.")
+	await _picture("10-examen")
+	if _game.current_question.is_empty():
+		quit(1)
+		return
+	_game._answer_subject(int(_game.current_question["answer"]))
+	var enrollment: Dictionary = model.state["enrollments"][rows[0]["course"]]
+	_check(enrollment["answers"] == [100.0] and enrollment.get("last_assessment_week", -1) == 2, "El parcial se registra en la semana programada.")
+	for lesson in rows:
+		if lesson["code"] == "SIS 1110":
+			_game._start_subject(lesson["course"])
+			_game._project_draft(int(_game.current_question["answer"]))
+			await _picture("11-proyecto")
+			_game._deliver_project(0)
+			_check(model.state["enrollments"][lesson["course"]]["answers"] == [100.0], "La propuesta y el hito registran un único avance evaluado.")
 	_viewport.queue_free()
 	await process_frame
-	for message in _errors:
-		push_error(message)
 	print("CAMPUS_ROUTINE_TESTS: %d assertions, %d failures" % [_count, _errors.size()])
 	quit(0 if _errors.is_empty() else 1)

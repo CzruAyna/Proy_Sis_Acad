@@ -626,6 +626,23 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 	if animations_enabled and room_id.is_empty():
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.07, 0.12, 0.29, _night_strength() * 0.48))
+	_draw_minimap()
+
+
+func _draw_minimap() -> void:
+	var rect := Rect2(Vector2(size.x - 148, 8), Vector2(140, 82))
+	draw_rect(rect.grow(2), Color("#efc66b"))
+	draw_rect(rect, Color("#162e31"))
+	var scale_map := rect.size / Map.SIZE
+	for block in buildings:
+		var footprint: Rect2 = block["rect"]
+		draw_rect(Rect2(rect.position + footprint.position * scale_map, footprint.size * scale_map), Color("#729a87"))
+	var here := player if room_id.is_empty() else _outside
+	if destination.is_finite():
+		var goal := rect.position + destination * scale_map
+		draw_line(rect.position + here * scale_map, goal, Color("#cbb77f"), 1)
+		draw_circle(goal, 4, Color("#ffbd50"))
+	draw_circle(rect.position + here * scale_map, 2.5, Color.WHITE)
 
 
 func _draw_campus(view: Rect2) -> void:
@@ -698,6 +715,9 @@ func _draw_room() -> void:
 	var kind := Map.room_kind(room_id, room_name)
 	var layout := Map.room_layout(room_id, room_name)
 	RoomArt.draw(self, layout, room_name, _lesson.get("lines", []).slice(0, _board_lines))
+	if not _lesson.is_empty():
+		var lectern := Vector2(layout["size"].x / 2 + 70, 90)
+		draw_texture_rect(Cast.texture("personal_docente"), Rect2(lectern - Vector2(12, 30), Vector2(24, 32)), false)
 	var count := 0
 	for actor in cast_instances:
 		if actor.get("state", "") == "CLASS" and actor["building_id"] == room_id and actor["room_name"] == room_name:
