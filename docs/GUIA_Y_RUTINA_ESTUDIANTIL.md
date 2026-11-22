@@ -61,6 +61,9 @@ Consulta tu rasgo en la mochila. Con miopía, los lentes agilizan la lectura de 
 |---|---|---|
 | ![Avisos de los profesores](evidencia/campana/celular.png) | ![Pregunta de Física en la hoja](evidencia/campana/examen.png) | ![Revisión del primer hito](evidencia/campana/proyecto.png) |
 
+En el minimapa, la flecha blanca te ubica y la marca dorada señala tu destino. El mapa grande se abre con **M**.
+
+
 ## Fuentes pendientes
 
 Para sustituir la recreación hacen falta horarios o listados de aulas por

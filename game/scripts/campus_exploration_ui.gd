@@ -145,12 +145,28 @@ func show_world() -> void:
 	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	workspace.add_theme_constant_override("separation", 6)
 	page.add_child(workspace)
+	var hud_margin := MarginContainer.new()
+	workspace.add_child(hud_margin)
+	var fit_hud := func() -> void:
+		hud_margin.add_theme_constant_override("margin_right", maxi(188, roundi(workspace.size.x * 0.36)))
+	workspace.resized.connect(fit_hud)
+	fit_hud.call()
+	var hud_panel := PanelContainer.new()
+	var hud_style := StyleBoxFlat.new()
+	hud_style.bg_color = Color("#101d28e8")
+	for edge in [SIDE_LEFT, SIDE_RIGHT]:
+		hud_style.set_content_margin(edge, 10)
+	hud_panel.add_theme_stylebox_override("panel", hud_style)
+	hud_margin.add_child(hud_panel)
+	var hud := VBoxContainer.new()
+	hud_panel.add_child(hud)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 10)
-	workspace.add_child(header)
+	hud.add_child(header)
 	var prefix := _name() + " · " if _ui().current_profile.is_empty() else ""
-	var location := _text(header, "", 15)
+	var location := _text(header, "", 18)
 	location.name = "ExplorerIdentity"
+	location.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var world := World.new()
 	world.name = "CampusWorld"
 	world.set_meta("gameplay_surface", true)
@@ -164,27 +180,39 @@ func show_world() -> void:
 	world.class_schedule = _schedule()
 	world._update_lesson()
 	world_ref = weakref(world)
-	var clock := _text(header, world.clock_text(), 14)
+	var clock := _text(header, world.clock_text(), 17)
 	clock.name = "CampusClock"
 	clock.autowrap_mode = TextServer.AUTOWRAP_OFF
 	clock.size_flags_horizontal = Control.SIZE_SHRINK_END
-	var supplies := _text(workspace, world.daily.status(), 13)
+	var supplies := _text(hud, world.daily.status(), 18)
 	supplies.name = "CampusSupplies"
 	world.clock_changed.connect(func(value: String) -> void:
 		clock.text = value
 		supplies.text = world.daily.status()
 	)
 	if _ui().simulation != null and not _ui().current_profile.is_empty():
-		_add_objective(workspace)
-	workspace.add_child(world)
+		_add_objective(hud)
+	_ui().add_child(world)
+	_ui().move_child(world, _ui().get_node("PageMargin").get_index())
+	world.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var space := Control.new()
+	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	workspace.add_child(space)
 	var hint: Label = _ui()._key_hint(workspace, world.interaction_text())
 	hint.name = "ExplorationContext"
 	var controls: Label = _ui()._key_hint(workspace, "[WASD] Mover   [Tab] Mochila   [M] Mapa   [G] Guía   [H] Horario   [C] Celular")
 	controls.name = "ExplorationKeys"
+	for caption in [controls, hint]:
+		caption.add_theme_stylebox_override("normal", hud_style)
+		caption.add_theme_color_override("font_color", Color.WHITE)
 	var update_location := func(value: String) -> void:
 		hint.text = value
 		var place := world.room_name if not world.room_name.is_empty() else str(Map.building(world.room_id).get("name", "")) + " · pasillo"
 		location.text = prefix + (place if not world.room_id.is_empty() else "Ciudad universitaria FNI")
+	for label in _ui().get_node("PageMargin").find_children("*", "Label", true, false):
+		label.add_theme_constant_override("outline_size", 5)
+		label.add_theme_color_override("font_outline_color", Color("#141922"))
 	world.context_changed.connect(update_location)
 	update_location.call(world.interaction_text())
 	world.progress_changed.connect(_update)
@@ -357,6 +385,10 @@ func show_map() -> void:
 	_ui()._bind_page_key(KEY_TAB, show_backpack.bind("", show_map))
 	map.state = saved.duplicate(true)
 	map.destination = _destination
+	if not map.destination.is_finite() and _ui().simulation != null:
+		var mission: Dictionary = _ui()._campus().exploration_objective(show_world)
+		if mission["id"] != "graduated":
+			map.destination = Map.building(str(mission.get("building", Classes.BUILDING)))["door"]
 	map.label_size = roundi(14 * float(_ui().settings["font_scale"]))
 	var frame := Control.new()
 	frame.clip_contents = true

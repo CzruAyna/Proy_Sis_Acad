@@ -148,6 +148,11 @@ func _run() -> void:
 
 	_game._show_exploration()
 	var world := _game.find_child("CampusWorld", true, false) as Control
+	await process_frame
+	_check(world.size.is_equal_approx(Vector2(_viewport.size)), "El recorrido ocupa toda la superficie del juego.")
+	await _picture("12-campus-completo")
+	var tracker := _game.find_child("CampusSupplies", true, false) as Label
+	_check(tracker.get_global_rect().end.y < world.size.y / 3, "Hambre y sed permanecen visibles en la cabecera.")
 	var positions := World.vendor_positions()
 	_check(positions.values().has(Map.SPAWN) == false, "Los puestos tienen ubicaciones propias en el mapa.")
 	for id: String in positions:

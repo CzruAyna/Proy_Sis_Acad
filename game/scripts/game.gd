@@ -117,7 +117,7 @@ var selected_faculty := ""
 var draft_player_name := ""
 var current_question: Dictionary = {}
 var _study_return := Callable()
-var settings := {"fullscreen": true, "animations": true, "font_scale": 1.0, "antialiasing": false, "low_performance": false}
+var settings := {"fullscreen": true, "animations": true, "font_scale": 1.2, "antialiasing": false, "low_performance": false}
 var formula_font: Font
 var random := RandomNumberGenerator.new()
 var _active_back := Callable()
@@ -964,7 +964,7 @@ func _load_settings() -> void:
 	if config.load("user://settings.cfg") == OK:
 		settings["fullscreen"] = config.get_value("game", "fullscreen", false)
 		settings["animations"] = config.get_value("game", "animations", true)
-		settings["font_scale"] = config.get_value("game", "font_scale", 1.0)
+		settings["font_scale"] = config.get_value("game", "font_scale", 1.2)
 		settings["antialiasing"] = config.get_value("game", "antialiasing", false)
 		settings["low_performance"] = config.get_value("game", "low_performance", false)
 
@@ -1088,7 +1088,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		maximum_width = 720.0
 	_page_width = maximum_width
 	var resize_page := func() -> void:
-		var side := maxi(24, int((size.x - maximum_width) * 0.5))
+		var side := 12 if title in ["Explorar FNI", "Mapa del campus"] else maxi(24, int((size.x - maximum_width) * 0.5))
 		margin.add_theme_constant_override("margin_left", side)
 		margin.add_theme_constant_override("margin_right", side)
 	resized.connect(resize_page)
@@ -1107,7 +1107,7 @@ func _make_page(title: String, subtitle: String, back: Callable = Callable(), me
 		identity.name = "PlayerIdentity"
 		identity.tooltip_text = str(current_profile.get("player_name", "")) + " · " + str(current_profile.get("mention_name", ""))
 		layout.add_child(identity)
-	if not title.is_empty() and title != "Jugar":
+	if not title.is_empty() and title not in ["Jugar", "Explorar FNI"]:
 		layout.add_child(_label(title, 24, _current_theme.get("text", INK), title in ["Jugar", "Simular", "Opciones del juego"]))
 	if not subtitle.is_empty() and not graph_workspace and not game_workspace:
 		layout.add_child(_label(subtitle, 13, _current_theme.get("sub", INK), title in ["Jugar", "Simular", "Opciones del juego"]))
