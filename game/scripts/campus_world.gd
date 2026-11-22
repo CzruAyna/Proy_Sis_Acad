@@ -220,13 +220,13 @@ func _advance_lighting(delta: float) -> void:
 		clock_changed.emit(clock_text())
 		if animations_enabled and room_id.is_empty():
 			queue_redraw()
-		if room_id == Classes.BUILDING:
+		if room_id in [Classes.BUILDING, "fis_mat"]:
 			_update_lesson()
 
 
 func _update_lesson() -> void:
-	var lesson := Classes.active(class_schedule, room_name, daily.minutes) if room_id == Classes.BUILDING else {}
-	var count := 0 if lesson.is_empty() else Classes.visible_lines(lesson, daily.minutes)
+	var lesson := Classes.active(class_schedule, room_name, daily.minutes) if room_id in [Classes.BUILDING, "fis_mat"] else {}
+	var count := 0 if lesson.is_empty() or daily.needs_glasses() else Classes.visible_lines(lesson, daily.minutes)
 	if lesson != _lesson or count != _board_lines:
 		_lesson = lesson
 		_board_lines = count
@@ -385,7 +385,7 @@ func interaction_text() -> String:
 				return "E · Trámites en Decanato"
 			if room_id == ASSISTANT_OFFICE:
 				return "E · Auxiliaturas en Dirección de Carrera"
-			if room_id == Classes.BUILDING and Map.room_kind(room_id, room_name) == "classroom":
+			if room_id in [Classes.BUILDING, "fis_mat"] and Map.room_kind(room_id, room_name) in ["classroom", "physics_virtual"]:
 				return "E · Horario y pizarra del aula"
 			return "E · Consultar actividades y otras aulas de este bloque"
 		return room_name + " · Acércate al tablero o a la puerta"
@@ -745,7 +745,7 @@ func _draw_room() -> void:
 		cue = "E: TRÁMITES"
 	elif room_id == ASSISTANT_OFFICE:
 		cue = "E: AUXILIATURAS"
-	elif room_id == Classes.BUILDING and kind == "classroom":
+	elif room_id in [Classes.BUILDING, "fis_mat"] and kind in ["classroom", "physics_virtual"]:
 		cue = "E: PIZARRA"
 	_sign(Vector2(32, 80), cue, 10)
 	var exit := Map.room_exit(room_id, room_name)

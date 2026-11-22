@@ -208,6 +208,7 @@ static func floor_rooms(id: String, level: int) -> Array[Dictionary]:
 		if level in [0, 2, 4]:
 			for gender in ["mujeres", "varones"]:
 				result.append({"id": "P%d · Baño %s" % [level, gender], "label": "Baño · " + gender, "kind": "restroom", "provisional": true})
+		result.append({"id": "Taller 30%d" % level, "label": "Taller 30%d" % level, "kind": "classroom", "provisional": true})
 	else:
 		for room in building(id).get("rooms", []):
 			result.append({"id": room, "label": room, "kind": room_kind(id, room), "provisional": true})

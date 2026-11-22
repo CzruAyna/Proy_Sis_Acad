@@ -98,6 +98,12 @@ func _check_economy() -> void:
 	_check(restored.load_count() == Daily.CAPACITY, "La mochila rechaza exceso de carga.")
 	restored.consume("agua")
 	_check(restored.thirst == 55.0 and restored.load_count() == Daily.CAPACITY - 1, "Consumir agua libera espacio y reduce la sed.")
+	var bottles := Daily.new()
+	bottles.student_trait = "Miopía"
+	_check(bottles.needs_glasses(), "La miopía requiere equipar lentes.")
+	bottles.buy("tienda", "lentes")
+	bottles.consume("lentes")
+	_check(not bottles.needs_glasses(), "Los lentes equipados permiten leer la pizarra.")
 	var before := restored.snapshot()
 	restored.buy("kiosco", "pollo")
 	_check(restored.snapshot() == before, "El catálogo del puesto controla la venta.")
@@ -151,6 +157,8 @@ func _run() -> void:
 	await process_frame
 	_check(world.size.is_equal_approx(Vector2(_viewport.size)), "El recorrido ocupa toda la superficie del juego.")
 	await _picture("12-campus-completo")
+	for workshop in Classes.workshops():
+		_check(Map.room_floor(workshop["building"], workshop["room"]) >= 0 and workshop["lines"].size() >= 3, "Cada taller tiene puerta, piso y lección.")
 	var tracker := _game.find_child("CampusSupplies", true, false) as Label
 	_check(tracker.get_global_rect().end.y < world.size.y / 3, "Hambre y sed permanecen visibles en la cabecera.")
 	var positions := World.vendor_positions()
@@ -192,6 +200,8 @@ func _run() -> void:
 	world.interact()
 	await process_frame
 	_click("Esperar aquí hasta la clase")
+	if _game._explorer()._daily().needs_glasses():
+		_click("Pedir lentes prestados y ponérmelos")
 	var board := _game.find_child("LiveClassBoard", true, false)
 	_check(board != null, "La pizarra abre tras esperar en el aula asignada.")
 	if board != null:
@@ -275,6 +285,20 @@ func _run() -> void:
 			await _picture("11-proyecto")
 			_game._deliver_project(0)
 			_check(model.state["enrollments"][lesson["course"]]["answers"] == [100.0], "La propuesta y el hito registran un único avance evaluado.")
+	_game._show_exploration()
+	world = _game.find_child("CampusWorld", true, false) as Control
+	var practice := Classes.workshops()[6]
+	world.daily.student_trait = "Miopía"
+	world.daily.equipment.erase("lentes")
+	world.daily.minutes = Classes.appointment(practice, 0)["start"]
+	world.enter_room("fis_mat", practice["room"])
+	world.player = Vector2(146, 82)
+	world.interact()
+	await process_frame
+	_check(_game.find_child("LiveClassBoard", true, false) == null, "El taller requiere lentes a quien tiene miopía.")
+	_click("Pedir lentes prestados y ponérmelos")
+	_check(_game.find_child("LiveClassBoard", true, false) != null, "El laboratorio del Bloque 100 imparte clase con los lentes puestos.")
+	await _picture("13-taller")
 	_viewport.queue_free()
 	await process_frame
 	print("CAMPUS_ROUTINE_TESTS: %d assertions, %d failures" % [_count, _errors.size()])

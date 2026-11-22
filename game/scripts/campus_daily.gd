@@ -126,5 +126,9 @@ func consume(item: String) -> String:
 	return "%s · hambre %d%% · sed %d%%." % [ITEMS[item][0], roundi(hunger), roundi(thirst)]
 
 
+func needs_glasses() -> bool:
+	return student_trait == "Miopía" and not equipment.has("lentes")
+
+
 func status() -> String:
 	return "%d créditos · Hambre %d%% · Sed %d%%" % [balance, roundi(hunger), roundi(thirst)]

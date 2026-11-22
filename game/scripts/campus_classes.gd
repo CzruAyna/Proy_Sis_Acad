@@ -26,6 +26,28 @@ const EXAMPLES := {
 }
 
 
+const WORKSHOPS := [
+	["CU-100", "Álgebra aplicada", "MAT 1100"], ["CU-101", "Derivadas", "MAT 1101"],
+	["CU-102", "Integración", "MAT 1102"], ["CU-103", "Transformaciones", "MAT 1103"],
+	["CU-104", "Estadística", "MAT 1135"], ["CU-105", "Ondas", "FIS 1200"],
+	["CU-106", "Laboratorio de movimiento", "FIS 1100"], ["Taller 300", "Reacciones químicas", "QMC 1100"],
+	["Taller 301", "Circuitos", "FIS 1102"], ["Taller 302", "Algoritmos", "SIS 1110"],
+	["Taller 303", "Conjuntos", "INF 1210"], ["Taller 304", "Bases de datos", "INF 2430"]
+]
+
+
+static func workshops() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for index in WORKSHOPS.size():
+		var item: Array = WORKSHOPS[index]
+		var id := "taller-" + str(index)
+		var building := "fis_mat" if index < 7 else BUILDING
+		rows.append({"key": id, "course": id, "code": item[2], "name": item[1], "room": item[0],
+			"building": building, "floor": Map.room_floor(building, item[0]), "teacher": ["Vega", "Quispe", "Flores"][index % 3],
+			"day": index % 5, "start": STARTS[index / 5], "seed": index, "lines": EXAMPLES[item[2]], "workshop": true})
+	return rows
+
+
 static func schedule(snapshot: Dictionary) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	var room_counts := {}
@@ -76,7 +98,7 @@ static func next_start(row: Dictionary, minutes: float) -> float:
 
 static func appointment(row: Dictionary, week: int) -> Dictionary:
 	var start := week * Daily.WEEK + int(row["day"]) * Daily.DAY + int(row["start"])
-	var exam := week % 3 == 2
+	var exam: bool = week % 3 == 2 and not row.get("workshop", false)
 	# A regular week always follows a cancelled week.
 	var roll := posmod(hash("%s/%d" % [row.get("seed", 0), week]), 10) if week % 2 == 1 else 9
 	var cancelled := roll == 0 and not exam
