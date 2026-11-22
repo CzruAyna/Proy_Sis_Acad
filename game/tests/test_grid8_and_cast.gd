@@ -35,12 +35,12 @@ func _run() -> void:
 	world.move_player(Vector2.RIGHT, 0.1, true)
 	_check(absf(world.player.distance_to(start) - Scale.WALK_SPEED * Scale.RUN_MULTIPLIER * 0.1) < 0.01, "Correr aplica el multiplicador sobre el ritmo calibrado")
 	world.player = start
-	_check(world.cast_instances.size() == 51, "Población ambiental: profesionales, 24 estudiantes, personal y cinco perros")
+	_check(world.cast_instances.size() == 27 + Cast.STUDENT_COUNT, "Población ambiental: profesionales, estudiantes de distintas carreras, personal y cinco perros")
 	var designs := {}
 	for index in range(Cast.STUDENT_COUNT):
 		var bytes := Cast.texture("estudiante_%d" % index).get_image().get_data()
 		designs[bytes.hex_encode()] = true
-	_check(designs.size() == 24, "Los 24 estudiantes tienen apariencia distinta")
+	_check(designs.size() == Cast.STUDENT_COUNT, "Los estudiantes de distintas carreras tienen apariencia distinta")
 	var positions := {}
 	for actor in world.cast_instances:
 		positions[actor["instance_id"]] = actor["point"]

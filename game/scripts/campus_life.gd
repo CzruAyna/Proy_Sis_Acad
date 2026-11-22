@@ -48,6 +48,10 @@ func build(can_walk: Callable, saved: Dictionary = {}, new_seed: int = -1) -> vo
 	for index in range(actors.size()):
 		var actor: Dictionary = actors[index]
 		var home: Dictionary = assigned_buildings.get(actor["id"], _blocks[(index * 7 + 8) % _blocks.size()])
+		if str(actor["id"]).begins_with("estudiante_"):
+			var program: Array = Cast.PROFESSIONS[int(str(actor["id"]).get_slice("_", 1)) % Cast.PROFESSIONS.size()]
+			home = Map.building(program[4])
+			actor["program"] = program[1]
 		actor.merge({"index": index, "state": "WAIT", "home_id": home["id"], "building_id": home["id"], "room_name": str(home["rooms"][0]), "floor": 0, "route": PackedVector2Array(), "cursor": 0, "cooldown": rng.randf_range(1, 8), "pending": 0.0, "class_count": 0, "pet_count": 0})
 	if valid_save:
 		_restore(saved)
@@ -57,7 +61,7 @@ func _spawn_cast() -> void:
 	for row in Cast.PROFESSIONS:
 		_spawn(row[0], Map.building(row[4])["door"] + Vector2(31, 16))
 	for index in range(Cast.STUDENT_COUNT):
-		var block: Dictionary = _blocks[(index * 7 + 8) % _blocks.size()]
+		var block := Map.building(Cast.PROFESSIONS[index % Cast.PROFESSIONS.size()][4])
 		_spawn("estudiante_%d" % index, block["door"] + Vector2(-32 if index % 2 == 0 else 32, 28))
 	for row in Cast.STAFF:
 		_spawn(row[0], Map.building(row[4])["door"] + Vector2(-45, 26))

@@ -1,7 +1,7 @@
 extends RefCounted
 ## Costume studies, not an institutional roster or autonomous population model.
 const Painter = preload("res://scripts/pixel_painter.gd")
-const STUDENT_COUNT := 24
+const STUDENT_COUNT := 42
 const STAFF := [
 	["personal_docente", "Docente", "#a5826e", "book", "matematicas"],
 	["personal_biblioteca", "Biblioteca", "#698d87", "book", "biblioteca"],
@@ -111,6 +111,8 @@ static func _person(p: RefCounted, id: String, frame: int, back: bool) -> void:
 			accessory = row[3]
 	if id.begins_with("estudiante"):
 		cloth = [Color("#6f9a8c"), Color("#9d6985"), Color("#4f88a9"), Color("#c19a63"), Color("#885f66"), Color("#68759c"), Color("#a0a878"), Color("#b86e57")][index % 8]
+	if id.begins_with("estudiante") and index >= 24:
+		cloth = cloth.lightened(0.28)
 	p.rect(8, 4, 8, 9, hair)
 	if id.begins_with("estudiante") and index % 3 == 1:
 		p.rect(7, 5, 2, 11, hair)
