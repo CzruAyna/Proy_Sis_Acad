@@ -630,9 +630,14 @@ func _draw() -> void:
 
 
 func _draw_minimap() -> void:
-	var rect := Rect2(Vector2(size.x - 148, 8), Vector2(140, 82))
+	var width := clampf(size.x * 0.22, 160, 252)
+	var rect := Rect2(Vector2(size.x - width - 14, 32), Vector2(width, width * Map.SIZE.y / Map.SIZE.x))
+	draw_rect(Rect2(rect.position - Vector2(2, 23), Vector2(width + 4, 24)), Color("#162e31"))
+	draw_string(Neon.PIXEL_FONT, rect.position + Vector2(4, -5), "MINIMAPA   N →", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	draw_rect(rect.grow(2), Color("#efc66b"))
 	draw_rect(rect, Color("#162e31"))
+	draw_rect(Rect2(rect.position.x - 2, rect.end.y + 2, width + 4, 21), Color("#162e31"))
+	draw_string(Neon.PIXEL_FONT, Vector2(rect.position.x + 5, rect.end.y + 17), "Tú" + ("    • Objetivo" if destination.is_finite() else ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	var scale_map := rect.size / Map.SIZE
 	for block in buildings:
 		var footprint: Rect2 = block["rect"]
@@ -642,7 +647,12 @@ func _draw_minimap() -> void:
 		var goal := rect.position + destination * scale_map
 		draw_line(rect.position + here * scale_map, goal, Color("#cbb77f"), 1)
 		draw_circle(goal, 4, Color("#ffbd50"))
-	draw_circle(rect.position + here * scale_map, 2.5, Color.WHITE)
+	var marker := rect.position + here * scale_map
+	var direction := facing if room_id.is_empty() else _exterior_facing
+	draw_colored_polygon(PackedVector2Array([marker + direction * 7, marker - direction * 4 + direction.orthogonal() * 4, marker - direction * 4 - direction.orthogonal() * 4]), Color.WHITE)
+	for i in 3:
+		draw_rect(Rect2(0, i * 6, 18 - i * 6, 6), Color.BLACK)
+		draw_rect(Rect2(size.x - 18 + i * 6, size.y - (i + 1) * 6, 18 - i * 6, 6), Color.BLACK)
 
 
 func _draw_campus(view: Rect2) -> void:
