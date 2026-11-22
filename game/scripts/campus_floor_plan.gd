@@ -30,6 +30,10 @@ static func draw(canvas: CanvasItem, area: Rect2, id: String, level: int) -> voi
 			canvas.draw_rect(rect, Color("#c5bda0"))
 			for index in range(4):
 				canvas.draw_rect(Rect2(rect.position + Vector2(8 + index % 2 * 32, 19 + index / 2 * 15), Vector2(22, 8)), Color("#92785b"))
+		canvas.draw_rect(Rect2(54, 44, 60, 35), Color("#75998b"))
+		canvas.draw_rect(Rect2(70, 79, 12, 9), Color("#8c9890"))
+		canvas.draw_string(FONT, Vector2(57, 59), "TALLER", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("#152f31"))
+		canvas.draw_string(FONT, Vector2(57, 73), "30%d" % level, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("#eff7db"))
 		_stairs(canvas, Vector2(126, 98))
 		if level in [0, 2, 4]:
 			for index in range(2):

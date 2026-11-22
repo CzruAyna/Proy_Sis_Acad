@@ -55,11 +55,13 @@ Las visitas libres conservan su estado durante la sesión.
 
 ### El personaje y la mochila
 
-Consulta tu rasgo en la mochila. Con miopía, los lentes agilizan la lectura de la pizarra. Con cabeza de pollo puedes copiar el apunte a mano o equipar una agenda. El kiosco vende leche sin lactosa para quien la necesite. Compra el equipo en la tienda exterior y actívalo desde la mochila.
+Consulta tu rasgo en la mochila. Con miopía debes ponerte lentes para leer la pizarra y rendir. Puedes comprarlos en la tienda o pedirlos prestados en el aula. Con cabeza de pollo puedes copiar el apunte a mano o equipar una agenda. El kiosco vende leche sin lactosa para quien la necesite. Compra el equipo en la tienda exterior y actívalo desde la mochila.
 
 | Celular y avisos | Hoja de examen | Revisión de proyecto |
 |---|---|---|
 | ![Avisos de los profesores](evidencia/campana/celular.png) | ![Pregunta de Física en la hoja](evidencia/campana/examen.png) | ![Revisión del primer hito](evidencia/campana/proyecto.png) |
+
+En **H → Talleres abiertos** encontrarás doce prácticas optativas en Básicas y el Bloque 100. Cada ficha indica el día, el aula y el piso. Puedes esperar la sesión en su pizarra y guardar el apunte. Estos talleres recreados permiten practicar durante la exploración libre y durante una partida.
 
 En el minimapa, la flecha blanca te ubica y la marca dorada señala tu destino. El mapa grande se abre con **M**.
 

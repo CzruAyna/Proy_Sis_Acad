@@ -178,6 +178,7 @@ func show_world() -> void:
 	_assign_trait(world.daily)
 	world.destination = _destination
 	world.class_schedule = _schedule()
+	world.class_schedule.append_array(Classes.workshops())
 	world._update_lesson()
 	world_ref = weakref(world)
 	var clock := _text(header, world.clock_text(), 17)
@@ -512,7 +513,7 @@ func show_room(building: Dictionary, room: String) -> void:
 	if id in [World.DEAN_OFFICE, World.ASSISTANT_OFFICE] and in_partida:
 		_ui()._campus().open_office(show_world, id)
 		return
-	if id == Classes.BUILDING and Map.room_kind(id, room) == "classroom":
+	if id in [Classes.BUILDING, "fis_mat"] and Map.room_kind(id, room) in ["classroom", "physics_virtual"]:
 		show_classroom(room)
 		return
 	var page: VBoxContainer = _play_page(room, "Interior recreado · " + str(building["name"]), show_world, false, false, false)
@@ -557,6 +558,7 @@ func show_schedule(back: Callable) -> void:
 	_theme()
 	var page: VBoxContainer = _play_page("Horario de Ciclo Básico", "Semanas del juego · horario simulado", back, false, false)
 	var schedule := _schedule()
+	_ui()._add_button(page, "Talleres abiertos · Básicas y Bloque 100", show_workshops.bind(back), false, 40)
 	if schedule.is_empty():
 		_text(page, "Inicia una partida e inscríbete para ver tus clases.", 17)
 		return
@@ -573,6 +575,15 @@ func show_schedule(back: Callable) -> void:
 			_text(card, "Choque con " + ", ".join(clashes), 15)
 		if _ui().simulation.planning_available():
 			_ui()._add_button(card, "Cambiar paralelo", _change_parallel.bind(row["course"], back), false, 34)
+
+
+func show_workshops(back: Callable) -> void:
+	var page := _play_page("Talleres abiertos", "Clases prácticas optativas · puedes asistir sin inscribir otra materia.", show_schedule.bind(back))
+	for row in Classes.workshops():
+		var card: VBoxContainer = _ui()._card(page)
+		_text(card, row["name"], 19)
+		_text(card, Map.building(row["building"])["name"] + " · " + Classes.timing(row), 16)
+		_ui()._add_button(card, "Marcar " + str(row["room"]), mark_building.bind(row["building"]), false, 36)
 
 
 func _change_parallel(course: String, back: Callable) -> void:
@@ -628,8 +639,10 @@ func show_journal() -> void:
 
 func show_classroom(room: String) -> void:
 	var routine := _daily()
-	var page: VBoxContainer = _play_page(room, "Ciclo Básico · Piso %d" % Map.room_floor(Classes.BUILDING, room), show_world, false, false)
+	var building := "fis_mat" if room.begins_with("CU-10") else Classes.BUILDING
+	var page: VBoxContainer = _play_page(room, "%s · Piso %d" % [Map.building(building)["name"], Map.room_floor(building, room)], show_world, false, false)
 	var classes := _schedule()
+	classes.append_array(Classes.workshops())
 	var active := Classes.active(classes, room, routine.minutes)
 	if not active.is_empty():
 		_live_class(page, active, routine)
@@ -657,6 +670,16 @@ func _wait_for_class(row: Dictionary) -> void:
 
 
 func _live_class(page: VBoxContainer, row: Dictionary, routine: RefCounted) -> void:
+	if routine.needs_glasses():
+		_text(page, "Necesitas lentes para leer la pizarra. Puedes usar los tuyos o pedir un par prestado en esta aula.", 19)
+		_ui()._add_button(page, "Ponerme los lentes" if routine.backpack.has("lentes") else "Pedir lentes prestados y ponérmelos", func() -> void:
+			if routine.backpack.has("lentes"):
+				routine.consume("lentes")
+			else:
+				routine.equipment["lentes"] = true
+			_save_daily(routine)
+			show_classroom(row["room"]), true, 40)
+		return
 	var board: VBoxContainer = _ui()._card(page, true)
 	board.name = "LiveClassBoard"
 	_text(board, "%s · %s" % [row["code"], row["name"]], 24)
@@ -665,7 +688,7 @@ func _live_class(page: VBoxContainer, row: Dictionary, routine: RefCounted) -> v
 	ink.name = "LiveClassWriting"
 	var feedback := _text(board, "", 15)
 	var timer := Timer.new()
-	timer.wait_time = 5.0 if routine.student_trait == "Miopía" and not routine.equipment.has("lentes") else 3.0
+	timer.wait_time = 3.0
 	board.add_child(timer)
 	var sync := func() -> void:
 		var count := Classes.visible_lines(row, routine.minutes)
@@ -697,7 +720,7 @@ func _live_class(page: VBoxContainer, row: Dictionary, routine: RefCounted) -> v
 		_text(page, "Tarea de clasificación completada.", 15)
 	else:
 		_ui()._add_button(page, "Resolver tarea de aula", _practice.bind(row), false, 38)
-	if _ui().simulation.state["phase"] == "CURSANDO":
+	if not row.get("workshop", false) and _ui().simulation != null and _ui().simulation.state["phase"] == "CURSANDO":
 		var entry: Dictionary = _ui().simulation.state["enrollments"].get(row["course"], {})
 		if not entry.is_empty() and entry["score"] == null:
 			var week := floori(routine.minutes / Daily.WEEK)
