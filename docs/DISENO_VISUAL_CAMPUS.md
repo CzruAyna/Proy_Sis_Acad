@@ -95,7 +95,7 @@ Al cambiar de periodo, la consulta inicial se actualiza al nivel de las materias
 
 ## Pantallas compactas y navegación sin rueda
 
-La regla permanente está en `REGLAS_USUARIO.txt`; `AGENTS.md` obliga a leerla antes de trabajar. No se utilizan deslizadores, barras de desplazamiento ni listas desplegables que requieran rueda.
+No se utilizan deslizadores, barras de desplazamiento ni listas desplegables que requieran rueda.
 
 - Las páginas comunes se centran y limitan a 880 unidades de ancho. La malla dispone de hasta 1100, con espacio propio para explorar.
 - Desde el 31/10 el inicio reúne todas las acciones en un solo contenedor de altura contenida, sin páginas. `broken_pixel_panel.gd` dibuja una abertura negra con bordes fragmentados y píxeles sueltos; no usa el marco ordinario de las tarjetas. Logo y cosmos se conservan, sin un segundo panel de citas. Las acciones tienen el mismo ancho y tipografía compacta; se comprueban con partida reciente y letras al 120%. El campus agrupa las acciones de malla y auxiliatura y ofrece un único acceso de guardar/salir.

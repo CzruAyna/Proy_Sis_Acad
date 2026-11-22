@@ -156,7 +156,7 @@ Añadí una demostración que recorre una carrera con semilla reproducible y per
 
 **Mensaje original:** `docs: documentracion y reglas de proyecto`. **Hora:** 19:18:22 (UTC−04:00).
 
-Reorganicé el README alrededor del juego de escritorio y añadí el índice, la arquitectura y las instrucciones de desarrollo local. Precisé el cierre obligatorio de reglas en AGENTS.md y la separación entre documentación vigente e histórica.
+Reorganicé el README alrededor del juego de escritorio y añadí el índice, la arquitectura y las instrucciones de desarrollo local. Precisé el procedimiento de revisión de cambios y la separación entre documentación vigente e histórica.
 
 **Archivos de referencia:** `README.md`, `docs/ARQUITECTURA.md`, `docs/DESARROLLO_LOCAL.md`.
 

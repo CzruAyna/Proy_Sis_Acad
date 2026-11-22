@@ -9,7 +9,7 @@ partida, usa una partida de prueba y evita adjuntar datos personales.
 
 ## Preparar un cambio
 
-1. Consulta las [reglas del proyecto](REGLAS_USUARIO.txt) y la guía del área
+1. Consulta la guía del área
    que vas a modificar. [Índice de documentación](docs/README.md)
 2. Ejecuta las pruebas relacionadas con Godot 4.7.2. Para cambios de
    interfaz, comprueba también el recorrido con teclado. [Desarrollo local](docs/DESARROLLO_LOCAL.md)

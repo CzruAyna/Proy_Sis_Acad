@@ -5,8 +5,7 @@ Para preparar un cambio, consulta [Contribuir a SIS-INF](../CONTRIBUTING.md).
 
 Este índice reúne guías de uso y documentos de coordinación. Los análisis con
 fecha describen el estado observado durante esa revisión; para reglas vigentes
-del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
-[reglas permanentes del usuario](../REGLAS_USUARIO.txt).
+del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md).
 
 ## Uso y componentes
 
@@ -32,7 +31,7 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Ramas, terreno y misiones](RAMAS_TERRENO_Y_MISIONES.md) | Malla acumulativa, controles del mapa, arte del campus, objetivos y contrato de recompensas. |
 | [Caminos, inicio y ambientes](CAMINOS_MENU_Y_AMBIENTES.md) | Empalmes continuos, rosa orientada, inicio con cuatro acciones, interiores variados y contrato para motor/backend. |
 | [Vida del campus y rendimiento](VIDA_CAMPUS_Y_RENDIMIENTO.md) | Pisos transitables, rutinas persistentes, caricias, Piedritas 1/100, logros y optimizaciones medidas; pendientes para frontend y datos. |
-| [Guía y rutina estudiantil](GUIA_Y_RUTINA_ESTUDIANTIL.md) | Destinos, expedientes, horarios, clases, mochila, tiendas y tareas de diseño. |
+| [Guía y rutina estudiantil](GUIA_Y_RUTINA_ESTUDIANTIL.md) | Misiones, minimapa, celular, rasgos, proyectos, exámenes y tiendas. |
 | [Mapa en cuatro cuadrantes, histórico](MAPA_PARA_CORRECCIONES.md) | Exportación del 03/11/2026, sustituida por la matriz 8×8. |
 | [Referencias de interiores FNI](REFERENCIAS_INTERIORES_FNI.md) | Fuentes consultadas, ambientación recreada y planos/fotos que faltan verificar. |
 | [Sala de juegos del bloque E](JUEGOS_BLOQUE_E.md) | Cuatro minijuegos jugables contra rivales, variantes, controles, guardado, optimizaciones y pendientes. |
@@ -56,7 +55,3 @@ del juego, consultar [Simulación individual](SIMULACION_ESTUDIANTE.md) y las
 | [Roadmap](ROADMAP.md) | Fases previstas en el documento de planificación. |
 | [Guía de documentación](GUIA_DOCUMENTACION.md) | Criterios para documentar decisiones, cambios, comprobaciones y pendientes. |
 | [Código libre y licencia](LICENCIA_CODIGO_LIBRE.md) | GPLv3 o posterior para el código original, derechos de terceros y revisiones pendientes. |
-
-Las reglas permanentes del usuario y el procedimiento obligatorio para agentes
-están en [`../REGLAS_USUARIO.txt`](../REGLAS_USUARIO.txt) y
-[`../AGENTS.md`](../AGENTS.md).
