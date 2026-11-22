@@ -99,6 +99,17 @@ func _check_economy() -> void:
 	restored.consume("agua")
 	_check(restored.thirst == 55.0 and restored.load_count() == Daily.CAPACITY - 1, "Consumir agua libera espacio y reduce la sed.")
 	var bottles := Daily.new()
+	bottles.collect_bottle("dorada", 3)
+	var inventory := bottles.snapshot()
+	bottles.restore(inventory)
+	_check(bottles.collect_bottle("dorada", 5).is_empty() and bottles.snapshot() == inventory, "Volver al escondite conserva el hallazgo.")
+	var full_count := 0
+	for seed_value in 1000:
+		var trial := Daily.new()
+		trial.collect_bottle("dorada", seed_value)
+		if trial.finds["dorada"] == "llena":
+			full_count += 1
+	_check(full_count > 0 and full_count < 50, "La dorada llena se puede encontrar y es poco frecuente.")
 	bottles.student_trait = "Miopía"
 	_check(bottles.needs_glasses(), "La miopía requiere equipar lentes.")
 	bottles.buy("tienda", "lentes")
@@ -161,6 +172,18 @@ func _run() -> void:
 		_check(Map.room_floor(workshop["building"], workshop["room"]) >= 0 and workshop["lines"].size() >= 3, "Cada taller tiene puerta, piso y lección.")
 	var tracker := _game.find_child("CampusSupplies", true, false) as Label
 	_check(tracker.get_global_rect().end.y < world.size.y / 3, "Hambre y sed permanecen visibles en la cabecera.")
+	var sites := World.bottle_positions()
+	for id in sites:
+		world.player = sites[id]
+		_check(world._can_stand_outside(world.player) and world.nearby_building().is_empty() and world.nearby_vendor().is_empty() and world.nearby_feature().get("id") == id, "La botella tiene un punto de recogida accesible: " + str(id))
+	world.player = sites["vidrio_verde"]
+	world.interact()
+	await process_frame
+	_check(_game._explorer()._daily().finds.get("vidrio_verde") == "vacía", "Recoger con E guarda el recuerdo en la mochila.")
+	await _picture("14-hallazgo")
+	_game._show_exploration()
+	world = _game.find_child("CampusWorld", true, false) as Control
+	_check(world.nearby_feature().get("id") != "vidrio_verde", "La botella recogida desaparece del campus.")
 	var positions := World.vendor_positions()
 	_check(positions.values().has(Map.SPAWN) == false, "Los puestos tienen ubicaciones propias en el mapa.")
 	for id: String in positions:

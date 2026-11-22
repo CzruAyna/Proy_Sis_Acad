@@ -226,6 +226,7 @@ func show_world() -> void:
 	world.actor_requested.connect(show_actor, CONNECT_DEFERRED)
 	world.stairs_requested.connect(show_floors, CONNECT_DEFERRED)
 	world.vendor_requested.connect(show_vendor, CONNECT_DEFERRED)
+	world.bottle_found.connect(func(message: String) -> void: show_backpack(message, show_world), CONNECT_DEFERRED)
 	world.backpack_requested.connect(show_backpack.bind("", show_world), CONNECT_DEFERRED)
 
 
@@ -856,6 +857,9 @@ func show_backpack(message: String, back: Callable, section: int = 0) -> void:
 			var supplies: VBoxContainer = _ui()._card(page, true)
 			_text(supplies, "Comida y objetos", 21)
 			_text(supplies, "Tu personaje · " + routine.student_trait, 16)
+			for id in routine.finds:
+				var glass := "Botella dorada" if id == "dorada" else ("Botella verde" if id == "vidrio_verde" else "Botella ámbar")
+				_text(supplies, glass + " · " + str(routine.finds[id]), 16)
 			for id in routine.equipment:
 				_text(supplies, "En uso · " + str(Daily.GEAR[id]), 15)
 			if routine.backpack.is_empty():

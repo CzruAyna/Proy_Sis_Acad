@@ -28,6 +28,7 @@ const VENDORS := {
 var student_trait := ""
 var equipment: Dictionary = {}
 var shops: Dictionary = {}
+var finds: Dictionary = {}
 var minutes := START
 var balance := ALLOWANCE
 var hunger := 0.0
@@ -46,6 +47,10 @@ func restore(data: Variant) -> void:
 	for id in GEAR:
 		if stored.get("equipment") is Dictionary and stored["equipment"].get(id) == true:
 			equipment[id] = true
+	finds = {}
+	for id in ["vidrio_verde", "vidrio_ambar", "dorada"]:
+		if stored.get("finds") is Dictionary and stored["finds"].get(id) in ["vacía", "llena"]:
+			finds[id] = stored["finds"][id]
 	shops = stored["shops"].duplicate() if stored.get("shops") is Dictionary else {}
 	minutes = _number(stored.get("minutes"), START, START, 1000000000.0)
 	balance = int(_number(stored.get("balance"), ALLOWANCE, 0.0, 1000000000.0))
@@ -70,7 +75,7 @@ func _number(value: Variant, fallback: float, low: float, high: float) -> float:
 
 
 func snapshot() -> Dictionary:
-	return {"student_trait": student_trait, "equipment": equipment.duplicate(), "shops": shops.duplicate(), "minutes": minutes, "balance": balance, "hunger": hunger, "thirst": thirst,
+	return {"finds": finds.duplicate(), "student_trait": student_trait, "equipment": equipment.duplicate(), "shops": shops.duplicate(), "minutes": minutes, "balance": balance, "hunger": hunger, "thirst": thirst,
 		"backpack": backpack.duplicate(), "tasks": tasks.duplicate(), "notes": notes.duplicate(true)}
 
 
@@ -124,6 +129,14 @@ func consume(item: String) -> String:
 	hunger = maxf(0.0, hunger - float(ITEMS[item][2]))
 	thirst = maxf(0.0, thirst - float(ITEMS[item][3]))
 	return "%s · hambre %d%% · sed %d%%." % [ITEMS[item][0], roundi(hunger), roundi(thirst)]
+
+
+func collect_bottle(id: String, seed_value: int) -> String:
+	if finds.has(id) or id not in ["vidrio_verde", "vidrio_ambar", "dorada"]:
+		return ""
+	var full := id == "dorada" and posmod(hash("botella/%d" % seed_value), 100) == 0
+	finds[id] = "llena" if full else "vacía"
+	return "Encontraste una %s %s." % ["botella dorada" if id == "dorada" else "botella de vidrio", finds[id]]
 
 
 func needs_glasses() -> bool:
