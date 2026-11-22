@@ -13,8 +13,6 @@ se guardan en archivos JSON en `user://`.
 
 | Ruta | Responsabilidad |
 |---|---|
-| `AGENTS.md` | Instrucciones de trabajo obligatorias para agentes. |
-| `REGLAS_USUARIO.txt` | Registro acumulativo que prevalece sobre documentación de análisis anterior. |
 | `game/` | Proyecto Godot, recursos, escenas, scripts y pruebas del juego. |
 | `docs/` | Guías, especificaciones y documentos de coordinación. |
 
@@ -77,8 +75,7 @@ presenta; las vistas no deben alterar directamente los estados para sortear
 esas validaciones.
 
 La navegación principal usa botones y páginas explícitas. La interfaz no debe
-requerir rueda, barras de desplazamiento ni sliders; estas reglas están
-detalladas en [`../REGLAS_USUARIO.txt`](../REGLAS_USUARIO.txt).
+requerir rueda, barras de desplazamiento ni sliders.
 
 ### Estado espacial y recreativo
 

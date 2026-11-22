@@ -28,6 +28,7 @@ godot --path game
 
 ## Documentación y contribuciones
 
+- [Cómo jugar la campaña estudiantil](docs/GUIA_Y_RUTINA_ESTUDIANTIL.md).
 - [Estado del juego](docs/ESTADO_ACTUAL.md) y [guías por tema](docs/README.md).
 - [Pruebas y publicaciones automáticas](docs/AUTOMATIZACION.md).
 - [Bitácora de desarrollo](docs/BITACORA_DESARROLLO.md).

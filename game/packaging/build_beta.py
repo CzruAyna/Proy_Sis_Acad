@@ -95,7 +95,7 @@ def macos_package(stage, stem, app_archive, names):
 
 
 def source_package(stage, stem):
-    files = [ROOT / name for name in ("README.md", "CONTRIBUTING.md", "AGENTS.md", "LICENSE", "REGLAS_USUARIO.txt",
+    files = [ROOT / name for name in ("README.md", "CONTRIBUTING.md", "LICENSE",
                                      ".gitattributes", ".gitignore")]
     files.extend(GAME / name for name in ("project.godot", "export_presets.cfg", "README.md"))
     directories = [GAME / name for name in ("assets", "packaging", "scenes", "scripts", "tests", "tools")]

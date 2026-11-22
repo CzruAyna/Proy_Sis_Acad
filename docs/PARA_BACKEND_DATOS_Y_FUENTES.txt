@@ -1,5 +1,5 @@
 PARA BACKEND: INFORMACIÓN REAL Y MATERIAL ORIGINAL PARA SIS-INF
-Solicitud del usuario: 29/10/2026. Revisar también /REGLAS_USUARIO.txt.
+Solicitud del usuario: 29/10/2026.
 Este archivo solicita revisión y datos; NO confirma vigencia ni modifica reglas.
 
 PRECISIÓN DEL 06/11/2026

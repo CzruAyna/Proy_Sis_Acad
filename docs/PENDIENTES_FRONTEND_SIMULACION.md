@@ -69,14 +69,13 @@ oficinas o aulas y actividades. El mapa de la sede del centro no se recibió.
 La guía enlazada registra la procedencia y los derechos pendientes del plano
 y del logo, las decisiones de adaptación y los criterios para cerrar tareas.
 
-Actualizado: 29 de octubre de 2026. Las tareas temporales del contrato original se consumieron e implementaron. Este archivo conserva el punto de coordinación con la sesión del motor. Leer primero `REGLAS_USUARIO.txt` y, para datos institucionales, `docs/PARA_BACKEND_DATOS_Y_FUENTES.txt`.
+Actualizado: 29 de octubre de 2026. Las tareas temporales del contrato original se consumieron e implementaron. Este archivo conserva el punto de coordinación con la sesión del motor. Para datos institucionales, consultar `docs/PARA_BACKEND_DATOS_Y_FUENTES.txt`.
 
 ## Registro de integración de octubre de 2026
 
 Las secciones restantes describen la integración original y sus verificaciones.
 Las menciones a una plantilla desplazable, ficha bajo el grafo o exportación con
-el nombre anterior son históricas. Para navegación vigente se aplica
-`REGLAS_USUARIO.txt` y [Diseño visual](DISENO_VISUAL_CAMPUS.md).
+el nombre anterior son históricas. Para navegación vigente consultar [Diseño visual](DISENO_VISUAL_CAMPUS.md).
 
 | Área | Interfaz disponible |
 |---|---|

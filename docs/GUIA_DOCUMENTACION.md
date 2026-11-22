@@ -15,17 +15,9 @@ decisiones y dar continuidad al trabajo sin depender de conversaciones previas.
 
 ## Reglas de trabajo
 
-1. Leer completos `AGENTS.md` y `REGLAS_USUARIO.txt` antes de analizar, editar,
-   probar o compilar.
-2. Consultar el índice `docs/README.md` y los documentos del área afectada.
-3. Para datos o reglas institucionales, leer
-   `PARA_BACKEND_DATOS_Y_FUENTES.txt` y registrar el material faltante.
-4. Escribir la documentación técnica del repositorio en Markdown. Enlazar los
-   documentos nuevos desde el índice o el README principal.
-5. Conservar las reglas anteriores al incorporar una instrucción expresa nueva.
-   Identificar las decisiones técnicas como tales; no atribuirlas al usuario.
-6. Antes de cerrar una modificación, releer completo `REGLAS_USUARIO.txt` y
-   revisar el diff contra sus reglas.
+1. Consulta el índice de documentación y la guía del área afectada.
+2. Contrasta los datos institucionales con el registro de fuentes.
+3. Enlaza las guías nuevas desde el índice o el README principal.
 
 La memoria académica en LaTeX se conserva en la carpeta externa solicitada por
 el autor. Es una entrega separada y fechada; no reemplaza las guías Markdown
@@ -35,8 +27,6 @@ del repositorio ni se debe confundir con el estado actual del producto.
 
 | Asunto | Documento |
 |---|---|
-| Reglas expresas acumuladas del usuario | `../REGLAS_USUARIO.txt` |
-| Procedimiento obligatorio para agentes | `../AGENTS.md` |
 | Presentación, descarga y acceso a las guías | [README principal](../README.md) |
 | Reportes de fallos y preparación de cambios | [Contribuciones](../CONTRIBUTING.md) |
 | Instalación para jugadores | [Instaladores](INSTALADORES_BETA.md) |

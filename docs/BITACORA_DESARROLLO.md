@@ -1,6 +1,6 @@
 # Bitácora de desarrollo de SIS-INF
 
-Revisión del 14 de noviembre de 2026. Corte `2868d19`.
+La primera revisión llega al commit `2868d19`. La entrada del 21 de noviembre registra el trabajo posterior en las ramas de la campaña.
 
 La bitácora sigue las fechas de los commits en UTC−04:00. El [historial de pushes](HISTORIAL_PUSHES.md) registra los envíos y el [historial técnico](HISTORIAL_COMMITS.md) conserva sus mensajes y archivos. Las horas de Git son marcas del registro. Las notas personales entre comillas proceden de los mensajes originales.
 
@@ -125,3 +125,9 @@ Preparé los paquetes de Windows, Linux y macOS, junto con las fuentes y el mani
 **Commit:** `2868d19`.
 
 Enlacé la beta desde el README y dejé una comprobación breve para abrir el campus, guardar y retomar una partida.
+
+## 21 de noviembre de 2026 · Una campaña dentro del campus
+
+El calendario del celular y las clases comparten la misma cita. Un aviso de retraso cambia el momento en que aparece el docente. Desde el segundo semestre se pueden comparar paralelos. Los rasgos del personaje cambian qué conviene llevar en la mochila. En el aula, la hoja de examen y los hitos de proyecto tienen interacciones diferentes. El diario recoge los resultados de cada recorrido. [Guía de la campaña](GUIA_Y_RUTINA_ESTUDIANTIL.md)
+
+El calendario se incorporó en `4f9847b`, los rasgos en `b426d12` y las misiones y evaluaciones en `34efc30`. La revisión `46fd6c2` abrió la hoja con la pregunta visible y añadió doce problemas de Física, Química y Matemáticas. En Windows se probó la entrada al aula, la espera del examen y el registro de la respuesta. GitHub publicó la primera versión con el nuevo nombre. [Publicación verificada](https://github.com/CzruAyna/Proy_Sis_Acad/releases/tag/v0.2.0-beta.1)
