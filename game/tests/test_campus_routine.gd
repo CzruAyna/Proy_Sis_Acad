@@ -128,6 +128,18 @@ func _run() -> void:
 	_game._show_campus_section("materias")
 	_click("Ver mi horario")
 	var rows := Classes.schedule(_game.simulation.snapshot())
+	for lesson in rows:
+		_check(Classes.conflicts(lesson, rows).is_empty(), "El horario de ingreso carece de choques.")
+	var next_term: Dictionary = _game.simulation.snapshot()
+	next_term["term"] = 2
+	var later := Classes.schedule(next_term)
+	var chosen := str(later[0]["course"])
+	for subject in next_term["subjects"]:
+		if subject["id"] == chosen:
+			subject["enrollment"]["parallel"] = 1
+	var revised := Classes.schedule(next_term)
+	_check(revised[0]["day"] != later[0]["day"] and revised[0]["parallel"] == "B", "Cambiar de paralelo cambia la cita del segundo semestre.")
+	_check(revised == Classes.schedule(next_term), "Consultar de nuevo el horario conserva los paralelos.")
 	_check(rows.size() == 5, "Cada materia inscrita aparece en el horario.")
 	_check(rows[0]["lines"] != rows[1]["lines"], "Cada materia usa contenido propio.")
 	_check(Classes.active(rows, rows[0]["room"], 570.0)["key"] == rows[0]["key"], "El horario activa la clase al comienzo de su franja.")

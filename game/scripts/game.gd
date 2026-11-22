@@ -2029,13 +2029,6 @@ func _show_exam() -> void:
 		_project_review(content, entry, partial_index)
 		return
 	var columns := _adaptive_grid(content, 470.0, 2)
-	var lesson := _card(columns, true)
-	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
-	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
-	var demo := StudyDemo.new()
-	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme, self)
-	lesson.add_child(demo)
 	var exam := VBoxContainer.new()
 	exam.set_meta("page_atomic", true)
 	exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2062,6 +2055,14 @@ func _show_exam() -> void:
 	if not cheat.disabled:
 		cheat.text = "[U] " + cheat.text
 		_bind_page_key(KEY_U, _try_chanchullo.bind(cheat_key))
+
+	var lesson := _card(columns, true)
+	lesson.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lesson.add_child(_label("APUNTE RÁPIDO", 13, accent))
+	lesson.add_child(_label(str(course.get("desc", "")), 13, theme.get("sub", INK)))
+	var demo := StudyDemo.new()
+	demo.setup(course, partial_index, float(settings["font_scale"]), _current_theme, self)
+	lesson.add_child(demo)
 
 
 func _project_review(content: Control, entry: Dictionary, phase: int) -> void:

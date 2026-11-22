@@ -28,6 +28,7 @@ const EXAMPLES := {
 
 static func schedule(snapshot: Dictionary) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
+	var room_counts := {}
 	for subject: Dictionary in snapshot.get("subjects", []):
 		if subject["enrollment"].is_empty():
 			continue
@@ -38,7 +39,13 @@ static func schedule(snapshot: Dictionary) -> Array[Dictionary]:
 		var seed_key := "%s/%d/%s" % [snapshot.get("student_seed", ""), term, subject["id"]]
 		var parallel := int(subject["enrollment"].get("parallel", 0))
 		var slot := index if term == 1 else posmod(seed_key.hash() + parallel * 7, DAYS.size() * STARTS.size())
-		var room: String = ROOMS[(index if term == 1 else posmod(code.hash(), ROOMS.size())) % ROOMS.size()]
+		var preferred_room := index if term == 1 else posmod(code.hash(), ROOMS.size())
+		var room: String = ROOMS[preferred_room % ROOMS.size()]
+		for offset in range(1, ROOMS.size()):
+			var candidate: String = ROOMS[(preferred_room + offset) % ROOMS.size()]
+			if int(room_counts.get(candidate, 0)) < int(room_counts.get(room, 0)):
+				room = candidate
+		room_counts[room] = int(room_counts.get(room, 0)) + 1
 		rows.append({
 			"key": "%d/%s" % [int(snapshot["term"]), subject["id"]],
 			"course": str(subject["id"]), "code": code, "name": str(subject["name"]),

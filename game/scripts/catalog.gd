@@ -9,6 +9,26 @@ const THEME := {
 }
 
 const QUIZ_BANK := {
+	"FIS 1100": [
+		{"q": "Partes del reposo con una aceleración constante de 2 m/s². ¿Qué velocidad alcanzas en 3 s?", "options": ["6 m/s", "3 m/s", "9 m/s"], "answer": 0, "why": "La velocidad aumenta 2 m/s cada segundo. A los tres segundos alcanza 6 m/s."},
+		{"q": "Una fuerza neta de 12 N actúa sobre una masa de 3 kg. ¿Qué aceleración produce?", "options": ["4 m/s²", "36 m/s²", "9 m/s²"], "answer": 0, "why": "Por la segunda ley de Newton, a = F/m = 12/3."},
+		{"q": "Un carrito de 2 kg se mueve a 3 m/s. ¿Cuánta energía cinética tiene?", "options": ["9 J", "6 J", "18 J"], "answer": 0, "why": "La energía cinética es la mitad del producto de la masa por el cuadrado de la velocidad."}
+	],
+	"MAT 1100": [
+		{"q": "Si 2x + y = 7 y x − y = 2, ¿cuánto vale x?", "options": ["3", "1", "5"], "answer": 0, "why": "Al sumar las ecuaciones se elimina y. Queda 3x = 9."},
+		{"q": "¿Cuál es el determinante de una matriz diagonal con entradas 2 y 5?", "options": ["10", "7", "3"], "answer": 0, "why": "El determinante de una matriz diagonal es el producto de su diagonal."},
+		{"q": "¿Cuál es el producto escalar de (1, 2) y (3, 4)?", "options": ["11", "10", "7"], "answer": 0, "why": "Se suman los productos de componentes correspondientes: 1 × 3 + 2 × 4."}
+	],
+	"MAT 1101": [
+		{"q": "En la curva y = x², ¿cuál es la pendiente de la tangente en x = 3?", "options": ["6", "9", "3"], "answer": 0, "why": "La derivada es 2x. En x = 3 vale 6."},
+		{"q": "¿A qué valor tiende (x² − 1)/(x − 1) cuando x tiende a 1?", "options": ["2", "0", "1"], "answer": 0, "why": "Fuera de x = 1 se simplifica a x + 1 y el límite vale 2."},
+		{"q": "¿En qué valor de x alcanza su mínimo f(x) = (x − 2)² + 1?", "options": ["2", "1", "−2"], "answer": 0, "why": "El cuadrado alcanza cero en x = 2 y en cualquier otro punto es positivo."}
+	],
+	"QMC 1100": [
+		{"q": "¿Cuántas moléculas de oxígeno se consumen en 2 H₂ + O₂ → 2 H₂O por cada dos moléculas de agua formadas?", "options": ["Una", "Dos", "Cuatro"], "answer": 0, "why": "El coeficiente del oxígeno molecular es 1."},
+		{"q": "Una muestra de agua pesa 36 g. Con una masa molar de 18 g/mol, ¿cuántos moles contiene?", "options": ["2 mol", "18 mol", "0,5 mol"], "answer": 0, "why": "La cantidad de sustancia se obtiene al dividir la masa por la masa molar."},
+		{"q": "Disuelves 0,5 mol de sal hasta un volumen final de 2 L. ¿Qué concentración molar obtienes?", "options": ["0,25 mol/L", "1 mol/L", "4 mol/L"], "answer": 0, "why": "La molaridad es la cantidad de soluto dividida por el volumen final de la disolución."}
+	],
 	"SIS 1110": [
 		{"q": "Un algoritmo es una secuencia de pasos para resolver un problema. ¿Qué condición ayuda a que sea ejecutable?", "options": ["Definir entradas, operaciones y una salida para cada caso previsto", "Usar nombres de variables largos", "Repetir pasos sin una condición de término"], "answer": 0, "why": "Los pasos deben ser claros, finitos y producir un resultado a partir de los datos."},
 		{"q": "Una beca se concede si el promedio es al menos 70 y hay documentos completos. ¿Qué condición representa la regla?", "options": ["promedio >= 70 Y documentos_completos", "promedio >= 70 O documentos_completos", "promedio < 70 Y no documentos_completos"], "answer": 0, "why": "La conjunción exige que se cumplan las dos condiciones."},
@@ -399,9 +419,7 @@ static func course_for_sigla(program_id: String, sigla: String, mention_id: Stri
 	var sub := subject_by_sigla(program_id, sigla, mention_id)
 	if sub.is_empty(): return {}
 	var topics: Array = sub.get("topics", [])
-	var questions: Array = _topic_questions(sub, topics)
-	if QUIZ_BANK.has(sigla):
-		questions = QUIZ_BANK[sigla]
+	var questions: Array = QUIZ_BANK[sigla] if QUIZ_BANK.has(sigla) else _topic_questions(sub, topics)
 	var partials: Array = []
 	for partial_index in range(3):
 		var q: Dictionary = questions[partial_index].duplicate(true)
