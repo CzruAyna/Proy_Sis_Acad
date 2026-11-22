@@ -63,8 +63,7 @@ Consulta tu rasgo en la mochila. Con miopía debes ponerte lentes para leer la p
 
 En **H → Talleres abiertos** encontrarás doce prácticas optativas en Básicas y el Bloque 100. Cada ficha indica el día, el aula y el piso. Puedes esperar la sesión en su pizarra y guardar el apunte. Estos talleres recreados permiten practicar durante la exploración libre y durante una partida.
 
-En el minimapa, la flecha blanca te ubica y la marca dorada señala tu destino. El mapa grande se abre con **M**.
-
+En el minimapa, la flecha blanca te ubica y la marca dorada señala tu destino. El mapa grande se abre con **M**. Si encuentras una botella, pulsa **E** cerca de ella para guardarla como recuerdo. Puedes revisar los hallazgos en la mochila.
 
 ## Fuentes pendientes
 

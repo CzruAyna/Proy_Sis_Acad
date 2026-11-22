@@ -11,6 +11,7 @@ signal landmark_requested(id: String)
 signal actor_requested(id: String)
 signal stairs_requested(id: String)
 signal vendor_requested(id: String)
+signal bottle_found(message: String)
 signal backpack_requested
 
 const Map = preload("res://scripts/campus_map.gd")
@@ -71,6 +72,7 @@ var destination := Vector2.INF
 var _lesson: Dictionary = {}
 var _board_lines := 0
 static var _vendors: Dictionary = {}
+static var _bottles: Dictionary = {}
 var _ambient_phase := 0.0
 var _ambient_tick := 0.0
 var cast_instances: Array[Dictionary] = []
@@ -448,10 +450,24 @@ func interact() -> void:
 			if not feature.is_empty():
 				paused = true
 				_held.clear()
-				if feature["kind"] == "statue":
+				if feature["kind"] == "bottle":
+					var message := daily.collect_bottle(feature["id"], ambient_cast.seed_value)
+					progress_changed.emit(snapshot())
+					bottle_found.emit(message)
+				elif feature["kind"] == "statue":
 					landmark_requested.emit(feature["id"])
 				else:
 					actor_requested.emit(feature["id"])
+
+
+static func bottle_positions() -> Dictionary:
+	if _bottles.is_empty():
+		_bottles = {
+			"vidrio_verde": _safe_outside_position(Map.building("comedor")["door"] + Vector2(-86, 52)),
+			"vidrio_ambar": _safe_outside_position(Map.building("minas")["door"] + Vector2(72, 46)),
+			"dorada": _safe_outside_position(Map.building("civil")["door"] + Vector2(142, 110))
+		}
+	return _bottles
 
 
 static func vendor_positions() -> Dictionary:
@@ -492,6 +508,9 @@ func nearby_feature() -> Dictionary:
 				if count == 4:
 					break
 		return {}
+	for id in bottle_positions():
+		if not daily.finds.has(id) and player.distance_to(bottle_positions()[id]) < Scale.OUTDOOR_REACH:
+			return {"id": id, "kind": "bottle", "title": "Recoger botella"}
 	for item in Land.landmarks():
 		if player.distance_to(item["approach"]) < Scale.OUTDOOR_REACH:
 			return item
@@ -669,6 +688,14 @@ func _draw_campus(view: Rect2) -> void:
 		if not view.grow(80).intersects(rect):
 			continue
 		_draw_building(building, view)
+	for id in bottle_positions():
+		var spot: Vector2 = bottle_positions()[id]
+		if daily.finds.has(id) or not view.grow(12).has_point(spot):
+			continue
+		var glass := Color("#dab53b") if id == "dorada" else (Color("#538c6c") if id == "vidrio_verde" else Color("#ad7249"))
+		draw_rect(Rect2(spot + Vector2(-2, -6), Vector2(5, 7)), glass.darkened(0.22))
+		draw_rect(Rect2(spot + Vector2(-1, -10), Vector2(2, 4)), glass)
+		draw_rect(Rect2(spot + Vector2(-1, -5), Vector2(1, 4)), glass.lightened(0.4))
 	for point in Foliage.visible(view):
 		Architecture.tree(self, point)
 	for item in Land.landmarks():
